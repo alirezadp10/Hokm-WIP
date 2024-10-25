@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بازی کارت</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+</head>
+<body>
+<div class="game-container">
+    <div class="top-bar">
+        <i class="material-icons icon hamburger">menu</i>
+        <div class="scores">
+            <span class="team-score">تیم ما: 0</span>
+            <span class="team-score">تیم حریف: 0</span>
+        </div>
+        <div class="trump">حکم: ♥️</div>
+    </div>
+    <div class="center-cards" id="center-cards">
+        <div class="center-row" id="center-row-top"></div>
+        <div class="center-row" id="center-row-bottom"></div>
+    </div>
+    <div class="bottom-bar">
+        <div class="hand-cards" id="hand-cards">
+            <img src="img/8S.png" alt="8 of Spades" class="card" onclick="selectCard(this)">
+            <img src="img/KS.png" alt="King of Spades" class="card" onclick="selectCard(this)">
+            <img src="img/3C.png" alt="3 of Clubs" class="card" onclick="selectCard(this)">
+            <img src="img/5D.png" alt="5 of Diamonds" class="card" onclick="selectCard(this)">
+            <img src="img/AH.png" alt="Ace of Hearts" class="card" onclick="selectCard(this)">
+            <img src="img/KS.png" alt="King of Spades" class="card" onclick="selectCard(this)">
+            <img src="img/3C.png" alt="3 of Clubs" class="card" onclick="selectCard(this)">
+            <img src="img/5D.png" alt="5 of Diamonds" class="card" onclick="selectCard(this)">
+            <img src="img/AH.png" alt="Ace of Hearts" class="card" onclick="selectCard(this)">
+            <img src="img/KS.png" alt="King of Spades" class="card" onclick="selectCard(this)">
+            <img src="img/3C.png" alt="3 of Clubs" class="card" onclick="selectCard(this)">
+            <img src="img/5D.png" alt="5 of Diamonds" class="card" onclick="selectCard(this)">
+            <img src="img/AH.png" alt="Ace of Hearts" class="card" onclick="selectCard(this)">
+        </div>
+    </div>
+    <div class="opponent-name left">Opponent 1</div>
+    <div class="opponent-name right">Opponent 2</div>
+    <div class="player-name top">Ali</div>
+</div>
+
+<script>
+    function toggleMenu() {
+        const menu = document.getElementById("menu");
+        menu.style.display = menu.style.display === "none" || menu.style.display === "" ? "block" : "none";
+    }
+
+    function selectCard(card) {
+        const rowTop = document.getElementById("center-row-top");
+        const rowBottom = document.getElementById("center-row-bottom");
+        let newCard = card.cloneNode(true);
+        newCard.classList.add("center-card");
+
+        if (rowTop.children.length < 2) {
+            newCard.style.transform = `rotate(${(Math.random() * 20 - 10)}deg)`;
+            rowTop.appendChild(newCard);
+        } else if (rowBottom.children.length < 2) {
+            newCard.style.transform = `rotate(${(Math.random() * 20 - 10)}deg)`;
+            rowBottom.appendChild(newCard);
+        }
+
+        card.parentElement.removeChild(card);
+    }
+</script>
+</body>
+</html>

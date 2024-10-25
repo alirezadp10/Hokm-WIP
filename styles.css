@@ -1,0 +1,232 @@
+@font-face {
+    font-family: 'Iranian Sans';
+    src: url('font/Iranian Sans.ttf') format('truetype'); /* مسیر به فونت را مشخص کنید */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Iranian Sans', sans-serif; /* استفاده از فونت جدید */
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    background-image: url('img/rug.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    max-width: 400px;
+    height: 100vh;
+    background-color: white;
+    position: relative; /* برای قرار دادن نام‌ها روی ضلع‌ها */
+}
+
+.trump {
+    font-size: 18px; /* اندازه حکم */
+    font-weight: bold; /* ضخیم‌تر کردن حکم */
+    direction: rtl;
+}
+
+.top-bar {
+    direction: rtl;
+    display: flex; /* استفاده از flexbox */
+    justify-content: space-between; /* فاصله بین حکم و امتیازها */
+    align-items: center; /* تراز کردن اجزا به وسط */
+    padding: 10px;
+    background-color: #282828;
+    color: white;
+}
+
+.scores {
+    display: flex; /* استفاده از flexbox برای امتیازها */
+    align-items: center; /* تراز کردن امتیازها به وسط */
+    margin-left: auto; /* به سمت راست منتقل شود */
+    right: 35px;
+    position: absolute;
+    direction: rtl;
+}
+
+.team-score {
+    font-size: 16px; /* اندازه امتیاز */
+    margin: 0 10px; /* فاصله بین امتیازها */
+    font-weight: bold;
+}
+
+.opponent-name {
+    background: #00000080;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    position: absolute;
+    transform: rotate(90deg);
+    white-space: nowrap;
+}
+
+.left {
+    left: -30px; /* موقعیت نام رقیب در سمت چپ */
+    top: 50%; /* مرکز کردن عمودی */
+    transform: translateY(-50%) rotate(90deg); /* چرخش و مرکز کردن */
+}
+
+.right {
+    right: -30px; /* موقعیت نام رقیب در سمت راست */
+    top: 50%; /* مرکز کردن عمودی */
+    transform: translateY(-50%) rotate(-90deg); /* چرخش و مرکز کردن */
+}
+
+.player-name {
+    font-size: 20px; /* اندازه بزرگ‌تر برای اسم یار */
+    font-weight: bold; /* ضخیم‌تر کردن فونت */
+}
+
+.player-name.top {
+    color: white;
+    font-size: 18px;
+    background: #00000080;
+    font-weight: bold;
+    position: absolute;
+    top: 55px;
+    left: 50%; /* وسط چین افقی */
+    transform: translateX(-50%); /* جابجایی به سمت چپ برای وسط چین شدن */
+}
+
+.hokm-button {
+    background-color: #d9534f;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.center-cards {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    position: relative;
+}
+
+.center-row {
+    display: flex;
+    justify-content: center;
+    margin: 5px 0; /* فاصله بین ردیف‌ها */
+}
+
+.center-card {
+    width: 50px;
+    margin: 0 5px;
+}
+
+.bottom-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.hand-cards {
+    display: flex;
+    justify-content: center; /* مرکز کردن کارت‌ها */
+    align-items: flex-end;
+    width: 100%; /* عرض 100% */
+    padding: 0 20px; /* فضا در سمت چپ و راست */
+}
+
+.hand-cards img {
+    width: 50px; /* اندازه کارت */
+    margin: 0 -13px; /* فاصله کم بین کارت‌ها */
+    cursor: pointer;
+}
+
+.turn-message {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #333;
+}
+
+/* تنظیمات برای حالت پرتره در موبایل */
+@media only screen and (orientation: portrait) {
+    .hand-cards img {
+        width: 50px; /* اندازه کارت */
+        margin: 0 -20px; /* فاصله کم بین کارت‌ها */
+        cursor: pointer;
+    }
+
+    .game-container {
+        width: 100%;
+        height: 100vh;
+    }
+
+    .center-cards img {
+        width: 60px;
+    }
+
+    .hand-cards img {
+        width: 60px; /* اندازه کارت در حالت پرتره */
+    }
+}
+
+.hamburger {
+    font-size: 25px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    margin-left: 10px; /* فاصله از سمت چپ */
+}
+
+.bar {
+    width: 25px; /* عرض نوار */
+    height: 3px; /* ارتفاع نوار */
+    background-color: white; /* رنگ نوار */
+    margin: 3px 0; /* فاصله بین نوارها */
+}
+
+.menu-icon {
+    font-size: 30px; /* اندازه آیکون */
+    color: white; /* رنگ آیکون */
+    cursor: pointer; /* تغییر نشانگر ماوس به اشاره‌گر */
+    position: absolute; /* برای قرار دادن در گوشه */
+    top: 10px; /* فاصله از بالای صفحه */
+    right: 10px; /* فاصله از سمت راست */
+}
+
+.menu {
+    display: none; /* پنهان کردن منو به صورت پیش‌فرض */
+    position: absolute; /* برای قرار دادن در گوشه */
+    top: 50px; /* فاصله از بالای صفحه */
+    right: 10px; /* فاصله از سمت راست */
+    background-color: #282828; /* رنگ پس‌زمینه منو */
+    border-radius: 5px; /* گوشه‌های گرد */
+    z-index: 1000; /* قرار دادن در بالای سایر عناصر */
+}
+
+.menu ul {
+    list-style-type: none; /* حذف علامت‌های لیست */
+    padding: 10px; /* فاصله داخلی */
+}
+
+.menu li {
+    margin: 5px 0; /* فاصله بین گزینه‌ها */
+}
+
+.menu a {
+    color: white; /* رنگ لینک‌ها */
+    text-decoration: none; /* حذف زیرخط از لینک‌ها */
+}
