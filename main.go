@@ -1,9 +1,9 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/redis/rueidis"
 	"gopkg.in/telebot.v4"
 	"log"
 	"os"
@@ -14,9 +14,9 @@ func main() {
 	bot, err := telebot.NewBot(telebot.Settings{
 		Token: os.Getenv("TELEGRAM_BOT_TOKEN"),
 		Poller: &telebot.Webhook{
-			Listen: "0.0.0.0:80", // Address to listen for incoming webhook requests
+			Listen: "0.0.0.0:8443",
 			Endpoint: &telebot.WebhookEndpoint{
-				PublicURL: "https://8bb2-194-107-126-16.ngrok-free.app", // Replace with your actual public URL
+				PublicURL: "https://8bb2-194-107-126-16.ngrok-free.app",
 			},
 		},
 	})
@@ -26,10 +26,14 @@ func main() {
 
 	// Define a command handler
 	bot.Handle("/start", func(c telebot.Context) error {
-		client, _ := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"redis:6379"}})
-		defer client.Close()
-		client.Do(context.Background(), client.B().Set().Key("key").Value("val").Nx().Build())
-		return c.Send("Webhook is now active!")
+
+		message := c.Message()
+		user := message.Sender
+
+		foo, _ := json.MarshalIndent(user, "", " ")
+		// Print message details
+		fmt.Println(string(foo))
+		return c.Send("سلام خوش اومدی، صبر کن بقیه هم بیان خبرت میکنم")
 	})
 
 	// Start the bot
