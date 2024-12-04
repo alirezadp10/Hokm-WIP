@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بازی کارت</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+</head>
+<body>
+<div class="game-container">
+    <div class="top-bar">
+        <i class="material-icons icon hamburger">menu</i>
+        <div class="scores">
+            <span class="team-score">تیم ما: 0</span>
+            <span class="team-score">تیم حریف: 0</span>
+        </div>
+        <div class="trump">حکم: ♥️</div>
+    </div>
+    <div class="center-cards" id="center-cards">
+        <div class="center-row" id="center-row-top"></div>
+        <div class="center-row" id="center-row-bottom"></div>
+    </div>
+    <div class="bottom-bar">
+        <div class="bottom-score-cards-container" id="score-cards-container">
+            <img src="img/back.png" alt="8 of Spades" class="bottom-small-card small-card">
+            <span class="bottom-small-card-number">1</span>
+            <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
+            <span class="bottom-small-card-number">2</span>
+            <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
+            <span class="bottom-small-card-number">3</span>
+            <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
+            <span class="bottom-small-card-number">4</span>
+        </div>
+        <div class="hand-cards" id="hand-cards">
+            <img src="img/8S.png" alt="8 of Spades" class="card" onclick="selectCard(this)">
+            <img src="img/KS.png" alt="King of Spades" class="card" onclick="selectCard(this)">
+            <img src="img/3C.png" alt="3 of Clubs" class="card" onclick="selectCard(this)">
+            <img src="img/5D.png" alt="5 of Diamonds" class="card" onclick="selectCard(this)">
+            <img src="img/AH.png" alt="Ace of Hearts" class="card" onclick="selectCard(this)">
+            <img src="img/KS.png" alt="King of Spades" class="card" onclick="selectCard(this)">
+            <img src="img/3C.png" alt="3 of Clubs" class="card" onclick="selectCard(this)">
+            <img src="img/5D.png" alt="5 of Diamonds" class="card" onclick="selectCard(this)">
+            <img src="img/AH.png" alt="Ace of Hearts" class="card" onclick="selectCard(this)">
+        </div>
+    </div>
+    <div class="opponent-name left">Opponent 1</div>
+    <div class="opponent-name right">Opponent 2</div>
+    <div class="right-score-cards-container" id="right-score-cards-container">
+        <img src="img/back.png" alt="3 of Clubs" class="small-card right-small-card">
+        <span class="right-small-card-number">1</span>
+        <img src="img/back.png" alt="5 of Diamonds" class="small-card right-small-card">
+        <span class="right-small-card-number">2</span>
+        <img src="img/back.png" alt="5 of Diamonds" class="small-card right-small-card">
+        <span class="right-small-card-number">3</span>
+        <img src="img/back.png" alt="5 of Diamonds" class="small-card right-small-card">
+        <span class="right-small-card-number">4</span>
+    </div>
+    <div class="player-name top">Ali</div>
+</div>
+
+<script>
+    isYourTurn = false
+
+    function selectCard(card) {
+        if (card.hasAttribute("card-selected") || !isYourTurn) {
+            return
+        }
+        const rowTop = document.getElementById("center-row-top");
+        const rowBottom = document.getElementById("center-row-bottom");
+        let newCard = card.cloneNode(true);
+        newCard.classList.add("center-card");
+        newCard.setAttribute("card-selected", "true");
+
+        if (rowTop.children.length < 2) {
+            newCard.style.transform = `rotate(${(Math.random() * 20 - 10)}deg)`;
+            rowTop.appendChild(newCard);
+        } else if (rowBottom.children.length < 2) {
+            newCard.style.transform = `rotate(${(Math.random() * 20 - 10)}deg)`;
+            rowBottom.appendChild(newCard);
+        }
+
+        card.parentElement.removeChild(card);
+    }
+
+
+    function fadeCards(diraction) {
+        // Select all cards with the card-selected attribute
+        const selectedCards = document.querySelectorAll('[card-selected="true"]');
+
+        // Loop through each selected card and apply fade-out effect
+        selectedCards.forEach((card) => {
+            card.style.transition = "transform 0.5s ease, opacity 0.5s ease"; // Smooth transition
+            if (diraction === "left") {
+                card.style.transform = "translateX(-300%)"; // Move left
+            } else {
+                card.style.transform = "translateY(300%)"; // Move down
+            }
+
+            card.style.opacity = "0"; // Fade out completely
+
+            // Optionally remove the card after animation
+            setTimeout(() => {
+                card.remove();
+            }, 500); // Wait for the transition to complete before removing
+        });
+    }
+
+    function distribute() {
+        deck = document.createElement('div')
+        deck.className = 'deck';
+        deck.id = 'deck';
+
+        deckCard = document.createElement('img')
+        deckCard.src = 'img/back.png';
+        deckCard.className = 'deck-card';
+
+        deck.appendChild(deckCard)
+
+        document.getElementById("center-cards").appendChild(deck)
+
+
+        setTimeout(() => {
+            deck.remove()
+        }, 500);
+    }
+
+    function dealCards(direction, cards) {
+        const handCards = document.getElementById('hand-cards');
+        const deck = document.getElementById('deck');
+
+        let delay = 0;
+
+        cards.forEach((cardSrc) => {
+            setTimeout(() => {
+                const card = document.createElement('img');
+                card.src = cardSrc;
+                card.className = 'card dealing';
+
+                if (direction === "bottom") {
+                    card.style.setProperty('--target-x', `-50px`);
+                    card.style.setProperty('--target-y', `200px`);
+                }
+
+                if (direction === "right") {
+                    card.style.setProperty('--target-x', `100px`);
+                    card.style.setProperty('--target-y', `0px`);
+                }
+
+                if (direction === "left") {
+                    card.style.setProperty('--target-x', `-200px`);
+                    card.style.setProperty('--target-y', `0px`);
+                }
+
+                if (direction === "top") {
+                    card.style.setProperty('--target-x', `-50px`);
+                    card.style.setProperty('--target-y', `-200px`);
+                }
+
+                card.addEventListener('animationend', () => {
+                    if (direction === "bottom") {
+                        card.classList.remove('dealing');
+                        card.style.transform = 'none';
+                        handCards.appendChild(card);
+                    } else {
+                        card.remove()
+                    }
+                });
+
+                deck.appendChild(card);
+
+            }, delay);
+
+            delay += 500; // فاصله زمانی بین هر کارت
+        });
+    }
+
+</script>
+</body>
+</html>

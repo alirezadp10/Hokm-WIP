@@ -24,7 +24,7 @@ body {
     flex-direction: column;
     justify-content: center;
     width: 100%;
-    background-image: url('img/rug.jpg');
+    background-image: url('img/bg.jpg');
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -120,6 +120,7 @@ body {
     align-items: center;
     flex-grow: 1;
     position: relative;
+    margin-top: 100px;
 }
 
 .center-row {
@@ -150,9 +151,13 @@ body {
 }
 
 .hand-cards img {
-    width: 50px; /* اندازه کارت */
-    margin: 0 -13px; /* فاصله کم بین کارت‌ها */
+    width: 60px; /* اندازه کارت */
+    margin: 0 -20px; /* فاصله کم بین کارت‌ها */
     cursor: pointer;
+}
+
+.center-cards img {
+    width: 60px;
 }
 
 .turn-message {
@@ -164,7 +169,7 @@ body {
 /* تنظیمات برای حالت پرتره در موبایل */
 @media only screen and (orientation: portrait) {
     .hand-cards img {
-        width: 50px; /* اندازه کارت */
+        width: 60px; /* اندازه کارت در حالت پرتره */
         margin: 0 -20px; /* فاصله کم بین کارت‌ها */
         cursor: pointer;
     }
@@ -176,10 +181,6 @@ body {
 
     .center-cards img {
         width: 60px;
-    }
-
-    .hand-cards img {
-        width: 60px; /* اندازه کارت در حالت پرتره */
     }
 }
 
@@ -229,4 +230,112 @@ body {
 .menu a {
     color: white; /* رنگ لینک‌ها */
     text-decoration: none; /* حذف زیرخط از لینک‌ها */
+}
+
+.small-card {
+    position: relative; /* لازم برای قرار دادن عدد در موقعیت مطلق */
+    width: 25px; /* سایز کوچک برای کارت‌ها */
+    height: auto;
+    border-radius: 3px; /* گوشه‌های گرد */
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); /* سایه برای کارت‌ها */
+}
+
+.bottom-score-cards-container {
+    width: 70%;
+}
+
+.bottom-small-card {
+    margin-bottom: 15px;
+    margin-left: -15px;
+}
+
+.right-score-cards-container {
+    height: 70%;
+    position: absolute;
+    top: 60%;
+    right: 40px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.right-small-card {
+    margin-right: 15px;
+    margin-top: -24px;
+}
+
+.card-number {
+    position: absolute;
+    top: 0; /* بالای کارت */
+    right: 0; /* سمت راست کارت */
+    background-color: rgba(0, 0, 0, 0.7); /* پس‌زمینه تیره با شفافیت */
+    color: white; /* رنگ متن سفید */
+    font-size: 12px; /* اندازه متن */
+    font-weight: bold; /* متن ضخیم‌تر */
+    border-radius: 50%; /* دایره‌ای کردن پس‌زمینه */
+    width: 20px; /* عرض دایره */
+    height: 20px; /* ارتفاع دایره */
+    display: flex; /* برای مرکز کردن عدد */
+    justify-content: center; /* مرکز کردن متن افقی */
+    align-items: center; /* مرکز کردن متن عمودی */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* سایه برای زیبایی */
+}
+
+.bottom-small-card-number {
+    color: white;
+    font-weight: bold;
+    position: relative;
+    right: 23px;
+    bottom: 25px;
+    background: #6b6b6b;
+}
+
+.right-small-card-number {
+    color: white;
+    font-weight: bold;
+    position: relative;
+    right: 8px;
+    bottom: 32px;
+    background: #6b6b6b;
+}
+
+
+.deck {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+.deck-card {
+    width: 60px;
+    height: auto;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+
+
+
+
+
+
+
+@keyframes dealCard {
+    from {
+        transform: translate(-60px, 0) scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: translate(var(--target-x), var(--target-y)) scale(0.8);
+        opacity: 1;
+    }
+}
+
+.card.dealing {
+    position: absolute;
+    animation: dealCard 0.5s ease-in-out forwards;
 }

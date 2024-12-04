@@ -1,41 +1,47 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/joho/godotenv"
-	"gopkg.in/telebot.v4"
-	"log"
-	"os"
+    "fmt"
+    "github.com/joho/godotenv"
+    "gopkg.in/telebot.v4"
+    "log"
+    "os"
+    "time"
 )
 
 func main() {
-	_ = godotenv.Load()
-	bot, err := telebot.NewBot(telebot.Settings{
-		Token: os.Getenv("TELEGRAM_BOT_TOKEN"),
-		Poller: &telebot.Webhook{
-			Listen: "0.0.0.0:8443",
-			Endpoint: &telebot.WebhookEndpoint{
-				PublicURL: "https://8bb2-194-107-126-16.ngrok-free.app",
-			},
-		},
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
+    _ = godotenv.Load()
+    pref := telebot.Settings{
+        Token:  os.Getenv("TELEGRAM_BOT_TOKEN"),
+        Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
+    }
+    bot, err := telebot.NewBot(pref)
 
-	// Define a command handler
-	bot.Handle("/start", func(c telebot.Context) error {
+    if err != nil {
+        log.Fatal(err)
+    }
 
-		message := c.Message()
-		user := message.Sender
+    // Define a command handler
+    bot.Handle("/start", func(c telebot.Context) error {
+        //client, _ := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"redis:6379"}})
+        //defer client.Close()
 
-		foo, _ := json.MarshalIndent(user, "", " ")
-		// Print message details
-		fmt.Println(string(foo))
-		return c.Send("سلام خوش اومدی، صبر کن بقیه هم بیان خبرت میکنم")
-	})
+        //subClient := client.B().Subscribe().Channel("").Build() // Subscription command
+        //
+        //message := c.Message()
+        //user := message.Sender
+        //
+        //foo, _ := json.MarshalIndent(user, "", " ")
+        // Print message details
+        //fmt.Println(string(foo))
+        //return c.Send("سلام خوش اومدی، صبر کن بقیه هم بیان خبرت میکنم")
+        fmt.Println("Bot is running...")
 
-	// Start the bot
-	bot.Start()
+        return c.Reply("Hi", telebot.ModeHTML)
+    })
+
+    fmt.Println("Bot is running...")
+
+    // Start the bot
+    bot.Start()
 }

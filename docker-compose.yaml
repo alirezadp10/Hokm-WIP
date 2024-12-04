@@ -3,8 +3,10 @@ services:
   app:
     build: .
     image: hokm:latest
-    ports:
-      - "8443:80"
+    environment:
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - HTTP_PROXY=${HTTP_PROXY}
+
   redis:
     image: redis:latest
     ports:
