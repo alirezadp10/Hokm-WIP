@@ -1,6 +1,6 @@
 @font-face {
     font-family: 'Iranian Sans';
-    src: url('font/Iranian Sans.ttf') format('truetype'); /* مسیر به فونت را مشخص کنید */
+    src: url('font/Iranian Sans.ttf') format('truetype');
 }
 
 * {
@@ -10,7 +10,7 @@
 }
 
 body {
-    font-family: 'Iranian Sans', sans-serif; /* استفاده از فونت جدید */
+    font-family: 'Iranian Sans', sans-serif;
     background-color: #000;
     display: flex;
     justify-content: center;
@@ -31,37 +31,37 @@ body {
     max-width: 400px;
     height: 100vh;
     background-color: white;
-    position: relative; /* برای قرار دادن نام‌ها روی ضلع‌ها */
+    position: relative;
 }
 
 .trump {
-    font-size: 18px; /* اندازه حکم */
-    font-weight: bold; /* ضخیم‌تر کردن حکم */
+    font-size: 18px;
+    font-weight: bold;
     direction: rtl;
 }
 
 .top-bar {
     direction: rtl;
-    display: flex; /* استفاده از flexbox */
-    justify-content: space-between; /* فاصله بین حکم و امتیازها */
-    align-items: center; /* تراز کردن اجزا به وسط */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 10px;
     background-color: #282828;
     color: white;
 }
 
 .scores {
-    display: flex; /* استفاده از flexbox برای امتیازها */
-    align-items: center; /* تراز کردن امتیازها به وسط */
-    margin-left: auto; /* به سمت راست منتقل شود */
+    display: flex;
+    align-items: center;
+    margin-left: auto;
     right: 35px;
     position: absolute;
     direction: rtl;
 }
 
 .team-score {
-    font-size: 16px; /* اندازه امتیاز */
-    margin: 0 10px; /* فاصله بین امتیازها */
+    font-size: 16px;
+    margin: 0 10px;
     font-weight: bold;
 }
 
@@ -73,23 +73,28 @@ body {
     position: absolute;
     transform: rotate(90deg);
     white-space: nowrap;
+    width: 130px;
+    line-height: 30px;
+    text-align: center;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .left {
-    left: -30px; /* موقعیت نام رقیب در سمت چپ */
-    top: 50%; /* مرکز کردن عمودی */
-    transform: translateY(-50%) rotate(90deg); /* چرخش و مرکز کردن */
+    left: -40px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
 }
 
 .right {
-    right: -30px; /* موقعیت نام رقیب در سمت راست */
-    top: 50%; /* مرکز کردن عمودی */
-    transform: translateY(-50%) rotate(-90deg); /* چرخش و مرکز کردن */
+    right: -40px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
 }
 
 .player-name {
-    font-size: 20px; /* اندازه بزرگ‌تر برای اسم یار */
-    font-weight: bold; /* ضخیم‌تر کردن فونت */
+    font-size: 20px;
+    font-weight: bold;
 }
 
 .player-name.top {
@@ -99,8 +104,29 @@ body {
     font-weight: bold;
     position: absolute;
     top: 55px;
-    left: 50%; /* وسط چین افقی */
-    transform: translateX(-50%); /* جابجایی به سمت چپ برای وسط چین شدن */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    line-height: 30px;
+    text-align: center;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.player-name.bottom {
+    color: white;
+    font-size: 18px;
+    background: #00000080;
+    font-weight: bold;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    line-height: 30px;
+    text-align: center;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .hokm-button {
@@ -119,14 +145,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-grow: 1;
-    position: relative;
-    margin-top: 100px;
-}
-
-.center-row {
-    display: flex;
-    justify-content: center;
-    margin: 5px 0; /* فاصله بین ردیف‌ها */
+    padding-top: 100px;
 }
 
 .center-card {
@@ -144,20 +163,23 @@ body {
 
 .hand-cards {
     display: flex;
-    justify-content: center; /* مرکز کردن کارت‌ها */
+    justify-content: center;
     align-items: flex-end;
-    width: 100%; /* عرض 100% */
-    padding: 0 20px; /* فضا در سمت چپ و راست */
+    width: 100%;
+    padding: 0 20px;
+    margin-bottom: 50px;
 }
 
 .hand-cards img {
-    width: 60px; /* اندازه کارت */
-    margin: 0 -20px; /* فاصله کم بین کارت‌ها */
+    width: 60px;
+    margin: 0 -20px;
     cursor: pointer;
+    opacity: 1 !important;
 }
 
 .center-cards img {
     width: 60px;
+    opacity: 1 !important;
 }
 
 .turn-message {
@@ -166,11 +188,10 @@ body {
     color: #333;
 }
 
-/* تنظیمات برای حالت پرتره در موبایل */
 @media only screen and (orientation: portrait) {
     .hand-cards img {
-        width: 60px; /* اندازه کارت در حالت پرتره */
-        margin: 0 -20px; /* فاصله کم بین کارت‌ها */
+        width: 60px;
+        margin: 0 -20px;
         cursor: pointer;
     }
 
@@ -189,55 +210,55 @@ body {
     display: flex;
     flex-direction: column;
     cursor: pointer;
-    margin-left: 10px; /* فاصله از سمت چپ */
+    margin-left: 10px;
 }
 
 .bar {
-    width: 25px; /* عرض نوار */
-    height: 3px; /* ارتفاع نوار */
-    background-color: white; /* رنگ نوار */
-    margin: 3px 0; /* فاصله بین نوارها */
+    width: 25px;
+    height: 3px;
+    background-color: white;
+    margin: 3px 0;
 }
 
 .menu-icon {
-    font-size: 30px; /* اندازه آیکون */
-    color: white; /* رنگ آیکون */
-    cursor: pointer; /* تغییر نشانگر ماوس به اشاره‌گر */
-    position: absolute; /* برای قرار دادن در گوشه */
-    top: 10px; /* فاصله از بالای صفحه */
-    right: 10px; /* فاصله از سمت راست */
+    font-size: 30px;
+    color: white;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
 }
 
 .menu {
-    display: none; /* پنهان کردن منو به صورت پیش‌فرض */
-    position: absolute; /* برای قرار دادن در گوشه */
-    top: 50px; /* فاصله از بالای صفحه */
-    right: 10px; /* فاصله از سمت راست */
-    background-color: #282828; /* رنگ پس‌زمینه منو */
-    border-radius: 5px; /* گوشه‌های گرد */
-    z-index: 1000; /* قرار دادن در بالای سایر عناصر */
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    background-color: #282828;
+    border-radius: 5px;
+    z-index: 1000;
 }
 
 .menu ul {
-    list-style-type: none; /* حذف علامت‌های لیست */
-    padding: 10px; /* فاصله داخلی */
+    list-style-type: none;
+    padding: 10px;
 }
 
 .menu li {
-    margin: 5px 0; /* فاصله بین گزینه‌ها */
+    margin: 5px 0;
 }
 
 .menu a {
-    color: white; /* رنگ لینک‌ها */
-    text-decoration: none; /* حذف زیرخط از لینک‌ها */
+    color: white;
+    text-decoration: none;
 }
 
 .small-card {
-    position: relative; /* لازم برای قرار دادن عدد در موقعیت مطلق */
-    width: 25px; /* سایز کوچک برای کارت‌ها */
+    position: relative;
+    width: 25px;
     height: auto;
-    border-radius: 3px; /* گوشه‌های گرد */
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5); /* سایه برای کارت‌ها */
+    border-radius: 3px;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 .bottom-score-cards-container {
@@ -268,20 +289,69 @@ body {
 
 .card-number {
     position: absolute;
-    top: 0; /* بالای کارت */
-    right: 0; /* سمت راست کارت */
-    background-color: rgba(0, 0, 0, 0.7); /* پس‌زمینه تیره با شفافیت */
-    color: white; /* رنگ متن سفید */
-    font-size: 12px; /* اندازه متن */
-    font-weight: bold; /* متن ضخیم‌تر */
-    border-radius: 50%; /* دایره‌ای کردن پس‌زمینه */
-    width: 20px; /* عرض دایره */
-    height: 20px; /* ارتفاع دایره */
-    display: flex; /* برای مرکز کردن عدد */
-    justify-content: center; /* مرکز کردن متن افقی */
-    align-items: center; /* مرکز کردن متن عمودی */
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* سایه برای زیبایی */
+    top: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
+
+@keyframes greenLightningEffect {
+    0% {
+        background-color: transparent;
+        opacity: 0;
+    }
+    10% {
+        background-color: #00b100;
+        box-shadow: 0 0 50px #00b100;
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1.05);
+    }
+    20% {
+        background-color: transparent;
+        opacity: 0;
+    }
+    30% {
+        background-color: #00b100;
+        box-shadow: 0 0 30px #00b100;
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1.02);
+    }
+    40% {
+        background-color: transparent;
+        opacity: 0;
+    }
+    50% {
+        background-color: #00b100;
+        box-shadow: 0 0 70px #00b100;
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1.1);
+    }
+    100% {
+        background-color: transparent;
+        opacity: 0;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+.green-lightning {
+    animation: greenLightningEffect 0.8s linear;
+}
+
+.static-green {
+    background-color: #00b100;
+    box-shadow: 0 0 70px #00b100;
+    transform: translate(-50%, 0) scale(1);
+}
+
 
 .bottom-small-card-number {
     color: white;
@@ -301,7 +371,6 @@ body {
     background: #6b6b6b;
 }
 
-
 .deck {
     position: absolute;
     top: 50%;
@@ -317,25 +386,89 @@ body {
     cursor: pointer;
 }
 
-
-
-
-
-
-
-
 @keyframes dealCard {
     from {
         transform: translate(-60px, 0) scale(1);
         opacity: 1;
     }
     to {
-        transform: translate(var(--target-x), var(--target-y)) scale(0.8);
+        transform: translate(var(--target-x), var(--target-y));
         opacity: 1;
     }
 }
 
 .card.dealing {
     position: absolute;
-    animation: dealCard 0.5s ease-in-out forwards;
+    animation: dealCard 0.5s ease forwards;
+}
+
+.error-message {
+    position: absolute;
+    bottom: 160px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    direction: rtl;
+}
+
+.top-card {
+    position: absolute;
+    margin-top: -100px;
+}
+
+.left-card {
+    position: absolute;
+    margin-left: -90px;
+}
+
+.bottom-card {
+    margin-top: 100px;
+    position: absolute;
+}
+
+.right-card {
+    position: absolute;
+    margin-left: 90px;
+}
+
+@keyframes throwCardAnimation {
+    from {
+        transform: translate(var(--target-x), var(--target-y)) scale(0.95) rotate(0deg);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1) rotate(var(--random-rotation));
+        opacity: 1;
+    }
+}
+
+.center-card {
+    animation: throwCardAnimation 0.5s ease forwards;
+}
+
+@keyframes fadeOutDown {
+    0% { transform: translate(0, 0) ; opacity: 1; }
+    100% { transform: translate(-50px, 200px) scale(0.5); opacity: 0;  }
+}
+
+@keyframes fadeOutRight {
+    0% { transform: translate(0, 0); opacity: 1; }
+    100% { transform: translate(120px, -100px) scale(0.5); opacity: 0; scale(0.5) }
+}
+
+.fade-out-down {
+    animation: fadeOutDown 0.5s ease forwards;
+}
+
+.fade-out-right {
+    animation: fadeOutRight 0.5s ease forwards;
 }

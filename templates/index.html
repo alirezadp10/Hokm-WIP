@@ -7,11 +7,12 @@
     <title>بازی کارت</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <audio id="card-sound" src="card-sound-1.mp3" preload="auto"></audio>
 </head>
 <body>
 <div class="game-container">
     <div class="top-bar">
-        <i class="material-icons icon hamburger">menu</i>
+        <i class="material-icons icon hamburger"></i>
         <div class="scores">
             <span class="team-score">تیم ما: 0</span>
             <span class="team-score">تیم حریف: 0</span>
@@ -19,11 +20,10 @@
         <div class="trump">حکم: ♥️</div>
     </div>
     <div class="center-cards" id="center-cards">
-        <div class="center-row" id="center-row-top"></div>
-        <div class="center-row" id="center-row-bottom"></div>
     </div>
     <div class="bottom-bar">
         <div class="bottom-score-cards-container" id="score-cards-container">
+<!--            &lt;!&ndash;-->
             <img src="img/back.png" alt="8 of Spades" class="bottom-small-card small-card">
             <span class="bottom-small-card-number">1</span>
             <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
@@ -32,58 +32,59 @@
             <span class="bottom-small-card-number">3</span>
             <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
             <span class="bottom-small-card-number">4</span>
+<!--            &ndash;&gt;-->
         </div>
+        <div id="error-message" class="error-message"></div>
+
         <div class="hand-cards" id="hand-cards">
-            <img src="img/8S.png" alt="8 of Spades" class="card" onclick="selectCard(this)">
-            <img src="img/KS.png" alt="King of Spades" class="card" onclick="selectCard(this)">
-            <img src="img/3C.png" alt="3 of Clubs" class="card" onclick="selectCard(this)">
-            <img src="img/5D.png" alt="5 of Diamonds" class="card" onclick="selectCard(this)">
-            <img src="img/AH.png" alt="Ace of Hearts" class="card" onclick="selectCard(this)">
-            <img src="img/KS.png" alt="King of Spades" class="card" onclick="selectCard(this)">
-            <img src="img/3C.png" alt="3 of Clubs" class="card" onclick="selectCard(this)">
-            <img src="img/5D.png" alt="5 of Diamonds" class="card" onclick="selectCard(this)">
-            <img src="img/AH.png" alt="Ace of Hearts" class="card" onclick="selectCard(this)">
+            <!--            &lt;!&ndash;-->
+            <img src="img/8S.png" alt="8S" class="card" onclick="selectCard(this)">
+            <img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
+            <img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
+            <img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
+            <img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
+            <img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
+            <img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
+            <img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
+            <img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
+            <!--            &ndash;&gt;-->
         </div>
     </div>
-    <div class="opponent-name left">Opponent 1</div>
-    <div class="opponent-name right">Opponent 2</div>
+    <div class="opponent-name left">Sara</div>
+    <div class="opponent-name right">Maryam</div>
     <div class="right-score-cards-container" id="right-score-cards-container">
+<!--        &lt;!&ndash;-->
         <img src="img/back.png" alt="3 of Clubs" class="small-card right-small-card">
         <span class="right-small-card-number">1</span>
         <img src="img/back.png" alt="5 of Diamonds" class="small-card right-small-card">
         <span class="right-small-card-number">2</span>
-        <img src="img/back.png" alt="5 of Diamonds" class="small-card right-small-card">
-        <span class="right-small-card-number">3</span>
-        <img src="img/back.png" alt="5 of Diamonds" class="small-card right-small-card">
-        <span class="right-small-card-number">4</span>
+<!--        &ndash;&gt;-->
     </div>
     <div class="player-name top">Ali</div>
+    <div class="player-name bottom">Mammad</div>
 </div>
-
 <script>
     isYourTurn = false
 
-    function selectCard(card) {
-        if (card.hasAttribute("card-selected") || !isYourTurn) {
-            return
-        }
-        const rowTop = document.getElementById("center-row-top");
-        const rowBottom = document.getElementById("center-row-bottom");
-        let newCard = card.cloneNode(true);
-        newCard.classList.add("center-card");
-        newCard.setAttribute("card-selected", "true");
+    function playCardSound() {
+        const audio = document.getElementById('card-sound');
+        audio.currentTime = 0;
+        audio.play();
+    }
 
-        if (rowTop.children.length < 2) {
-            newCard.style.transform = `rotate(${(Math.random() * 20 - 10)}deg)`;
-            rowTop.appendChild(newCard);
-        } else if (rowBottom.children.length < 2) {
-            newCard.style.transform = `rotate(${(Math.random() * 20 - 10)}deg)`;
-            rowBottom.appendChild(newCard);
+    function selectCard(card) {
+        // if (false){
+        showError("کارت غیرمجاز ⛔");
+        // }
+
+        if (card.hasAttribute("card-selected") || !isYourTurn) {
+            // return;
         }
 
         card.parentElement.removeChild(card);
-    }
 
+        throwACard("bottom", card.getAttribute("alt"))
+    }
 
     function fadeCards(diraction) {
         // Select all cards with the card-selected attribute
@@ -107,72 +108,179 @@
         });
     }
 
-    function distribute() {
+    async function firstKingDetermination() {
         deck = document.createElement('div')
         deck.className = 'deck';
         deck.id = 'deck';
-
         deckCard = document.createElement('img')
         deckCard.src = 'img/back.png';
         deckCard.className = 'deck-card';
-
         deck.appendChild(deckCard)
-
         document.getElementById("center-cards").appendChild(deck)
-
-
-        setTimeout(() => {
-            deck.remove()
-        }, 500);
+        await dealCards("left", ["img/9H.png"], true);
+        await sleep(500);
+        await dealCards("bottom", ["img/2D.png"], true);
+        await sleep(500);
+        await dealCards("right", ["img/5H.png"], true);
+        await sleep(500);
+        await dealCards("top", ["img/3D.png"], true);
+        await deck.remove()
     }
 
-    function dealCards(direction, cards) {
-        const handCards = document.getElementById('hand-cards');
-        const deck = document.getElementById('deck');
+    async function distribute() {
+        deck = document.createElement('div')
+        deck.className = 'deck';
+        deck.id = 'deck';
+        deckCard = document.createElement('img')
+        deckCard.src = 'img/back.png';
+        deckCard.className = 'deck-card';
+        deck.appendChild(deckCard)
+        document.getElementById("center-cards").appendChild(deck)
+        await dealCards("left", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
+        await sleep(250);
+        await dealCards("bottom", ["img/9H.png", "img/5H.png", "img/2D.png", "img/3D.png", "img/0H.png"]);
+        await sleep(250);
+        await dealCards("right", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
+        await sleep(250);
+        await dealCards("top", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
+        await deck.remove()
+    }
 
-        let delay = 0;
+    function dealCards(direction, cards, isKingDeterminationLevel = false) {
+        return new Promise((resolve) => {
+            const handCards = document.getElementById('hand-cards');
+            const deck = document.getElementById('deck');
 
-        cards.forEach((cardSrc) => {
-            setTimeout(() => {
-                const card = document.createElement('img');
-                card.src = cardSrc;
-                card.className = 'card dealing';
+            let delay = 0;
+            let completedAnimations = 0;
 
-                if (direction === "bottom") {
-                    card.style.setProperty('--target-x', `-50px`);
-                    card.style.setProperty('--target-y', `200px`);
-                }
+            cards.forEach((cardSrc, index) => {
+                setTimeout(() => {
+                    playCardSound();
 
-                if (direction === "right") {
-                    card.style.setProperty('--target-x', `100px`);
-                    card.style.setProperty('--target-y', `0px`);
-                }
+                    const card = document.createElement('img');
+                    card.src = cardSrc;
+                    card.className = 'card dealing';
 
-                if (direction === "left") {
-                    card.style.setProperty('--target-x', `-200px`);
-                    card.style.setProperty('--target-y', `0px`);
-                }
-
-                if (direction === "top") {
-                    card.style.setProperty('--target-x', `-50px`);
-                    card.style.setProperty('--target-y', `-200px`);
-                }
-
-                card.addEventListener('animationend', () => {
                     if (direction === "bottom") {
-                        card.classList.remove('dealing');
-                        card.style.transform = 'none';
-                        handCards.appendChild(card);
-                    } else {
-                        card.remove()
+                        card.style.setProperty('--target-x', `-60px`);
+                        card.style.setProperty('--target-y', `150px`);
                     }
-                });
 
-                deck.appendChild(card);
+                    if (direction === "right") {
+                        card.style.setProperty('--target-x', `50px`);
+                        card.style.setProperty('--target-y', `0px`);
+                    }
 
-            }, delay);
+                    if (direction === "left") {
+                        card.style.setProperty('--target-x', `-170px`);
+                        card.style.setProperty('--target-y', `0px`);
+                    }
 
-            delay += 500; // فاصله زمانی بین هر کارت
+                    if (direction === "top") {
+                        card.style.setProperty('--target-x', `-60px`);
+                        card.style.setProperty('--target-y', `-150px`);
+                    }
+
+                    card.addEventListener('animationend', () => {
+                        if (!isKingDeterminationLevel) {
+                            if (direction === "bottom") {
+                                card.classList.remove('dealing');
+                                card.style.transform = 'none';
+                                handCards.appendChild(card);
+                            } else {
+                                card.remove();
+                            }
+
+                        }
+
+                        completedAnimations++;
+                        if (completedAnimations === cards.length) {
+                            resolve(); // Resolve the promise after the last card finishes animating
+                        }
+                    });
+
+                    deck.appendChild(card);
+                }, delay);
+
+                delay += 300; // Delay between each card
+            });
+        });
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function showError(message) {
+        const errorMessage = document.getElementById("error-message");
+
+        errorMessage.innerText = message;
+
+        errorMessage.style.opacity = "1";
+
+        setTimeout(() => {
+            errorMessage.style.opacity = "0";
+        }, 3000);
+    }
+
+    function throwACard(direction, name) {
+        playCardSound()
+        const centerCards = document.getElementById("center-cards");
+        let newCard = document.createElement('img');
+        newCard.src = "img/" + name + ".png";
+        newCard.classList.add("center-card");
+        newCard.classList.add(`${direction}-card`);
+        newCard.setAttribute("card-selected", "true");
+        newCard.style.setProperty('--random-rotation', `${Math.random() * 20 - 10}deg`);
+        if (direction === "bottom") {
+            newCard.style.setProperty('--target-y', `200px`);
+            newCard.style.setProperty('--target-x', `0px`);
+        }
+        if (direction === "top") {
+            newCard.style.setProperty('--target-y', `-150px`);
+            newCard.style.setProperty('--target-x', `0px`);
+        }
+        if (direction === "left") {
+            newCard.style.setProperty('--target-y', `0px`);
+            newCard.style.setProperty('--target-x', `-80px`);
+        }
+        if (direction === "right") {
+            newCard.style.setProperty('--target-y', `0px`);
+            newCard.style.setProperty('--target-x', `80px`);
+        }
+
+
+        centerCards.appendChild(newCard);
+    }
+
+    function simulateGreenLightningEffect(positions) {
+        positions.forEach(function (position) {
+            const playerElement = document.querySelector(`.player-name.${position}`);
+            playerElement.classList.add("green-lightning");
+            setTimeout(() => {
+                playerElement.classList.remove("green-lightning");
+                playerElement.classList.add("static-green");
+                setTimeout(() => {
+                    playerElement.classList.remove("static-green");
+                }, 1000);
+            }, 800);
+        })
+    }
+
+    function clearCenterCards(direction) {
+        const centerCards = document.querySelectorAll(".center-card");
+
+        centerCards.forEach((card) => {
+            if (direction === "down") {
+                card.classList.add("fade-out-down");
+            } else if (direction === "right") {
+                card.classList.add("fade-out-right");
+            }
+
+            card.addEventListener("animationend", () => {
+                card.remove();
+            });
         });
     }
 
