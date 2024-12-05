@@ -19,11 +19,20 @@
         </div>
         <div class="trump">حکم: ♥️</div>
     </div>
+    <div class="timer">
+        <div class="clock">
+            <div class="hand"></div>
+        </div>
+    </div>
     <div class="center-cards" id="center-cards">
     </div>
     <div class="bottom-bar">
+        <div class="timer-wrapper">
+            <div id="timer">15</div>
+        </div>
+
         <div class="bottom-score-cards-container" id="score-cards-container">
-<!--            &lt;!&ndash;-->
+            <!--            &lt;!&ndash;-->
             <img src="img/back.png" alt="8 of Spades" class="bottom-small-card small-card">
             <span class="bottom-small-card-number">1</span>
             <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
@@ -32,12 +41,12 @@
             <span class="bottom-small-card-number">3</span>
             <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
             <span class="bottom-small-card-number">4</span>
-<!--            &ndash;&gt;-->
+            <!--            &ndash;&gt;-->
         </div>
         <div id="error-message" class="error-message"></div>
 
         <div class="hand-cards" id="hand-cards">
-            <!--            &lt;!&ndash;-->
+                        <!--
             <img src="img/8S.png" alt="8S" class="card" onclick="selectCard(this)">
             <img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
             <img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
@@ -47,21 +56,65 @@
             <img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
             <img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
             <img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
-            <!--            &ndash;&gt;-->
+                        -->
         </div>
     </div>
+
     <div class="opponent-name left">Sara</div>
     <div class="opponent-name right">Maryam</div>
     <div class="right-score-cards-container" id="right-score-cards-container">
-<!--        &lt;!&ndash;-->
+        <!--        &lt;!&ndash;-->
         <img src="img/back.png" alt="3 of Clubs" class="small-card right-small-card">
         <span class="right-small-card-number">1</span>
         <img src="img/back.png" alt="5 of Diamonds" class="small-card right-small-card">
         <span class="right-small-card-number">2</span>
-<!--        &ndash;&gt;-->
+        <!--        &ndash;&gt;-->
     </div>
     <div class="player-name top">Ali</div>
     <div class="player-name bottom">Mammad</div>
+
+    <div id="score-modal" class="modal">
+        <div class="modal-content">
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('last-hand')">دست آخر</div>
+                <div class="tab" onclick="showTab('score-table')">جدول امتیازات</div>
+            </div>
+            <div id="last-hand" class="content">
+                <table>
+                    <thead>
+                    <tr>
+                        <th rowspan="2">دست</th>
+                        <th colspan="2">امتیاز دست</th>
+                        <th colspan="2">امتیاز کل</th>
+                        <th rowspan="2">قانون</th>
+                    </tr>
+                    <tr>
+                        <th>شما</th>
+                        <th>حریف</th>
+                        <th>شما</th>
+                        <th>حریف</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>اول</td>
+                        <td>4</td>
+                        <td>7</td>
+                        <td>0</td>
+                        <td class="highlight">1</td>
+                        <td>—</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="score-table" class="content" style="display: none;">
+                <p>جدول امتیازات در این بخش نمایش داده می‌شود.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="continue-btn" onclick="continueGame()">ادامه بازی</button>
+            </div>
+        </div>
+    </div>
 </div>
 <script>
     isYourTurn = false
@@ -263,7 +316,7 @@
                 playerElement.classList.add("static-green");
                 setTimeout(() => {
                     playerElement.classList.remove("static-green");
-                }, 1000);
+                }, 2000);
             }, 800);
         })
     }
@@ -284,6 +337,53 @@
         });
     }
 
+    function openModal() {
+        document.getElementById("score-modal").style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById("score-modal").style.display = "none";
+    }
+
+    function showTab(tabId) {
+        document.querySelectorAll('.content').forEach(content => {
+            content.style.display = 'none';
+        });
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        document.getElementById(tabId).style.display = 'block';
+        event.target.classList.add('active');
+    }
+
+    function continueGame() {
+        closeModal();
+    }
+
+    const timerElement = document.getElementById("timer");
+    let time = 15;
+    function updateTimer() {
+        timerElement.textContent = time;
+
+        if (time <= 5) {
+            // اضافه کردن انیمیشن و تغییر رنگ در ثانیه‌های آخر
+            timerElement.classList.add("warning");
+        } else {
+            // حذف انیمیشن و تغییر رنگ در ثانیه‌های دیگر
+            timerElement.classList.remove("warning");
+        }
+
+        if (time > 0) {
+            time--;
+        } else {
+            clearInterval(countdown);
+            timerElement.style.fontSize = "15px"
+            timerElement.textContent = "Time's up!";
+        }
+    }
+    const countdown = setInterval(updateTimer, 1000);
 </script>
 </body>
 </html>
