@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بازی کارت</title>
+    <title>حکم</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/htmx.org@1.8.4"></script>
     <audio id="card-sound" src="audio/card-sound.mp3" preload="auto"></audio>
@@ -15,65 +15,29 @@
     <div class="top-bar">
         <i class="material-icons icon hamburger"></i>
         <div class="scores">
-            <span class="team-score">تیم ما: 0</span>
-            <span class="team-score">تیم حریف: 0</span>
+            <span class="team-score">تیم ما: <span id="our-team-score"></span></span>
+            <span class="team-score">تیم حریف: <span id="other-team-score"></span></span>
         </div>
-        <div class="trump">حکم: ♥️</div>
+        <div class="trump"><span style="position: relative; bottom: 5px;">حکم: </span><span id="trump"></span></div>
     </div>
     <div class="timer">
-        <div class="clock">
-            <div class="hand"></div>
-        </div>
+        <div class="clock"></div>
     </div>
     <div class="center-cards" id="center-cards">
     </div>
-    <div class="bottom-bar">
+    <div class="down-bar">
         <div class="timer-wrapper">
-            <div id="timer">15</div>
+            <div id="timer"></div>
         </div>
-
-        <div class="bottom-score-cards-container" id="score-cards-container">
-            <!--            &lt;!&ndash;-->
-            <img src="img/back.png" alt="8 of Spades" class="bottom-small-card small-card">
-            <span class="bottom-small-card-number">1</span>
-            <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
-            <span class="bottom-small-card-number">2</span>
-            <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
-            <span class="bottom-small-card-number">3</span>
-            <img src="img/back.png" alt="King of Spades" class="bottom-small-card small-card">
-            <span class="bottom-small-card-number">4</span>
-            <!--            &ndash;&gt;-->
-        </div>
+        <div class="down-score-cards-container" id="down-score-cards-container"></div>
         <div id="error-message" class="error-message"></div>
-
-        <div class="hand-cards" id="hand-cards">
-            <!--
-<img src="img/8S.png" alt="8S" class="card" onclick="selectCard(this)">
-<img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
-<img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
-<img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
-<img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
-<img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
-<img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
-<img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
-<img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
-            -->
-        </div>
+        <div class="hand-cards" id="hand-cards"></div>
     </div>
-
-    <div class="opponent-name left">Sara</div>
-    <div class="opponent-name right">Maryam</div>
-    <div class="right-score-cards-container" id="right-score-cards-container">
-        <!--        &lt;!&ndash;-->
-        <img src="img/back.png" alt="3 of Clubs" class="small-card right-small-card">
-        <span class="right-small-card-number">1</span>
-        <img src="img/back.png" alt="5 of Diamonds" class="small-card right-small-card">
-        <span class="right-small-card-number">2</span>
-        <!--        &ndash;&gt;-->
-    </div>
-    <div class="player-name up">Ali</div>
-    <div class="player-name down">Mammad</div>
-
+    <div class="opponent-name left" id="left-player"></div>
+    <div class="opponent-name right" id="right-player"></div>
+    <div class="right-score-cards-container" id="right-score-cards-container"></div>
+    <div class="player-name up" id="up-player"></div>
+    <div class="player-name down" id="down-player"></div>
     <div id="score-modal" class="modal">
         <div class="modal-content">
             <div class="tabs">
@@ -120,47 +84,141 @@
 <script>
     const baseURL = "http://localhost:3000"
     let isYourTurn = false
-    let time = 15;
-    let centerCards = {};
+    let time;
+    let countdown;
+    const roomId = 123456;
 
-    fetch(`${baseURL}/room/123456`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.currentTurn === "down") {
-                isYourTurn = true
-            }
-            time = data.timeRemained;
-            console.log(data.centerCards)
-            Object.entries(data.centerCards).forEach(([direction, card]) => {
-                console.log(direction)
-                console.log(card)
-                throwACard(direction, card, false, false)
-            })
+    // Function to fetch room data and update the UI
+    function fetchRoomData(roomId) {
+        fetch(`${baseURL}/room/${roomId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
         })
-        .catch(error => console.error('Error:', error));
+            .then((response) => response.json())
+            .then((data) => updateRoomUI(data))
+            .catch((error) => console.error('Error:', error));
+    }
 
+    // Function to update the room UI based on the fetched data
+    function updateRoomUI(data) {
+        updateTurn(data.currentTurn);
+        updateTime(data.timeRemained);
+        updateCenterCards(data.centerCards);
+        updateYourCards(data.yourCards);
+        updateTrump(data.trump);
+        updatePlayerNames(data.players);
+        updateTotalRoundScores(data.points.total);
+        updateCurrentRoundScores(data.points.currentRound, {
+            down: "down-score-cards-container",
+            right: "right-score-cards-container",
+        });
+    }
 
-    // fetch(`${baseURL}/refresh/123456`, {
-    //     method: 'GET',
-    //     headers: {
-    //         'Content-Type': 'application/json'
-    //     }
-    // })
-    //     .then(response => response.json())
-    //     .then(data => {
-    //         if (data.currentTurn === "down") {
-    //             isYourTurn = true
-    //         }
-    //         time = data.timeRemained;
-    //         centerCards = data.centerCards; // { right: "2C", down: "3H", left: "AC" }
-    //     })
-    //     .catch(error => console.error('Error:', error));
+    function updatePlayerNames(players) {
+        Object.entries(players).forEach(([direction, player]) => {
+            document.getElementById(`${direction}-player`).textContent = player.name
+        });
+    }
 
+    // Update turn and start timer if it's your turn
+    function updateTurn(currentTurn) {
+        if (currentTurn === "down") {
+            isYourTurn = true;
+            countdown = setInterval(updateTimer, 1000);
+        } else {
+            refresh()
+        }
+    }
+
+    // Update the time remained
+    function updateTime(timeRemained) {
+        time = timeRemained;
+    }
+
+    // Update the center cards
+    function updateCenterCards(centerCards) {
+        Object.entries(centerCards).forEach(([direction, card]) => {
+            throwACard(direction, card, false, false);
+        });
+    }
+
+    // Update the player's cards
+    function updateYourCards(yourCards) {
+        const handCards = document.getElementById("hand-cards");
+        yourCards.forEach((card) => {
+            const newCard = createCardElement(card, "card", "selectCard(this)");
+            handCards.appendChild(newCard);
+        });
+    }
+
+    // Helper to create a card element
+    function createCardElement(card, className, onClick) {
+        const newCard = document.createElement('img');
+        newCard.src = `img/${card}.png`;
+        newCard.classList.add(className);
+        newCard.setAttribute("alt", card);
+        newCard.setAttribute("onclick", onClick);
+        return newCard;
+    }
+
+    // Update trump
+    function updateTrump(trump) {
+        switch (trump) {
+            case "heart":
+                document.getElementById("trump").innerHTML = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="20" height="20" viewBox="0 0 148 175" id="svg2" version="1.1" inkscape:version="0.91 r13725" sodipodi:docname="card heart.svg"> <defs id="defs4" /> <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="3.404" inkscape:cx="189.40648" inkscape:cy="125" inkscape:document-units="px" inkscape:current-layer="layer1" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1018" inkscape:window-x="1272" inkscape:window-y="-8" inkscape:window-maximized="1" /> <metadata id="metadata7"> <rdf:RDF> <cc:Work rdf:about=""> <dc:format>image/svg+xml</dc:format> <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /> <dc:title></dc:title> </cc:Work> </rdf:RDF> </metadata> <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(0,-877.36216)"> <path style="fill:#ff0000;fill-opacity:1;stroke:none" d="M 72.527478,1027.3356 C 67.735381,1012.5493 60.313567,1000.5864 34.362543,965.81962 18.536177,944.6169 12.638368,934.36254 10.707991,924.69211 c -2.34401,-11.74257 1.196833,-22.934 9.664894,-30.54751 5.693913,-5.11932 11.608399,-7.31434 19.708529,-7.31434 13.35413,0 24.173768,7.64475 30.646178,21.65344 1.853077,4.01074 3.699135,6.9191 4.10235,6.46303 0.403216,-0.45608 1.467487,-2.76806 2.365047,-5.13774 3.890151,-10.27052 12.753803,-19.15322 21.999836,-22.0471 6.268975,-1.96211 17.496565,-0.79433 23.434335,2.43742 16.5279,8.9956 20.13184,28.66056 9.23263,50.37797 -4.28341,8.53497 -8.26314,14.35165 -21.47246,31.38367 -18.465777,23.80963 -29.595326,41.93515 -34.001621,55.37465 -0.906412,2.7646 -1.779228,5.0266 -1.939592,5.0266 -0.160363,0 -1.024651,-2.262 -1.920639,-5.0266 z" id="path5865" inkscape:connector-curvature="0" /> </g> </svg>'
+                break
+            case "club":
+                document.getElementById("trump").innerHTML = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="25" height="25" viewBox="0 0 167 175" id="svg2" version="1.1" inkscape:version="0.91 r13725" sodipodi:docname="card club.svg"> <defs id="defs4" /> <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="3.4" inkscape:cx="179.42194" inkscape:cy="106.40265" inkscape:document-units="px" inkscape:current-layer="layer1" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1018" inkscape:window-x="1272" inkscape:window-y="-8" inkscape:window-maximized="1" /> <metadata id="metadata7"> <rdf:RDF> <cc:Work rdf:about=""> <dc:format>image/svg+xml</dc:format> <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /> <dc:title></dc:title> </cc:Work> </rdf:RDF> </metadata> <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(0,-877.36216)"> <path style="fill:#ffffff;fill-opacity:1;stroke:none" d="m 33.57277,1031.6441 c 0.0435,-2.1326 2.41976,-3.3889 10.49989,-5.5512 12.14507,-3.2503 16.36065,-5.2676 21.9679,-10.5125 9.82494,-9.1901 15.25562,-21.22154 15.97824,-35.39913 0.36906,-7.24076 0.24246,-8.32449 -0.79266,-6.78544 -0.67753,1.00737 -2.97792,4.45418 -5.11199,7.65957 -7.97032,11.97146 -22.45213,19.5535 -35.36758,18.51676 -11.83058,-0.9496 -22.13911,-8.0757 -27.153181,-18.7705 C 11.408457,976.14131 9.9993832,974.1371 10,966.29829 c 5.75e-4,-7.29956 1.467962,-9.97978 3.127761,-13.57245 2.811689,-6.08595 9.305249,-12.90321 15.075899,-15.82742 4.21005,-2.1334 5.63196,-2.36479 12.00652,-1.95387 4.40788,0.28415 9.05935,1.27178 11.91429,2.52974 2.57586,1.13499 4.86604,1.88096 5.08928,1.65771 0.22325,-0.22324 -1.01801,-3.14232 -2.75836,-6.48683 -2.89215,-5.55798 -3.613547,-9.70494 -3.17439,-14.69794 0.715189,-8.13136 3.33033,-17.06576 9.26858,-22.66644 6.210544,-5.8575 13.15934,-8.70278 24.23193,-8.29118 10.30158,0.38295 16.28183,3.51796 21.8449,9.11271 5.44231,5.4733 8.15044,13.72926 8.79339,21.42097 0.42932,5.136 -0.30242,8.80285 -3.41548,15.07978 -1.87851,3.78769 -3.11542,6.88671 -2.74868,6.88671 0.36674,0 3.19626,-1.17617 6.28782,-2.61372 14.45758,-6.72263 31.03576,-0.21065 38.04272,14.94333 1.68146,3.63649 3.04501,6.21845 3.03882,14.4789 -0.007,8.74854 -1.3142,10.67446 -3.37074,14.84042 -6.50325,13.17365 -21.57941,20.77499 -35.34793,17.82215 -11.72207,-2.5139 -21.58027,-9.5882 -28.79683,-20.66458 -2.24081,-3.43932 -4.2733,-6.25331 -4.51666,-6.25331 -0.70681,0 0.71696,12.36855 2.17672,18.90959 2.84299,12.73914 11.304859,24.30404 22.0274,30.10484 4.10231,2.2193 12.45749,4.8896 21.58822,6.8996 1.4227,0.3132 2.73765,1.3922 3.02207,2.4798 0.49967,1.9108 0.12309,1.9254 -49.67283,1.9254 -27.59697,0 -50.16972,-0.3231 -50.16165,-0.7181 z" id="path5891" inkscape:connector-curvature="0" sodipodi:nodetypes="ccssssssssssscsaasaasssscssssssscsc" /> </g> </svg>'
+                break
+            case "spade":
+                document.getElementById("trump").innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" baseProfile="full" width="20" height="20" viewBox="68.547241 122.68109 537.42297 635.16461"> <path d="m213.23 502.9c-195.31 199.54-5.3525 344.87 149.07 249.6.84137 49.146-37.692 95.028-61.394 138.9h166.73c-24.41-42.64-65.17-89.61-66.66-138.9 157.66 90.57 325.33-67.37 150.39-249.6-91.22-100.08-148.24-177.95-169.73-204.42-19.602 25.809-71.82 101.7-168.41 204.42z" fill="white" stroke="white" stroke-width="1.3691pt" transform="translate(-40.697 -154.41)"/> </svg>'
+                break
+            case "diamond":
+                document.getElementById("trump").innerHTML = '<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="20" height="20" viewBox="0 0 127 175" id="svg2" version="1.1" inkscape:version="0.91 r13725" sodipodi:docname="card diamond.svg"> <defs id="defs4" /> <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="3.404" inkscape:cx="191.84843" inkscape:cy="125" inkscape:document-units="px" inkscape:current-layer="layer1" showgrid="false" units="px" inkscape:window-width="1920" inkscape:window-height="1018" inkscape:window-x="1272" inkscape:window-y="-8" inkscape:window-maximized="1" /> <metadata id="metadata7"> <rdf:RDF> <cc:Work rdf:about=""> <dc:format>image/svg+xml</dc:format> <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /> <dc:title></dc:title> </cc:Work> </rdf:RDF> </metadata> <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(0,-877.36216)"> <path style="fill:#ff0000;fill-opacity:1;stroke:none" d="M 59.617823,1026.4045 C 54.076551,1017.027 35.802458,991.8393 22.320951,974.99722 15.544428,966.53149 10,959.28947 10,958.90385 c 0,-0.38562 2.498012,-3.68932 5.551138,-7.34155 14.779126,-17.67921 34.688967,-44.7342 42.813135,-58.17773 2.491067,-4.12211 4.836029,-7.13807 5.211026,-6.70213 0.374997,0.43594 3.911379,5.74741 7.858624,11.80326 8.617724,13.22128 27.37269,38.4164 38.049687,51.11535 l 7.73836,9.2038 -7.73836,9.2038 c -14.035208,16.69312 -34.03523,44.26125 -44.489713,61.32495 l -1.855601,3.0286 -3.520473,-5.9577 z" id="path5878" inkscape:connector-curvature="0" /> </g> </svg>'
+        }
+    }
+
+    // Update total score for each direction
+    function updateTotalRoundScores(points) {
+        document.getElementById("our-team-score").innerText = points.down
+        document.getElementById("other-team-score").innerText = points.right
+    }
+
+    // Update scorecards for each direction
+    function updateCurrentRoundScores(points, containers) {
+        Object.entries(points).forEach(([direction, score]) => {
+            const containerId = containers[direction];
+            if (!containerId) return; // Skip if no container is defined for the direction
+            const scoreCardsContainer = document.getElementById(containerId);
+            for (let i = 0; i < score; i++) {
+                const cardHTML = `<img src="img/back.png" class="${direction}-small-card small-card">
+                                  <span class="${direction}-small-card-number">${i + 1}</span>`;
+                scoreCardsContainer.innerHTML += cardHTML;
+            }
+        });
+    }
+
+    // Fetch data for room
+    fetchRoomData(roomId);
+
+    function refresh() {
+        fetch(`${baseURL}/refresh/${roomId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                throwACard(data.lastMove.from, data.lastMove.card)
+                if (data.currentTurn !== "down") {
+                    refresh()
+                }
+            })
+            .catch((error) => console.error('Error:', error));
+    }
 
     function playCardSound() {
         let audio = document.getElementById('card-sound');
@@ -175,12 +233,12 @@
     }
 
     function selectCard(card) {
-        // if (false){
-        showError("کارت غیرمجاز ⛔");
-        // }
+        if (false) {
+            showError("کارت غیرمجاز ⛔");
+        }
 
         if (card.hasAttribute("card-selected") || !isYourTurn) {
-            // return;
+            return;
         }
 
         card.parentElement.removeChild(card);
@@ -335,25 +393,28 @@
         newCard.classList.add("center-card");
         newCard.classList.add(`${direction}-card`);
         newCard.setAttribute("card-selected", "true");
+        if (withAnimation) {
+            newCard.style.setProperty('--animation-time', `0.5s`);
+        } else {
+            newCard.style.setProperty('--animation-time', `0s`);
+        }
         newCard.style.setProperty('--random-rotation', `${Math.random() * 20 - 10}deg`);
-        // if (withAnimation) {
-            if (direction === "down") {
-                newCard.style.setProperty('--target-y', `200px`);
-                newCard.style.setProperty('--target-x', `0px`);
-            }
-            if (direction === "up") {
-                newCard.style.setProperty('--target-y', `-150px`);
-                newCard.style.setProperty('--target-x', `0px`);
-            }
-            if (direction === "left") {
-                newCard.style.setProperty('--target-y', `0px`);
-                newCard.style.setProperty('--target-x', `-80px`);
-            }
-            if (direction === "right") {
-                newCard.style.setProperty('--target-y', `0px`);
-                newCard.style.setProperty('--target-x', `80px`);
-            }
-        // }
+        if (direction === "down") {
+            newCard.style.setProperty('--target-y', `200px`);
+            newCard.style.setProperty('--target-x', `0px`);
+        }
+        if (direction === "up") {
+            newCard.style.setProperty('--target-y', `-150px`);
+            newCard.style.setProperty('--target-x', `0px`);
+        }
+        if (direction === "left") {
+            newCard.style.setProperty('--target-y', `0px`);
+            newCard.style.setProperty('--target-x', `-80px`);
+        }
+        if (direction === "right") {
+            newCard.style.setProperty('--target-y', `0px`);
+            newCard.style.setProperty('--target-x', `80px`);
+        }
         centerCards.appendChild(newCard);
     }
 
@@ -411,8 +472,6 @@
     function continueGame() {
         closeModal();
     }
-
-    const countdown = setInterval(updateTimer, 1000);
 
     function updateTimer() {
         let timerElement = document.getElementById("timer");

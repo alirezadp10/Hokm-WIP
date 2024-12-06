@@ -149,7 +149,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-grow: 1;
-    padding-top: 270px;
+    padding-top: 180px;
 }
 
 .center-card {
@@ -157,7 +157,7 @@ body {
     margin: 0 5px;
 }
 
-.bottom-bar {
+.down-bar {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -266,13 +266,13 @@ body {
     box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
-.bottom-score-cards-container {
+.down-score-cards-container {
     width: 70%;
 }
 
-.bottom-small-card {
+.down-small-card {
     margin-bottom: 15px;
-    margin-left: -15px;
+    margin-left: -10px;
 }
 
 .right-score-cards-container {
@@ -354,7 +354,7 @@ body {
 }
 
 
-.bottom-small-card-number {
+.down-small-card-number {
     color: white;
     font-weight: bold;
     position: relative;
@@ -421,7 +421,7 @@ body {
     direction: rtl;
 }
 
-.top-card {
+.up-card {
     position: absolute;
     margin-top: -100px;
 }
@@ -431,7 +431,7 @@ body {
     margin-left: -90px;
 }
 
-.bottom-card {
+.down-card {
     margin-top: 100px;
     position: absolute;
 }
@@ -443,7 +443,7 @@ body {
 
 @keyframes throwCardAnimation {
     from {
-        transform: translate(var(--target-x), var(--target-y)) scale(0.95) rotate(0deg);
+        transform: translate(var(--target-x), var(--target-y)) scale(0.95) rotate(var(--random-rotation));
         opacity: 0;
     }
     to {
@@ -453,7 +453,7 @@ body {
 }
 
 .center-card {
-    animation: throwCardAnimation 0.5s ease forwards;
+    animation: throwCardAnimation var(--animation-time) ease forwards;
 }
 
 @keyframes fadeOutDown {
@@ -629,6 +629,8 @@ body {
 
 
 .timer-wrapper {
+    position: absolute;
+    bottom: 200px;
     margin-top: 50px;
     font-size: 20px;
     font-weight: bold;
