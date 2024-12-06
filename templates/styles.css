@@ -101,7 +101,7 @@ body {
     font-weight: bold;
 }
 
-.player-name.top {
+.player-name.up {
     color: white;
     font-size: 18px;
     background: #00000080;
@@ -117,7 +117,7 @@ body {
     overflow: hidden;
 }
 
-.player-name.bottom {
+.player-name.down {
     color: white;
     font-size: 18px;
     background: #00000080;

@@ -7,7 +7,8 @@
     <title>بازی کارت</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/htmx.org@1.8.4"></script>
-    <audio id="card-sound" src="card-sound-1.mp3" preload="auto"></audio>
+    <audio id="card-sound" src="audio/card-sound.mp3" preload="auto"></audio>
+    <audio id="tiktok" src="audio/tiktok.mp3" preload="auto"></audio>
 </head>
 <body>
 <div class="game-container">
@@ -46,17 +47,17 @@
         <div id="error-message" class="error-message"></div>
 
         <div class="hand-cards" id="hand-cards">
-                        <!--
-            <img src="img/8S.png" alt="8S" class="card" onclick="selectCard(this)">
-            <img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
-            <img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
-            <img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
-            <img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
-            <img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
-            <img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
-            <img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
-            <img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
-                        -->
+            <!--
+<img src="img/8S.png" alt="8S" class="card" onclick="selectCard(this)">
+<img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
+<img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
+<img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
+<img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
+<img src="img/KS.png" alt="KS" class="card" onclick="selectCard(this)">
+<img src="img/3C.png" alt="3C" class="card" onclick="selectCard(this)">
+<img src="img/5D.png" alt="5D" class="card" onclick="selectCard(this)">
+<img src="img/AH.png" alt="AH" class="card" onclick="selectCard(this)">
+            -->
         </div>
     </div>
 
@@ -70,8 +71,8 @@
         <span class="right-small-card-number">2</span>
         <!--        &ndash;&gt;-->
     </div>
-    <div class="player-name top">Ali</div>
-    <div class="player-name bottom">Mammad</div>
+    <div class="player-name up">Ali</div>
+    <div class="player-name down">Mammad</div>
 
     <div id="score-modal" class="modal">
         <div class="modal-content">
@@ -117,10 +118,58 @@
     </div>
 </div>
 <script>
-    isYourTurn = false
+    const baseURL = "http://localhost:3000"
+    let isYourTurn = false
+    let time = 15;
+    let centerCards = {};
+
+    fetch(`${baseURL}/room/123456`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.currentTurn === "down") {
+                isYourTurn = true
+            }
+            time = data.timeRemained;
+            console.log(data.centerCards)
+            Object.entries(data.centerCards).forEach(([direction, card]) => {
+                console.log(direction)
+                console.log(card)
+                throwACard(direction, card, false, false)
+            })
+        })
+        .catch(error => console.error('Error:', error));
+
+
+    // fetch(`${baseURL}/refresh/123456`, {
+    //     method: 'GET',
+    //     headers: {
+    //         'Content-Type': 'application/json'
+    //     }
+    // })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         if (data.currentTurn === "down") {
+    //             isYourTurn = true
+    //         }
+    //         time = data.timeRemained;
+    //         centerCards = data.centerCards; // { right: "2C", down: "3H", left: "AC" }
+    //     })
+    //     .catch(error => console.error('Error:', error));
+
 
     function playCardSound() {
-        const audio = document.getElementById('card-sound');
+        let audio = document.getElementById('card-sound');
+        audio.currentTime = 0;
+        audio.play();
+    }
+
+    function playTiktokSound() {
+        let audio = document.getElementById('tiktok');
         audio.currentTime = 0;
         audio.play();
     }
@@ -136,7 +185,7 @@
 
         card.parentElement.removeChild(card);
 
-        throwACard("bottom", card.getAttribute("alt"))
+        throwACard("down", card.getAttribute("alt"))
     }
 
     function fadeCards(diraction) {
@@ -172,11 +221,11 @@
         document.getElementById("center-cards").appendChild(deck)
         await dealCards("left", ["img/9H.png"], true);
         await sleep(500);
-        await dealCards("bottom", ["img/2D.png"], true);
+        await dealCards("down", ["img/2D.png"], true);
         await sleep(500);
         await dealCards("right", ["img/5H.png"], true);
         await sleep(500);
-        await dealCards("top", ["img/3D.png"], true);
+        await dealCards("up", ["img/3D.png"], true);
         await deck.remove()
     }
 
@@ -191,11 +240,11 @@
         document.getElementById("center-cards").appendChild(deck)
         await dealCards("left", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
         await sleep(250);
-        await dealCards("bottom", ["img/9H.png", "img/5H.png", "img/2D.png", "img/3D.png", "img/0H.png"]);
+        await dealCards("down", ["img/9H.png", "img/5H.png", "img/2D.png", "img/3D.png", "img/0H.png"]);
         await sleep(250);
         await dealCards("right", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
         await sleep(250);
-        await dealCards("top", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
+        await dealCards("up", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
         await deck.remove()
     }
 
@@ -215,7 +264,7 @@
                     card.src = cardSrc;
                     card.className = 'card dealing';
 
-                    if (direction === "bottom") {
+                    if (direction === "down") {
                         card.style.setProperty('--target-x', `-60px`);
                         card.style.setProperty('--target-y', `150px`);
                     }
@@ -230,21 +279,20 @@
                         card.style.setProperty('--target-y', `0px`);
                     }
 
-                    if (direction === "top") {
+                    if (direction === "up") {
                         card.style.setProperty('--target-x', `-60px`);
                         card.style.setProperty('--target-y', `-150px`);
                     }
 
                     card.addEventListener('animationend', () => {
                         if (!isKingDeterminationLevel) {
-                            if (direction === "bottom") {
+                            if (direction === "down") {
                                 card.classList.remove('dealing');
                                 card.style.transform = 'none';
                                 handCards.appendChild(card);
                             } else {
                                 card.remove();
                             }
-
                         }
 
                         completedAnimations++;
@@ -277,33 +325,35 @@
         }, 3000);
     }
 
-    function throwACard(direction, name) {
-        playCardSound()
-        const centerCards = document.getElementById("center-cards");
+    function throwACard(direction, name, withSound = true, withAnimation = true) {
+        if (withSound) {
+            playTiktokSound()
+        }
+        let centerCards = document.getElementById("center-cards");
         let newCard = document.createElement('img');
         newCard.src = "img/" + name + ".png";
         newCard.classList.add("center-card");
         newCard.classList.add(`${direction}-card`);
         newCard.setAttribute("card-selected", "true");
         newCard.style.setProperty('--random-rotation', `${Math.random() * 20 - 10}deg`);
-        if (direction === "bottom") {
-            newCard.style.setProperty('--target-y', `200px`);
-            newCard.style.setProperty('--target-x', `0px`);
-        }
-        if (direction === "top") {
-            newCard.style.setProperty('--target-y', `-150px`);
-            newCard.style.setProperty('--target-x', `0px`);
-        }
-        if (direction === "left") {
-            newCard.style.setProperty('--target-y', `0px`);
-            newCard.style.setProperty('--target-x', `-80px`);
-        }
-        if (direction === "right") {
-            newCard.style.setProperty('--target-y', `0px`);
-            newCard.style.setProperty('--target-x', `80px`);
-        }
-
-
+        // if (withAnimation) {
+            if (direction === "down") {
+                newCard.style.setProperty('--target-y', `200px`);
+                newCard.style.setProperty('--target-x', `0px`);
+            }
+            if (direction === "up") {
+                newCard.style.setProperty('--target-y', `-150px`);
+                newCard.style.setProperty('--target-x', `0px`);
+            }
+            if (direction === "left") {
+                newCard.style.setProperty('--target-y', `0px`);
+                newCard.style.setProperty('--target-x', `-80px`);
+            }
+            if (direction === "right") {
+                newCard.style.setProperty('--target-y', `0px`);
+                newCard.style.setProperty('--target-x', `80px`);
+            }
+        // }
         centerCards.appendChild(newCard);
     }
 
@@ -362,16 +412,16 @@
         closeModal();
     }
 
-    const timerElement = document.getElementById("timer");
-    let time = 15;
+    const countdown = setInterval(updateTimer, 1000);
+
     function updateTimer() {
+        let timerElement = document.getElementById("timer");
         timerElement.textContent = time;
 
         if (time <= 5) {
-            // اضافه کردن انیمیشن و تغییر رنگ در ثانیه‌های آخر
             timerElement.classList.add("warning");
+            playTiktokSound()
         } else {
-            // حذف انیمیشن و تغییر رنگ در ثانیه‌های دیگر
             timerElement.classList.remove("warning");
         }
 
@@ -383,7 +433,6 @@
             timerElement.textContent = "Time's up!";
         }
     }
-    const countdown = setInterval(updateTimer, 1000);
 </script>
 </body>
 </html>
