@@ -654,3 +654,20 @@ body {
         transform: scale(1);
     }
 }
+
+.trump-box {
+    background: #000000a1;
+    width: 80%;
+    height: 90px;
+    align-self: center;
+    position: absolute;
+    top: 180px;
+    text-align: center;
+    align-content: center;
+}
+
+.trump-box img {
+    width: 55px;
+    cursor: pointer;
+    margin: 0 10px;
+}

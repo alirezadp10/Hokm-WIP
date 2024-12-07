@@ -25,6 +25,12 @@
     </div>
     <div class="center-cards" id="center-cards">
     </div>
+    <div class="trump-box" id="trump-box" hidden>
+        <img src="img/spades.png" alt="s" onclick="trumpDetermine('s')">
+        <img src="img/hearts.png" alt="h" onclick="trumpDetermine('h')">
+        <img src="img/clubs.png" alt="c" onclick="trumpDetermine('c')">
+        <img src="img/diamonds.png" alt="d" onclick="trumpDetermine('d')">
+    </div>
     <div class="down-bar">
         <div class="timer-wrapper">
             <div id="timer"></div>
@@ -100,18 +106,49 @@
             .catch((error) => console.error('Error:', error));
     }
 
-    function updateRoomUI(data) {
+    async function updateRoomUI(data) {
+        updatePlayerNames(data.players);
+        updateTotalRoundScores(data.points.total);
+        if (data.firstKingDeterminationCards.length) {
+            await firstKingDetermination(data.firstKingDeterminationCards)
+            let lastCard = data.firstKingDeterminationCards.length - 1;
+            let hakem = data.firstKingDeterminationCards[lastCard].direction
+            let cards = []
+            if (hakem === "down") {
+                cards = data.trumpDetermination;
+            } else {
+                cards = ["back", "back", "back", "back", "back"];
+            }
+            document.getElementById(`${hakem}-player`).innerHTML = "👑 " + document.getElementById(`${hakem}-player`).innerHTML;
+            await sleep(500);
+            await distribute(hakem, cards)
+
+            if (hakem === "down") {
+                countdown = setInterval(updateTimer, 1000);
+                updateTime(20)
+                document.getElementById("trump-box").removeAttribute("hidden")
+            } else {
+                fetch(`${baseURL}/room/${roomId}/cards`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        continueDistributing(data, getNextIndex(hakem))
+                    })
+                    .catch((error) => console.error('Error:', error));
+            }
+
+            return
+        }
         updateTurn(data.currentTurn);
         updateTime(data.timeRemained);
         updateCenterCards(data.centerCards);
         updateYourCards(data.yourCards);
         updateTrump(data.trump);
-        updatePlayerNames(data.players);
-        updateTotalRoundScores(data.points.total);
-        updateCurrentRoundScores(data.points.currentRound, {
-            down: "down-score-cards-container",
-            right: "right-score-cards-container",
-        });
+        updateCurrentRoundScores(data.points.currentRound);
     }
 
     function updatePlayerNames(players) {
@@ -177,7 +214,7 @@
         document.getElementById("other-team-score").innerText = points.right
     }
 
-    function updateCurrentRoundScores(points, containers) {
+    function updateCurrentRoundScores(points) {
         Object.entries(points).forEach(([direction, score]) => {
             for (let i = 0; i < score; i++) {
                 addRoundPoint(direction, i + 1)
@@ -188,7 +225,7 @@
     fetchRoomData(roomId);
 
     function refresh() {
-        fetch(`${baseURL}/refresh/${roomId}`, {
+        fetch(`${baseURL}/room/${roomId}/refresh`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -199,6 +236,70 @@
                 refreshActions(data)
             })
             .catch((error) => console.error('Error:', error));
+    }
+
+    function trumpDetermine(type) {
+        fetch(`${baseURL}/room/${roomId}/trump`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: {
+                'trump': type
+            }
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                trumpDetermineActions(data)
+            })
+            .catch((error) => console.error('Error:', error));
+    }
+
+    function rearrangeArray(direction) {
+        const directions = ["right", "up", "left", "down"];
+        const index = directions.indexOf(direction);
+
+        if (index === -1) {
+            throw new Error("Invalid direction");
+        }
+
+        return [...directions.slice(index), ...directions.slice(0, index)];
+    }
+
+    function getNextIndex(direction) {
+        const directions = ["right", "up", "left", "down"];
+        const index = directions.indexOf(direction);
+
+        if (index === -1) {
+            throw new Error("Invalid direction");
+        }
+
+        const nextIndex = (index + 1) % directions.length;
+        return directions[nextIndex];
+    }
+
+    async function continueDistributing(data, direction) {
+        let arr = rearrangeArray(direction)
+        for (let [_, cards] of Object.entries(data.cards)) {
+            for (let i = 0; i < arr.length; i++) {
+                if (arr[i] === "down"){
+                    if (cards.length){
+                        await distribute("down", cards)
+                    }
+                } else {
+                    await distribute(arr[i], ["back", "back", "back", "back", "back"])
+                }
+                await document.getElementById("deck").remove()
+            }
+        }
+    }
+
+    async function trumpDetermineActions(data) {
+        document.getElementById("trump-box").setAttribute("hidden", "true")
+        document.getElementById("timer").setAttribute("hidden", "true")
+        clearInterval(countdown);
+        data.cards.push({})
+        await continueDistributing(data, getNextIndex("down"));
     }
 
     async function refreshActions(data) {
@@ -279,19 +380,7 @@
         });
     }
 
-    function firstKingDetermination() {
-        fetch(`${baseURL}/first-king-determination/${roomId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-            .then((response) => response.json())
-            .then((data) => { firstKingDeterminationActions(data) })
-            .catch((error) => console.error('Error:', error));
-    }
-
-    async function firstKingDeterminationActions(data){
+    async function firstKingDetermination(data) {
         let deck = document.createElement('div')
         deck.className = 'deck';
         deck.id = 'deck';
@@ -300,30 +389,25 @@
         deckCard.className = 'deck-card';
         deck.appendChild(deckCard)
         document.getElementById("center-cards").appendChild(deck)
-        await Object.entries(data.cards).forEach(([_, card]) => { distributeCard(card)});
-        // await deck.remove()
+        await sleep(1500);
+        for (let [_, item] of Object.entries(data)) {
+            await dealCards(item.direction, [item.card], true);
+            await sleep(500);
+        }
+        await sleep(1000);
+        await deck.remove()
     }
-    async function distributeCard(card){
-        await dealCards("left", [`img/${card}.png`], true);
-        await sleep(500);
-    }
-    async function distribute() {
-        deck = document.createElement('div')
+
+    async function distribute(direction, cards) {
+        let deck = document.createElement('div')
         deck.className = 'deck';
         deck.id = 'deck';
-        deckCard = document.createElement('img')
+        let deckCard = document.createElement('img')
         deckCard.src = 'img/back.png';
         deckCard.className = 'deck-card';
         deck.appendChild(deckCard)
         document.getElementById("center-cards").appendChild(deck)
-        await dealCards("left", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
-        await sleep(250);
-        await dealCards("down", ["img/9H.png", "img/5H.png", "img/2D.png", "img/3D.png", "img/0H.png"]);
-        await sleep(250);
-        await dealCards("right", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
-        await sleep(250);
-        await dealCards("up", ["img/back.png", "img/back.png", "img/back.png", "img/back.png", "img/back.png"]);
-        await deck.remove()
+        await dealCards(direction, cards);
     }
 
     function dealCards(direction, cards, isKingDeterminationLevel = false) {
@@ -339,7 +423,7 @@
                     playCardSound();
 
                     const card = document.createElement('img');
-                    card.src = cardSrc;
+                    card.src = `img/${cardSrc}.png`;
                     card.className = 'card dealing';
 
                     if (direction === "down") {
