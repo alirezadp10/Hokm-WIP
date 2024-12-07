@@ -317,7 +317,6 @@ body {
     10% {
         background-color: #00b100;
         opacity: 1;
-        transform: translate(-50%, 0) scale(1.05);
     }
     20% {
         background-color: transparent;
@@ -326,7 +325,6 @@ body {
     30% {
         background-color: #00b100;
         opacity: 1;
-        transform: translate(-50%, 0) scale(1.02);
     }
     40% {
         background-color: transparent;
@@ -335,12 +333,10 @@ body {
     50% {
         background-color: #00b100;
         opacity: 1;
-        transform: translate(-50%, 0) scale(1.1);
     }
     100% {
         background-color: transparent;
         opacity: 0;
-        transform: translate(-50%, 0) scale(1);
     }
 }
 
@@ -350,7 +346,6 @@ body {
 
 .static-green {
     background-color: #00b100 !important;
-    transform: translate(-50%, 0) scale(1);
 }
 
 

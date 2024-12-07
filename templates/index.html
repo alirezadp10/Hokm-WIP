@@ -88,7 +88,6 @@
     let countdown;
     const roomId = 123456;
 
-    // Function to fetch room data and update the UI
     function fetchRoomData(roomId) {
         fetch(`${baseURL}/room/${roomId}`, {
             method: 'GET',
@@ -101,7 +100,6 @@
             .catch((error) => console.error('Error:', error));
     }
 
-    // Function to update the room UI based on the fetched data
     function updateRoomUI(data) {
         updateTurn(data.currentTurn);
         updateTime(data.timeRemained);
@@ -122,7 +120,6 @@
         });
     }
 
-    // Update turn and start timer if it's your turn
     function updateTurn(currentTurn) {
         if (currentTurn === "down") {
             isYourTurn = true;
@@ -132,19 +129,16 @@
         }
     }
 
-    // Update the time remained
     function updateTime(timeRemained) {
         time = timeRemained;
     }
 
-    // Update the center cards
     function updateCenterCards(centerCards) {
         Object.entries(centerCards).forEach(([direction, card]) => {
             throwACard(direction, card, false, false);
         });
     }
 
-    // Update the player's cards
     function updateYourCards(yourCards) {
         const handCards = document.getElementById("hand-cards");
         yourCards.forEach((card) => {
@@ -153,7 +147,6 @@
         });
     }
 
-    // Helper to create a card element
     function createCardElement(card, className, onClick) {
         const newCard = document.createElement('img');
         newCard.src = `img/${card}.png`;
@@ -163,7 +156,6 @@
         return newCard;
     }
 
-    // Update trump
     function updateTrump(trump) {
         switch (trump) {
             case "heart":
@@ -180,27 +172,19 @@
         }
     }
 
-    // Update total score for each direction
     function updateTotalRoundScores(points) {
         document.getElementById("our-team-score").innerText = points.down
         document.getElementById("other-team-score").innerText = points.right
     }
 
-    // Update scorecards for each direction
     function updateCurrentRoundScores(points, containers) {
         Object.entries(points).forEach(([direction, score]) => {
-            const containerId = containers[direction];
-            if (!containerId) return; // Skip if no container is defined for the direction
-            const scoreCardsContainer = document.getElementById(containerId);
             for (let i = 0; i < score; i++) {
-                const cardHTML = `<img src="img/back.png" class="${direction}-small-card small-card">
-                                  <span class="${direction}-small-card-number">${i + 1}</span>`;
-                scoreCardsContainer.innerHTML += cardHTML;
+                addRoundPoint(direction, i + 1)
             }
         });
     }
 
-    // Fetch data for room
     fetchRoomData(roomId);
 
     function refresh() {
@@ -212,12 +196,39 @@
         })
             .then((response) => response.json())
             .then((data) => {
-                throwACard(data.lastMove.from, data.lastMove.card)
-                if (data.currentTurn !== "down") {
-                    refresh()
-                }
+                refreshActions(data)
             })
             .catch((error) => console.error('Error:', error));
+    }
+
+    async function refreshActions(data) {
+        throwACard(data.lastMove.from, data.lastMove.card)
+        if (data.currentTurn !== "down") {
+            refresh()
+        }
+        if (data.whoHasWon === "down" || data.whoHasWon === "up") {
+            await sleep(1000);
+            simulateGreenLightningEffect([data.whoHasWon])
+            await sleep(2000);
+            clearCenterCards("down")
+            addRoundPoint("down", data.points.currentRound.down)
+        }
+        if (data.whoHasWon === "right" || data.whoHasWon === "left") {
+            await sleep(1000);
+            simulateGreenLightningEffect([data.whoHasWon])
+            await sleep(2000);
+            clearCenterCards("right")
+            addRoundPoint("right", data.points.currentRound.right)
+        }
+    }
+
+    function addRoundPoint(direction, point) {
+        const scoreCardsContainer = document.getElementById(`${direction}-score-cards-container`);
+
+        const cardHTML = `<img src="img/back.png" class="${direction}-small-card small-card">
+                                  <span class="${direction}-small-card-number">${point}</span>`;
+
+        scoreCardsContainer.innerHTML += cardHTML;
     }
 
     function playCardSound() {
@@ -268,25 +279,34 @@
         });
     }
 
-    async function firstKingDetermination() {
-        deck = document.createElement('div')
+    function firstKingDetermination() {
+        fetch(`${baseURL}/first-king-determination/${roomId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then((response) => response.json())
+            .then((data) => { firstKingDeterminationActions(data) })
+            .catch((error) => console.error('Error:', error));
+    }
+
+    async function firstKingDeterminationActions(data){
+        let deck = document.createElement('div')
         deck.className = 'deck';
         deck.id = 'deck';
-        deckCard = document.createElement('img')
+        let deckCard = document.createElement('img')
         deckCard.src = 'img/back.png';
         deckCard.className = 'deck-card';
         deck.appendChild(deckCard)
         document.getElementById("center-cards").appendChild(deck)
-        await dealCards("left", ["img/9H.png"], true);
-        await sleep(500);
-        await dealCards("down", ["img/2D.png"], true);
-        await sleep(500);
-        await dealCards("right", ["img/5H.png"], true);
-        await sleep(500);
-        await dealCards("up", ["img/3D.png"], true);
-        await deck.remove()
+        await Object.entries(data.cards).forEach(([_, card]) => { distributeCard(card)});
+        // await deck.remove()
     }
-
+    async function distributeCard(card){
+        await dealCards("left", [`img/${card}.png`], true);
+        await sleep(500);
+    }
     async function distribute() {
         deck = document.createElement('div')
         deck.className = 'deck';
@@ -420,7 +440,7 @@
 
     function simulateGreenLightningEffect(positions) {
         positions.forEach(function (position) {
-            const playerElement = document.querySelector(`.player-name.${position}`);
+            const playerElement = document.getElementById(`${position}-player`);
             playerElement.classList.add("green-lightning");
             setTimeout(() => {
                 playerElement.classList.remove("green-lightning");
