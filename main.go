@@ -37,24 +37,55 @@ func main() {
                     "name": "mammad",
                 },
             },
-
             "points": map[string]interface{}{
                 "total":        map[string]interface{}{"right": 3, "down": 2},
                 "currentRound": map[string]interface{}{"right": 3, "down": 2},
             },
-            "firstKingDeterminationCards": []interface{}{
-                map[string]interface{}{"direction": "up", "card": "2S"},
-                map[string]interface{}{"direction": "right", "card": "3C"},
-                map[string]interface{}{"direction": "down", "card": "3H"},
-                map[string]interface{}{"direction": "left", "card": "3S"},
-                map[string]interface{}{"direction": "up", "card": "AC"},
+            "firstKingDeterminationCards": []interface{}{},
+            "centerCards": map[string]interface{}{
+                "left":  "5S",
+                "up":    "2S",
+                "right": "7S",
             },
-            "centerCards":  []interface{}{"2H", "3H", "4C"},
             "currentTurn":  "right",
             "timeRemained": 14,
             "yourCards":    []interface{}{"3H", "3H", "3S", "3S", "4C"},
+            "hakem":        "down",
             "trump":        "heart",
         })
+        //json.NewEncoder(writer).Encode(map[string]interface{}{
+        //    "players": map[string]interface{}{
+        //        "up": map[string]interface{}{
+        //            "name": "ali",
+        //        },
+        //        "right": map[string]interface{}{
+        //            "name": "maryam",
+        //        },
+        //        "left": map[string]interface{}{
+        //            "name": "sara",
+        //        },
+        //        "down": map[string]interface{}{
+        //            "name": "mammad",
+        //        },
+        //    },
+        //    "points": map[string]interface{}{
+        //        "total":        map[string]interface{}{"right": 3, "down": 2},
+        //        "currentRound": map[string]interface{}{"right": 3, "down": 2},
+        //    },
+        //    "firstKingDeterminationCards": []interface{}{
+        //        map[string]interface{}{"direction": "up", "card": "2S"},
+        //        map[string]interface{}{"direction": "right", "card": "3C"},
+        //        map[string]interface{}{"direction": "down", "card": "3H"},
+        //        map[string]interface{}{"direction": "left", "card": "3S"},
+        //        map[string]interface{}{"direction": "up", "card": "AC"},
+        //    },
+        //    "centerCards":  []interface{}{"2H", "3H", "4C"},
+        //    "currentTurn":  "right",
+        //    "timeRemained": 14,
+        //    "yourCards":    []interface{}{"3H", "3H", "3S", "3S", "4C"},
+        //"hakem":        "up",
+        //    "trump":        "heart",
+        //})
     })
 
     http.HandleFunc("/room/123456/cards", func(writer http.ResponseWriter, request *http.Request) {

@@ -108,10 +108,9 @@
     async function updateRoomUI(data) {
         updatePlayerNames(data.players);
         updateTotalRoundScores(data.points.total);
+        let hakem = data.hakem
         if (data.firstKingDeterminationCards.length) {
             await firstKingDetermination(data.firstKingDeterminationCards)
-            let lastCard = data.firstKingDeterminationCards.length - 1;
-            let hakem = data.firstKingDeterminationCards[lastCard].direction
             let cards = []
             if (hakem === "down") {
                 cards = data.trumpDetermination;
@@ -142,6 +141,9 @@
             }
 
             return
+        }
+        else {
+            document.getElementById(`${hakem}-player`).innerHTML = "👑 " + document.getElementById(`${hakem}-player`).innerHTML;
         }
         updateTurn(data.currentTurn);
         updateTime(data.timeRemained);
