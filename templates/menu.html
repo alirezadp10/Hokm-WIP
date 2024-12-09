@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منوی بازی حکم</title>
+    <link rel="stylesheet" href="/templates/menu.css">
+</head>
+<body>
+<div class="game-container">
+    <div class="menu">
+        <h1 class="game-title">حکم</h1>
+        <div class="menu-buttons">
+            <button onclick="startGame()">شروع بازی</button>
+            <button onclick="scoreboard()">جدول امتیازات</button>
+            <button onclick="exitGame()">خروج</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function startGame() {
+        document.location.href = '/templates/game.html';
+    }
+
+    function scoreboard() {
+    }
+
+    function exitGame() {
+        window.close();
+    }
+</script>
+</body>
+</html>

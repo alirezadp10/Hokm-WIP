@@ -5,10 +5,9 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حکم</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
-    <audio id="card-sound" src="audio/card-sound.mp3" preload="auto"></audio>
-    <audio id="tiktok" src="audio/tiktok.mp3" preload="auto"></audio>
+    <link rel="stylesheet" href="/templates/game.css?12334">
+    <audio id="card-sound" src="/templates/audio/card-sound.mp3" preload="auto"></audio>
+    <audio id="tiktok" src="/templates/audio/tiktok.mp3" preload="auto"></audio>
 </head>
 <body>
 <div class="game-container">
@@ -88,7 +87,7 @@
     </div>
 </div>
 <script>
-    const baseURL = "http://localhost:3000"
+    const baseURL = "https://76b1-46-100-55-166.ngrok-free.app"
     let isYourTurn = false
     let time;
     let countdown;
@@ -136,6 +135,7 @@
                 })
                     .then((response) => response.json())
                     .then((data) => {
+                        document.getElementById("deck").remove()
                         continueDistributing(data, getNextIndex(hakem))
                     })
                     .catch((error) => console.error('Error:', error));
@@ -256,7 +256,7 @@
     }
 
     function rearrangeArray(direction) {
-        const directions = ["right", "up", "left", "down"];
+        const directions = ["right", "down", "left", "up"];
         const index = directions.indexOf(direction);
 
         if (index === -1) {
@@ -267,7 +267,7 @@
     }
 
     function getNextIndex(direction) {
-        const directions = ["right", "up", "left", "down"];
+        const directions = ["up", "right", "down", "left"];
         const index = directions.indexOf(direction);
 
         if (index === -1) {
@@ -287,7 +287,7 @@
                         await distribute("down", cards)
                     }
                 } else {
-                    await distribute(arr[i], ["back", "back", "back", "back", "back"])
+                    await distribute(arr[i], new Array(cards.length).fill("back"))
                 }
                 await document.getElementById("deck").remove()
             }
@@ -432,12 +432,12 @@
                     }
 
                     if (direction === "right") {
-                        card.style.setProperty('--target-x', `50px`);
+                        card.style.setProperty('--target-x', `40px`);
                         card.style.setProperty('--target-y', `0px`);
                     }
 
                     if (direction === "left") {
-                        card.style.setProperty('--target-x', `-170px`);
+                        card.style.setProperty('--target-x', `-160px`);
                         card.style.setProperty('--target-y', `0px`);
                     }
 

@@ -1,0 +1,80 @@
+@font-face {
+    font-family: 'Iranian Sans';
+    src: url('font/Iranian Sans.ttf') format('truetype');
+}
+
+button {
+    font-family: 'Iranian Sans', sans-serif;
+    font-size: 1.2rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: #000;
+    padding: 10px 20px;
+    margin: 10px 0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+    width: 80%; /* دکمه‌ها اندازه عرض معقولی داشته باشند */
+    max-width: 300px;
+}
+
+button:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+}
+
+button:active {
+    transform: scale(1);
+}
+
+body {
+    font-family: 'Iranian Sans', sans-serif;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    background-image: url('img/bg.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    max-width: 370px;
+    height: 100vh;
+    background-color: white;
+    position: relative;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.6); /* پس‌زمینه تیره برای منو */
+    border-radius: 15px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.5);
+    width: 90%; /* عرض منو */
+    max-width: 300px;
+    align-self: center;
+}
+
+.game-title {
+    color: white;
+    margin-bottom: 20px;
+    font-size: 2rem;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column; /* دکمه‌ها در ستون چیده شوند */
+    align-items: center;
+    width: 100%;
+}

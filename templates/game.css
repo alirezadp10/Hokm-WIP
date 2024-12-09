@@ -178,9 +178,14 @@ body {
 .hand-cards img {
     width: 60px;
     margin: 0 -20px;
-    cursor: pointer;
+    /*cursor: pointer;*/
     opacity: 1 !important;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
 }
+
+
 
 .center-cards img {
     width: 60px;
@@ -197,7 +202,6 @@ body {
     .hand-cards img {
         width: 60px;
         margin: 0 -20px;
-        cursor: pointer;
     }
 
     .game-container {
