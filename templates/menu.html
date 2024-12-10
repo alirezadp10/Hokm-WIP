@@ -4,30 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منوی بازی حکم</title>
-    <link rel="stylesheet" href="/templates/menu.css">
+    <link rel="stylesheet" href="/templates/menu.css?14463">
 </head>
 <body>
 <div class="game-container">
     <div class="menu">
         <h1 class="game-title">حکم</h1>
         <div class="menu-buttons">
-            <button onclick="startGame()">شروع بازی</button>
-            <button onclick="scoreboard()">جدول امتیازات</button>
-            <button onclick="exitGame()">خروج</button>
+            <button onclick="startGame(this)">شروع بازی</button>
+            <button onclick="scoreboard(this)">جدول امتیازات</button>
+            <button onclick="exitGame(this)">خروج</button>
         </div>
     </div>
 </div>
 
 <script>
-    function startGame() {
-        document.location.href = '/templates/game.html';
+    // اضافه کردن کلاس fade-in به body پس از بارگذاری صفحه
+    window.addEventListener('load', () => {
+        document.body.classList.add('fade-in');
+    });
+
+    function startGame(button) {
+        setLoading(button);
+        setTimeout(() => {
+            document.location.href = '/templates/game.html';
+        }, 2000); // شبیه‌سازی لودینگ 2 ثانیه‌ای
     }
 
-    function scoreboard() {
+    function scoreboard(button) {
+        setLoading(button);
+        setTimeout(() => {
+            alert('در حال آماده‌سازی...');
+            resetButton(button, "جدول امتیازات");
+        }, 2000);
     }
 
-    function exitGame() {
-        window.close();
+    function exitGame(button) {
+        setLoading(button);
+        setTimeout(() => {
+            window.close();
+        }, 2000);
+    }
+
+    function setLoading(button) {
+        button.disabled = true;
+        button.classList.add("loading");
+        button.innerHTML = '<span class="spinner"></span>';
+    }
+
+    function resetButton(button, text) {
+        button.disabled = false;
+        button.classList.remove("loading");
+        button.innerHTML = text;
     }
 </script>
 </body>

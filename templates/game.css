@@ -186,7 +186,6 @@ body {
 }
 
 
-
 .center-cards img {
     width: 60px;
     opacity: 1 !important;
@@ -357,18 +356,25 @@ body {
     color: white;
     font-weight: bold;
     position: relative;
-    right: 23px;
+    right: 26px;
     bottom: 25px;
     background: #6b6b6b;
+    border-radius: 50%;
+    width: 18px;
+    text-align: center;
+    display: inline-block;
 }
 
 .right-small-card-number {
     color: white;
     font-weight: bold;
     position: relative;
-    right: 8px;
+    right: 7px;
     bottom: 32px;
     background: #6b6b6b;
+    border-radius: 50%;
+    width: 18px;
+    text-align: center;
 }
 
 .deck {
@@ -668,6 +674,7 @@ body {
     top: 180px;
     text-align: center;
     align-content: center;
+    z-index: 100;
 }
 
 .trump-box img {

@@ -3,7 +3,24 @@
     src: url('font/Iranian Sans.ttf') format('truetype');
 }
 
+body {
+    font-family: 'Iranian Sans', sans-serif;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    opacity: 0;
+    transition: opacity 4s ease;
+}
+
+body.fade-in {
+    opacity: 1;
+}
+
 button {
+    direction: rtl;
     font-family: 'Iranian Sans', sans-serif;
     font-size: 1.2rem;
     background-color: rgba(255, 255, 255, 0.9);
@@ -14,8 +31,10 @@ button {
     border-radius: 10px;
     cursor: pointer;
     transition: transform 0.2s ease, background-color 0.3s ease;
-    width: 80%; /* دکمه‌ها اندازه عرض معقولی داشته باشند */
+    width: 80%;
     max-width: 300px;
+    position: relative;
+    overflow: hidden;
 }
 
 button:hover {
@@ -27,14 +46,30 @@ button:active {
     transform: scale(1);
 }
 
-body {
-    font-family: 'Iranian Sans', sans-serif;
-    background-color: #000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
+button.loading {
+    background-color: rgba(200, 200, 200, 0.8);
+    cursor: not-allowed;
+    color: #333;
+}
+
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #000;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    margin-right: 5px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .game-container {
@@ -57,10 +92,10 @@ body {
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    background: rgba(0, 0, 0, 0.6); /* پس‌زمینه تیره برای منو */
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 15px;
     box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.5);
-    width: 90%; /* عرض منو */
+    width: 90%;
     max-width: 300px;
     align-self: center;
 }
@@ -74,7 +109,7 @@ body {
 
 .menu-buttons {
     display: flex;
-    flex-direction: column; /* دکمه‌ها در ستون چیده شوند */
+    flex-direction: column;
     align-items: center;
     width: 100%;
 }

@@ -5,7 +5,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حکم</title>
-    <link rel="stylesheet" href="/templates/game.css?12334">
+    <link rel="stylesheet" href="/templates/game.css?14">
     <audio id="card-sound" src="/templates/audio/card-sound.mp3" preload="auto"></audio>
     <audio id="tiktok" src="/templates/audio/tiktok.mp3" preload="auto"></audio>
 </head>
@@ -108,20 +108,19 @@
     async function updateRoomUI(data) {
         updatePlayerNames(data.players);
         updateTotalRoundScores(data.points.total);
-        let hakem = data.hakem
+        let judge = data.judge
         if (data.firstKingDeterminationCards.length) {
             await firstKingDetermination(data.firstKingDeterminationCards)
-            let cards = []
-            if (hakem === "down") {
-                cards = data.trumpDetermination;
+            let cards
+            if (judge === "down") {
+                cards = data.trumpDeterminationCards;
             } else {
                 cards = ["back", "back", "back", "back", "back"];
             }
-            document.getElementById(`${hakem}-player`).innerHTML = "👑 " + document.getElementById(`${hakem}-player`).innerHTML;
+            document.getElementById(`${judge}-player`).innerHTML = "👑 " + document.getElementById(`${judge}-player`).innerHTML;
             await sleep(500);
-            await distribute(hakem, cards)
-
-            if (hakem === "down") {
+            await distribute(judge, cards)
+            if (judge === "down") {
                 countdown = setInterval(updateTimer, 1000);
                 updateTime(20)
                 document.getElementById("trump-box").removeAttribute("hidden")
@@ -135,15 +134,13 @@
                     .then((response) => response.json())
                     .then((data) => {
                         document.getElementById("deck").remove()
-                        continueDistributing(data, getNextIndex(hakem))
+                        continueDistributing(data, getNextIndex(judge))
                     })
                     .catch((error) => console.error('Error:', error));
             }
-
             return
-        }
-        else {
-            document.getElementById(`${hakem}-player`).innerHTML = "👑 " + document.getElementById(`${hakem}-player`).innerHTML;
+        } else {
+            document.getElementById(`${judge}-player`).innerHTML = "👑 " + document.getElementById(`${judge}-player`).innerHTML;
         }
         updateTurn(data.currentTurn);
         updateTime(data.timeRemained);
@@ -174,7 +171,7 @@
 
     function updateCenterCards(centerCards) {
         Object.entries(centerCards).forEach(([direction, card]) => {
-            throwACard(direction, card, false, false);
+            placeCard(direction, card, false, false);
         });
     }
 
@@ -284,8 +281,8 @@
         let arr = rearrangeArray(direction)
         for (let [_, cards] of Object.entries(data.cards)) {
             for (let i = 0; i < arr.length; i++) {
-                if (arr[i] === "down"){
-                    if (cards.length){
+                if (arr[i] === "down") {
+                    if (cards.length) {
                         await distribute("down", cards)
                     }
                 } else {
@@ -305,7 +302,7 @@
     }
 
     async function refreshActions(data) {
-        throwACard(data.lastMove.from, data.lastMove.card)
+        placeCard(data.lastMove.from, data.lastMove.card)
         if (data.currentTurn !== "down") {
             refresh()
         }
@@ -347,18 +344,96 @@
     }
 
     function selectCard(card) {
-        if (false) {
-            showError("کارت غیرمجاز ⛔");
-        }
-
         if (card.hasAttribute("card-selected") || !isYourTurn) {
             return;
         }
 
-        card.parentElement.removeChild(card);
+        isYourTurn = false
 
-        throwACard("down", card.getAttribute("alt"))
+        fetch(`${baseURL}/room/${roomId}/place`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: {
+                'card': card.getAttribute("alt")
+            }
+        })
+            .then((response) => response.json())
+            .then((data) => selectCardActions(data, card))
+            .catch((error) => {
+                console.error('Error:', error)
+                isYourTurn = true
+            });
     }
+
+    async function selectCardActions(data, card) {
+        if (false) {
+            showError("کارت غیرمجاز ⛔");
+        }
+        document.getElementById("timer").setAttribute("hidden", "true")
+        clearInterval(countdown);
+        card.parentElement.removeChild(card);
+        await placeCard("down", card.getAttribute("alt"))
+        await sleep(1500)
+        if (data.wasRoundOvered === true) {
+            if (data.whoHasWonTheRound === "down" || data.whoHasWonTheRound === "up") {
+                clearCenterCards("down")
+                addRoundPoint("down", data.points.currentRound.down)
+                await sleep(1000)
+            } else {
+                clearCenterCards("right")
+                addRoundPoint("down", data.points.currentRound.right)
+                await sleep(1000)
+            }
+
+            if (data.wasGameOvered) {
+                if (data.whoHasWonTheGame === "down" || data.whoHasWonTheGame === "up") {
+                    alert("down has won the game!")
+                } else {
+                    alert("right has won the game!")
+                }
+            } else {
+                let judge = data.judge
+                let cards
+                if (judge === "down") {
+                    cards = data.trumpDeterminationCards;
+                } else {
+                    cards = ["back", "back", "back", "back", "back"];
+                }
+                if (data.wasKingChanged) {
+                    document.getElementById(`${judge}-player`).innerHTML = "👑 " + document.getElementById(`${judge}-player`).innerHTML;
+                }
+                await sleep(500);
+                await distribute(judge, cards)
+                if (judge === "down") {
+                    countdown = setInterval(updateTimer, 1000);
+                    updateTime(20)
+                    document.getElementById("trump-box").removeAttribute("hidden")
+                } else {
+                    fetch(`${baseURL}/room/${roomId}/cards`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            document.getElementById("deck").remove()
+                            continueDistributing(data, getNextIndex(judge))
+                        })
+                        .catch((error) => console.error('Error:', error));
+                }
+            }
+        }
+        // updateTurn(data.currentTurn);
+        // updateTime(data.timeRemained);
+        // updateCenterCards(data.centerCards);
+        // updateYourCards(data.yourCards);
+        // updateTrump(data.trump);
+        // updateCurrentRoundScores(data.points.currentRound);
+    }
+
 
     function fadeCards(diraction) {
         // Select all cards with the card-selected attribute
@@ -489,7 +564,7 @@
         }, 3000);
     }
 
-    function throwACard(direction, name, withSound = true, withAnimation = true) {
+    async function placeCard(direction, name, withSound = true, withAnimation = true) {
         if (withSound) {
             playTiktokSound()
         }
