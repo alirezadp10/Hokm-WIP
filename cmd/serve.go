@@ -22,8 +22,6 @@ func init() {
 func serve(cmd *cobra.Command, args []string) {
     db := database.Connection()
 
-    _ = db.AutoMigrate(&database.Player{})
-
     go telegram.Start(db)
 
     e := echo.New()
@@ -46,9 +44,5 @@ func serve(cmd *cobra.Command, args []string) {
 
     fmt.Println("Server is running at 7070")
 
-    err := e.Start("localhost:7070")
-
-    if err != nil {
-        fmt.Println("Error starting server:", err)
-    }
+    e.Logger.Fatal(e.Start(":7070"))
 }

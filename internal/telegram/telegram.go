@@ -3,7 +3,6 @@ package telegram
 import (
     "fmt"
     "github.com/alirezadp10/hokm/internal/database"
-    "github.com/joho/godotenv"
     "gopkg.in/telebot.v4"
     "gorm.io/gorm"
     "log"
@@ -12,7 +11,6 @@ import (
 )
 
 func Start(db *gorm.DB) {
-    _ = godotenv.Load()
     pref := telebot.Settings{
         Token:  os.Getenv("TELEGRAM_BOT_TOKEN"),
         Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
@@ -33,10 +31,11 @@ func Start(db *gorm.DB) {
 }
 
 func startHandler(c telebot.Context, db *gorm.DB) error {
-    _, err := database.SavePlayer(db, c.Message().Sender)
+    _, err := database.SavePlayer(db, c.Sender(), c.Chat().ID)
     if err != nil {
         log.Fatalf("couldn't save: %v", err)
     }
+
     return c.Send("Let's Play", &telebot.ReplyMarkup{
         InlineKeyboard: [][]telebot.InlineButton{
             {
@@ -47,15 +46,16 @@ func startHandler(c telebot.Context, db *gorm.DB) error {
             },
         },
     })
-    //client, _ := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"redis:6379"}})
-    //defer client.Close()
-    //subClient := client.B().Subscribe().Channel("").Build() // Subscription command
-    //
-    //message := c.Message()
-    //user := message.Sender
-    //
-    //foo, _ := json.MarshalIndent(user, "", " ")
-    // Print message details
-    //fmt.Println(string(foo))
-    //return c.Send("سلام خوش اومدی، صبر کن بقیه هم بیان خبرت میکنم")
 }
+
+//client, _ := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"redis:6379"}})
+//defer client.Close()
+//subClient := client.B().Subscribe().Channel("").Build() // Subscription command
+//
+//message := c.Message()
+//user := message.Sender
+//
+//foo, _ := json.MarshalIndent(user, "", " ")
+// Print message details
+//fmt.Println(string(foo))
+//return c.Send("سلام خوش اومدی، صبر کن بقیه هم بیان خبرت میکنم")

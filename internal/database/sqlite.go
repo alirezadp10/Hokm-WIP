@@ -9,9 +9,13 @@ import (
 
 func Connection() *gorm.DB {
     db, err := gorm.Open(sqlite.Open(os.Getenv("DB_NAME")), &gorm.Config{})
-
     if err != nil {
         log.Fatalf("failed to connect database: %v", err)
+    }
+
+    err = db.AutoMigrate(&Player{})
+    if err != nil {
+        log.Fatalf("failed to migrate database: %v", err)
     }
 
     return db

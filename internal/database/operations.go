@@ -6,14 +6,13 @@ import (
     "time"
 )
 
-func SavePlayer(db *gorm.DB, player *telebot.User) (*Player, error) {
+func SavePlayer(db *gorm.DB, player *telebot.User, chatId int64) (*Player, error) {
     newPlayer := Player{
         Id:        player.ID,
         FirstName: player.FirstName,
         LastName:  player.LastName,
         Username:  player.Username,
-        //Score     uint
-        //Avatar    string
+        ChatId:    chatId,
         UpdatedAt: time.Now(),
         JoinedAt:  time.Now(),
     }
