@@ -1,6 +1,6 @@
 @font-face {
     font-family: 'Iranian Sans';
-    src: url('font/Iranian Sans.ttf') format('truetype');
+    src: url('/assets/font/Iranian Sans.ttf') format('truetype');
 }
 
 * {
@@ -28,7 +28,7 @@ body {
     flex-direction: column;
     justify-content: center;
     width: 100%;
-    background-image: url('img/bg.jpg');
+    background-image: url('/assets/img/bg.jpg');
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -149,7 +149,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-grow: 1;
-    padding-top: 180px;
+    padding-top: 120px;
 }
 
 .center-card {
@@ -275,7 +275,7 @@ body {
 
 .down-small-card {
     margin-bottom: 15px;
-    margin-left: -10px;
+    margin-left: -15px;
 }
 
 .right-score-cards-container {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منوی بازی حکم</title>
-    <link rel="stylesheet" href="/templates/menu.css?14463">
+    <link rel="stylesheet" href="/assets/css/menu.css">
 </head>
 <body>
 <div class="game-container">
@@ -27,8 +27,8 @@
     function startGame(button) {
         setLoading(button);
         setTimeout(() => {
-            document.location.href = '/templates/game.html';
-        }, 2000); // شبیه‌سازی لودینگ 2 ثانیه‌ای
+            document.location.href = '/game';
+        }, 2000);
     }
 
     function scoreboard(button) {

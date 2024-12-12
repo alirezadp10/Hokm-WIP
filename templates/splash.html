@@ -7,7 +7,7 @@
     <style>
         @font-face {
             font-family: 'Iranian Sans';
-            src: url('font/Iranian Sans.ttf') format('truetype');
+            src: url('/assets/font/Iranian Sans.ttf') format('truetype');
         }
 
         body {
@@ -29,12 +29,11 @@
             justify-content: center;
             width: 100%;
             height: 100%;
-            background-image: url('img/splash-bg.jpg'); /* پس‌زمینه اختیاری */
             background-size: cover;
             background-position: center;
             position: relative;
             opacity: 1;
-            transition: opacity 1.5s ease; /* انتقال نرم برای افکت فید */
+            transition: opacity 1.5s ease;
         }
 
         .splash-logo {
@@ -144,7 +143,7 @@
         'XX.png',
     ];
 
-    const baseDir = 'path/to/your/images/'; // مسیر تصاویر را اینجا تنظیم کنید
+    const baseDir = 'http://localhost:7070/assets/img/';
     const splashContainer = document.getElementById('splashContainer');
 
     // تابع پیش‌بارگذاری تصاویر
@@ -170,15 +169,12 @@
         });
     };
 
-    // پیش‌بارگذاری و اعمال افکت فید
     preloadImages(imagesToPreload, () => {
-        // افکت فید
         splashContainer.style.opacity = '0';
 
-        // انتقال به صفحه جدید بعد از انیمیشن
         setTimeout(() => {
-            document.location.href = '/templates/menu.html';
-        }, 3000); // مدت زمان انیمیشن
+            document.location.href = 'http://localhost:7070/menu';
+        }, 3000);
     });
 </script>
 </body>
