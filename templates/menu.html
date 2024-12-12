@@ -19,16 +19,22 @@
 </div>
 
 <script>
-    // اضافه کردن کلاس fade-in به body پس از بارگذاری صفحه
+    const baseURL = "http://localhost:7070"
+
     window.addEventListener('load', () => {
         document.body.classList.add('fade-in');
     });
 
     function startGame(button) {
         setLoading(button);
-        setTimeout(() => {
-            document.location.href = '/game';
-        }, 2000);
+        fetch(`${baseURL}/start`, {method: 'GET'})
+            .then((response) => response.json())
+            .then((data) => document.location.href = `/game?gameId=${data.gameId}`)
+            .catch(async (error) => {
+                await sleep(1000)
+                await startGame()
+                console.error('Error:', error)
+            });
     }
 
     function scoreboard(button) {

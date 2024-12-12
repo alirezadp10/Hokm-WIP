@@ -21,28 +21,18 @@ func init() {
 
 func serve(cmd *cobra.Command, args []string) {
     db := database.Connection()
-
     go telegram.Start(db)
 
     e := echo.New()
-
     e.Static("/assets", "assets")
-
     e.GET("/", handler.GetSplashPage)
-
     e.GET("/menu", handler.GetMenuPage)
-
     e.GET("/game", handler.GetGamePage)
-
+    e.GET("/game/start", handler.GetGameId)
     e.GET("/game/:gameId", handler.GetGameData)
-
     e.GET("/game/:gameId/cards", handler.GetYourCards)
-
     e.POST("/game/:gameId/place", handler.PlaceCard)
-
     e.GET("/game/:gameId/refresh", handler.GetUpdate)
-
-    fmt.Println("Server is running at 7070")
-
-    e.Logger.Fatal(e.Start(":7070"))
+    fmt.Println("Server is running at 9090")
+    e.Logger.Fatal(e.Start("0.0.0.0:9090"))
 }

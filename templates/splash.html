@@ -142,6 +142,8 @@
         'X2.png',
         'XX.png',
     ];
+    const params = new URLSearchParams(window.location.search);
+    let userId = params.get('userId')
 
     const baseDir = 'http://localhost:7070/assets/img/';
     const splashContainer = document.getElementById('splashContainer');
@@ -173,7 +175,7 @@
         splashContainer.style.opacity = '0';
 
         setTimeout(() => {
-            document.location.href = 'http://localhost:7070/menu';
+            document.location.href = `/menu?userId=${userId}`;
         }, 3000);
     });
 </script>

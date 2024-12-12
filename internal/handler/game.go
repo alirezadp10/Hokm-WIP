@@ -143,3 +143,9 @@ func GetUpdate(c echo.Context) error {
     }
     return c.JSON(http.StatusOK, response)
 }
+
+func GetGameId(c echo.Context) error {
+    return c.JSON(http.StatusOK, map[string]interface{}{
+        "gameId": 21,
+    })
+}
