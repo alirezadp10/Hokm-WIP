@@ -24,6 +24,12 @@ func serve(cmd *cobra.Command, args []string) {
     go telegram.Start(db)
 
     e := echo.New()
+    //e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+    //    return func(c echo.Context) error {
+    //        c.Response().Header().Set("ngrok-skip-browser-warning", "true")
+    //        return next(c)
+    //    }
+    //})
     e.Static("/assets", "assets")
     e.GET("/", handler.GetSplashPage)
     e.GET("/menu", handler.GetMenuPage)

@@ -74,7 +74,7 @@
 </head>
 <body>
 <div class="splash-container" id="splashContainer">
-    <div class="splash-logo">حکم</div>
+    <div class="splash-logo">حکم زون</div>
     <div class="loading">در حال بارگذاری...</div>
 </div>
 
@@ -142,13 +142,18 @@
         'X2.png',
         'XX.png',
     ];
-    const params = new URLSearchParams(window.location.search);
-    let userId = params.get('userId')
-
-    const baseDir = 'http://localhost:7070/assets/img/';
+    const baseDir = '/assets/img/';
     const splashContainer = document.getElementById('splashContainer');
 
-    // تابع پیش‌بارگذاری تصاویر
+    const preloadFonts = async () => {
+        try {
+            await document.fonts.load("1em 'Iranian Sans'");
+            console.log("Font loaded successfully.");
+        } catch (error) {
+            console.error("Font loading failed:", error);
+        }
+    };
+
     const preloadImages = (images, callback) => {
         let loadedCount = 0;
 
@@ -171,13 +176,19 @@
         });
     };
 
-    preloadImages(imagesToPreload, () => {
-        splashContainer.style.opacity = '0';
+    const initializeSplashScreen = async () => {
+        await preloadFonts(); // Wait for fonts to load
 
-        setTimeout(() => {
-            document.location.href = `/menu?userId=${userId}`;
-        }, 3000);
-    });
+        preloadImages(imagesToPreload, () => {
+            splashContainer.style.opacity = '0';
+
+            setTimeout(() => {
+                document.location.href = `/menu`;
+            }, 3000);
+        });
+    };
+
+    initializeSplashScreen();
 </script>
 </body>
 </html>

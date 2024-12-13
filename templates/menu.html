@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منوی بازی حکم</title>
+    <title>منو</title>
     <link rel="stylesheet" href="/assets/css/menu.css">
 </head>
 <body>
@@ -19,24 +19,24 @@
 </div>
 
 <script>
-    const baseURL = "http://localhost:7070"
-
     window.addEventListener('load', () => {
         document.body.classList.add('fade-in');
     });
 
     function startGame(button) {
         setLoading(button);
-        fetch(`${baseURL}/start`, {method: 'GET'})
+        fetch(`/game/start`, {method: 'GET'})
             .then((response) => response.json())
-            .then((data) => document.location.href = `/game?gameId=${data.gameId}`)
+            .then((data) => {
+                document.cookie = `gameId=${data.gameId}`;
+                document.location.href = `/game`
+            })
             .catch(async (error) => {
                 await sleep(1000)
                 await startGame()
                 console.error('Error:', error)
             });
     }
-
     function scoreboard(button) {
         setLoading(button);
         setTimeout(() => {
