@@ -25,7 +25,8 @@
 
     function startGame(button) {
         setLoading(button);
-        fetch(`/game/start`, {method: 'GET'})
+        let userId = getCookie('userId')
+        fetch(`/game/start?userId=${userId}`, {method: 'GET'})
             .then((response) => response.json())
             .then((data) => {
                 document.cookie = `gameId=${data.gameId}`;
@@ -62,6 +63,12 @@
         button.disabled = false;
         button.classList.remove("loading");
         button.innerHTML = text;
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
     }
 </script>
 </body>

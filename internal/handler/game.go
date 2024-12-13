@@ -3,6 +3,7 @@ package handler
 import (
     "github.com/labstack/echo/v4"
     "net/http"
+    "strconv"
     "time"
 )
 
@@ -145,7 +146,17 @@ func GetUpdate(c echo.Context) error {
 }
 
 func GetGameId(c echo.Context) error {
-    return c.JSON(http.StatusOK, map[string]interface{}{
-        "gameId": 21,
-    })
+    userId, _ := strconv.Atoi(c.QueryParam("userId"))
+    gameId := make(chan int)
+    go matchmaking(userId)
+    select {
+    case gid := <-gameId:
+        return c.JSON(http.StatusOK, map[string]interface{}{
+            "gameId": gid,
+        })
+    }
+}
+
+func matchmaking(userId int) {
+
 }
