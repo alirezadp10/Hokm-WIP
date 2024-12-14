@@ -8,6 +8,6 @@ services:
       - HTTP_PROXY=${HTTP_PROXY}
 
   redis:
-    image: redis:latest
+    image: redis/redis-stack-server:latest
     ports:
       - '6379:6379'

@@ -1,9 +1,11 @@
 package handler
 
 import (
+    "context"
     "github.com/labstack/echo/v4"
+    "github.com/redis/rueidis"
+    "log"
     "net/http"
-    "strconv"
     "time"
 )
 
@@ -146,9 +148,9 @@ func GetUpdate(c echo.Context) error {
 }
 
 func GetGameId(c echo.Context) error {
-    userId, _ := strconv.Atoi(c.QueryParam("userId"))
+    ctx := context.Background()
     gameId := make(chan int)
-    go matchmaking(userId)
+    go matchmaking(ctx, c.QueryParam("userId"))
     select {
     case gid := <-gameId:
         return c.JSON(http.StatusOK, map[string]interface{}{
@@ -157,6 +159,10 @@ func GetGameId(c echo.Context) error {
     }
 }
 
-func matchmaking(userId int) {
-
+func matchmaking(ctx context.Context, userId string) {
+    client, err := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"redis:6379"}})
+    if err != nil {
+        log.Fatal("couldn't connect to redis")
+    }
+    client.Do(ctx, client.B().Rpush().Key("waiting").Element(userId).Build())
 }
