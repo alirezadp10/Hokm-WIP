@@ -2,6 +2,8 @@ package handler
 
 import (
     "context"
+    "errors"
+    "github.com/alirezadp10/hokm/internal/database"
     "github.com/labstack/echo/v4"
     "github.com/redis/rueidis"
     "log"
@@ -148,21 +150,40 @@ func GetUpdate(c echo.Context) error {
 }
 
 func GetGameId(c echo.Context) error {
-    ctx := context.Background()
-    gameId := make(chan int)
-    go matchmaking(ctx, c.QueryParam("userId"))
-    select {
-    case gid := <-gameId:
-        return c.JSON(http.StatusOK, map[string]interface{}{
-            "gameId": gid,
+    ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+    defer cancel()
+
+    go database.Matchmaking(ctx, c.QueryParam("userId"))
+
+    client := database.GetNewRedisConnection()
+
+    err := client.Receive(context.Background(), client.B().Subscribe().Channel("waiting").Build(), func(msg rueidis.PubSubMessage) {
+        if msg.Message == "foo" {
+            unsubscribeErr := client.Do(ctx, client.B().Unsubscribe().Channel("waiting").Build()).Error()
+            if unsubscribeErr != nil {
+                log.Println("Error while unsubscribing:", unsubscribeErr)
+            }
+            cancel()
+        }
+    })
+
+    if err != nil {
+        log.Println("Error subscribing to channel:", err)
+        if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+            return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
+                "message": "فردی پیدا نشد، بعدا تلاش کنید.",
+                "gameId":  nil,
+            })
+        }
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+            "message": "مشکلی پیش آمده است، بعدا تلاش کنید.",
+            "gameId":  nil,
         })
     }
-}
 
-func matchmaking(ctx context.Context, userId string) {
-    client, err := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"redis:6379"}})
-    if err != nil {
-        log.Fatal("couldn't connect to redis")
-    }
-    client.Do(ctx, client.B().Rpush().Key("waiting").Element(userId).Build())
+    return c.JSON(http.StatusCreated, map[string]interface{}{
+        "message": "اتاق ساخته شد.",
+        "gameId":  nil,
+    })
+
 }

@@ -2,23 +2,19 @@ package main
 
 import (
     "context"
+    "fmt"
     "github.com/redis/rueidis"
     "log"
 )
 
 func main() {
-    ctx := context.Background()
     client, err := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"127.0.0.1:6379"}})
     if err != nil {
-        log.Fatal("couldn't connect to redis")
+        log.Fatalf("could not connect to Redis: %v", err)
     }
-    client.Do(ctx, client.B().Rpush().Key("matchmaking").Element("a").Build())
-    countOfWaitingPeople, _ := client.Do(ctx, client.B().Llen().Key("matchmaking").Build()).ToInt64()
-    var players []string
-    if countOfWaitingPeople >= 4 {
-        for i := 0; i < 4; i++ {
-            player, _ := client.Do(ctx, client.B().Lpop().Key("matchmaking").Build()).ToString()
-            players = append(players, player)
-        }
-    }
+    defer client.Close()
+
+    err = client.Receive(context.Background(), client.B().Subscribe().Channel("waiting").Build(), func(msg rueidis.PubSubMessage) {
+        fmt.Println("Received message:", msg.Message)
+    })
 }

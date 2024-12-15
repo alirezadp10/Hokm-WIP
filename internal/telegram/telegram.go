@@ -42,15 +42,3 @@ func startHandler(c telebot.Context, db *gorm.DB) error {
             WebApp: &telebot.WebApp{URL: os.Getenv("APP_URL") + "?userId=" + playerID},
         }}}})
 }
-
-//client, _ := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"redis:6379"}})
-//defer client.Close()
-//subClient := client.B().Subscribe().Channel("").Build() // Subscription command
-//
-//message := c.Message()
-//user := message.Sender
-//
-//foo, _ := json.MarshalIndent(user, "", " ")
-// Print message details
-//fmt.Println(string(foo))
-//return c.Send("سلام خوش اومدی، صبر کن بقیه هم بیان خبرت میکنم")
