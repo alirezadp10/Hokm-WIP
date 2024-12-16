@@ -14,3 +14,10 @@ type Player struct {
     UpdatedAt time.Time
     JoinedAt  time.Time
 }
+
+type Game struct {
+    GameId     string `gorm:"primaryKey"`
+    PlayerId   int64  `gorm:"foreignKey"`
+    CreatedAt  time.Time
+    FinishedAt time.Time
+}

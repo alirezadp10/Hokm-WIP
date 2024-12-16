@@ -2,12 +2,11 @@ package telegram
 
 import (
     "fmt"
-    "github.com/alirezadp10/hokm/internal/database"
+    "github.com/alirezadp10/hokm/internal/database/sqlite"
     "gopkg.in/telebot.v4"
     "gorm.io/gorm"
     "log"
     "os"
-    "strconv"
     "time"
 )
 
@@ -30,16 +29,15 @@ func Start(db *gorm.DB) {
 }
 
 func startHandler(c telebot.Context, db *gorm.DB) error {
-    player, err := database.SavePlayer(db, c.Sender(), c.Chat().ID)
+    player, err := sqlite.SavePlayer(db, c.Sender(), c.Chat().ID)
     if err != nil {
         log.Fatalf("couldn't save: %v", err)
     }
 
-    playerID := strconv.Itoa(int(player.Id))
     return c.Send("Let's Play", &telebot.ReplyMarkup{
         InlineKeyboard: [][]telebot.InlineButton{{{
             Text:   "شروع بازی",
-            WebApp: &telebot.WebApp{URL: os.Getenv("APP_URL") + "?userId=" + playerID},
+            WebApp: &telebot.WebApp{URL: os.Getenv("APP_URL") + "?username=" + player.Username},
         }}},
     })
 }

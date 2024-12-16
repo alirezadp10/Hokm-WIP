@@ -20,7 +20,7 @@ func init() {
 }
 
 func serve(cmd *cobra.Command, args []string) {
-    db := database.Connection()
+    db := database.GetNewConnection()
     go telegram.Start(db)
 
     e := echo.New()

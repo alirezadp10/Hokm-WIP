@@ -3,78 +3,61 @@ package handler
 import (
     "context"
     "errors"
-    "github.com/alirezadp10/hokm/internal/database"
+    "github.com/alirezadp10/hokm/internal/database/redis"
+    "github.com/alirezadp10/hokm/internal/database/sqlite"
+    "github.com/alirezadp10/hokm/internal/helper/myslice"
+    "github.com/alirezadp10/hokm/internal/hokm"
     "github.com/labstack/echo/v4"
     "github.com/redis/rueidis"
     "log"
     "net/http"
+    "strconv"
+    "strings"
     "time"
 )
 
 func GetGameData(c echo.Context) error {
-    //response := map[string]interface{}{
-    //    "players": map[string]interface{}{
-    //        "up": map[string]interface{}{
-    //            "name": "ali",
-    //        },
-    //        "right": map[string]interface{}{
-    //            "name": "maryam",
-    //        },
-    //        "left": map[string]interface{}{
-    //            "name": "sara",
-    //        },
-    //        "down": map[string]interface{}{
-    //            "name": "mammad",
-    //        },
-    //    },
-    //    "points": map[string]interface{}{
-    //        "total":        map[string]interface{}{"right": 3, "down": 2},
-    //        "currentRound": map[string]interface{}{"right": 3, "down": 2},
-    //    },
-    //    "firstKingDeterminationCards": []interface{}{},
-    //    "centerCards": map[string]interface{}{
-    //        "up":    "2S",
-    //        "right": "7S",
-    //    },
-    //    "currentTurn":  "down",
-    //    "timeRemained": 14,
-    //    "yourCards":    []interface{}{"3H", "3H", "3S", "3S", "4C"},
-    //    "judge":        "down",
-    //    "trump":        "heart",
-    //}
+    //TODO check security
+
+    gameId := c.QueryParam("gameId")
+    username := c.QueryParam("username")
+
+    ctx := context.Background()
+
+    redisClient := redis.GetNewConnection()
+
+    gameInformation := redis.GetGameInformation(ctx, redisClient, gameId)
+
+    players := gameInformation["players"].([]string)
+
+    points := gameInformation["points"].(map[string]interface{})
+
+    centerCards := gameInformation["center_cards"].(map[string]string)
+
+    turn := gameInformation["turn"].(string)
+
+    judge := gameInformation["judge"].(string)
+
+    trump := gameInformation["trump"].(string)
+
+    cards := gameInformation["cards"].(map[string]interface{})
+
+    uIndex := myslice.GetIndex(username, players)
+
+    kingsCards := gameInformation["kings_cards"].([]string)
+
     response := map[string]interface{}{
-        "players": map[string]interface{}{
-            "up": map[string]interface{}{
-                "name": "ali",
-            },
-            "right": map[string]interface{}{
-                "name": "maryam",
-            },
-            "left": map[string]interface{}{
-                "name": "sara",
-            },
-            "down": map[string]interface{}{
-                "name": "mammad",
-            },
-        },
-        "points": map[string]interface{}{
-            "total":        map[string]interface{}{"right": 3, "down": 2},
-            "currentRound": map[string]interface{}{"right": 3, "down": 2},
-        },
-        "firstKingDeterminationCards": []interface{}{
-            map[string]interface{}{"direction": "up", "card": "2S"},
-            map[string]interface{}{"direction": "right", "card": "3C"},
-            map[string]interface{}{"direction": "down", "card": "3H"},
-            map[string]interface{}{"direction": "left", "card": "3S"},
-            map[string]interface{}{"direction": "up", "card": "AC"},
-        },
-        "centerCards":  map[string]interface{}{"up": "2H", "left": "3H", "right": "4C"},
-        "currentTurn":  "right",
-        "timeRemained": 14,
-        "yourCards":    []interface{}{"3H", "3H", "3S", "3S", "4C"},
-        "judge":        "up",
-        "trump":        "heart",
+        "players":      hokm.GetPlayersWithDirections(players, uIndex),
+        "points":       hokm.GetPoints(points, uIndex),
+        "centerCards":  hokm.GetCenterCards(centerCards, players, uIndex),
+        "turn":         hokm.GetDirection(turn, players, uIndex),
+        "judge":        hokm.GetDirection(judge, players, uIndex),
+        "trump":        trump,
+        "timeRemained": 15,
+        "yourCards":    hokm.GetYourCards(cards, username),
+        "kingsCards":   hokm.GetKingsCards(kingsCards, uIndex),
     }
+
     return c.JSON(http.StatusOK, response)
 }
 
@@ -150,16 +133,34 @@ func GetUpdate(c echo.Context) error {
 }
 
 func GetGameId(c echo.Context) error {
+    var gameId string
+    //TODO fix it
+    username := c.QueryParam("username")
+
     ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
     defer cancel()
 
-    go database.Matchmaking(ctx, c.QueryParam("userId"))
+    sqliteClient := sqlite.GetNewConnection()
 
-    client := database.GetNewRedisConnection()
+    pid, err := strconv.ParseInt(username, 10, 64)
+    if gid, ok := sqlite.DoesPlayerHaveAnActiveGame(sqliteClient, pid); ok {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": "شما در حال حاضر بازی فعال دارید.",
+            "gameId":  *gid,
+        })
+    }
 
-    err := client.Receive(context.Background(), client.B().Subscribe().Channel("waiting").Build(), func(msg rueidis.PubSubMessage) {
-        if msg.Message == "foo" {
-            unsubscribeErr := client.Do(ctx, client.B().Unsubscribe().Channel("waiting").Build()).Error()
+    redisClient := redis.GetNewConnection()
+
+    go hokm.Matchmaking(ctx, redisClient, username)
+
+    err = redisClient.Receive(context.Background(), redisClient.B().Subscribe().Channel("waiting").Build(), func(msg rueidis.PubSubMessage) {
+        message := strings.Split(msg.Message, ",")
+        players := message[:len(message)-1]
+        if myslice.Has(players, username) {
+            _, _ = sqlite.AddPlayerToGame(sqliteClient, pid, gameId)
+            gameId = message[len(message)-1]
+            unsubscribeErr := redisClient.Do(ctx, redisClient.B().Unsubscribe().Channel("waiting").Build()).Error()
             if unsubscribeErr != nil {
                 log.Println("Error while unsubscribing:", unsubscribeErr)
             }
@@ -183,7 +184,6 @@ func GetGameId(c echo.Context) error {
 
     return c.JSON(http.StatusCreated, map[string]interface{}{
         "message": "اتاق ساخته شد.",
-        "gameId":  nil,
+        "gameId":  gameId,
     })
-
 }
