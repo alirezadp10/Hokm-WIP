@@ -19,7 +19,7 @@ var cards = []string{
 }
 
 // SetKingCards Function to randomly select king cards
-func SetKingCards(players []string) []interface{} {
+func SetKingCards() []string {
     // Create a local copy of the cards
     localCards := make([]string, len(cards))
     copy(localCards, cards)
@@ -29,25 +29,20 @@ func SetKingCards(players []string) []interface{} {
     rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })
 
     // Result to hold the selected cards
-    var result []interface{}
+    var result []string
 
     // Assign cards to players
     for {
-        for _, player := range players {
-            // Take the first card and remove it from the local deck
-            card := localCards[0]
-            localCards = localCards[1:]
+        // Take the first card and remove it from the local deck
+        card := localCards[0]
+        localCards = localCards[1:]
 
-            // Add the card to the result
-            result = append(result, map[string]interface{}{
-                "player": player,
-                "card":   card,
-            })
+        // Add the card to the result
+        result = append(result, card)
 
-            // If the card has "01", stop
-            if card[:2] == "01" {
-                return result
-            }
+        // If the card has "01", stop
+        if card[:2] == "01" {
+            return result
         }
     }
 }
@@ -107,10 +102,6 @@ func GetCenterCards(centerCards map[string]string, players []string, uIndex int)
         result[GetDirection(key, players, uIndex)] = val
     }
     return result
-}
-
-func GetYourCards(cards map[string]interface{}, username string) []string {
-    return cards[username].([]string)
 }
 
 func GetDirection(username string, players []string, uIndex int) string {

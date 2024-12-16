@@ -5,22 +5,37 @@ import (
     "errors"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
+    "github.com/alirezadp10/hokm/internal/helper/crypto"
     "github.com/alirezadp10/hokm/internal/helper/myslice"
+    "github.com/alirezadp10/hokm/internal/helper/trans"
     "github.com/alirezadp10/hokm/internal/hokm"
     "github.com/labstack/echo/v4"
     "github.com/redis/rueidis"
     "log"
     "net/http"
-    "strconv"
     "strings"
     "time"
 )
 
 func GetGameData(c echo.Context) error {
-    //TODO check security
-
     gameId := c.QueryParam("gameId")
-    username := c.QueryParam("username")
+
+    usernameDecrypted, err := crypto.Decrypt([]byte(c.QueryParam("username")))
+    if err != nil {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": trans.Get("Username is not valid."),
+        })
+    }
+
+    username := string(usernameDecrypted)
+
+    sqliteClient := sqlite.GetNewConnection()
+
+    if !sqlite.DoesPlayerBelongsToThisGame(sqliteClient, username, gameId) {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": trans.Get("It's not your game."),
+        })
+    }
 
     ctx := context.Background()
 
@@ -30,32 +45,18 @@ func GetGameData(c echo.Context) error {
 
     players := gameInformation["players"].([]string)
 
-    points := gameInformation["points"].(map[string]interface{})
-
-    centerCards := gameInformation["center_cards"].(map[string]string)
-
-    turn := gameInformation["turn"].(string)
-
-    judge := gameInformation["judge"].(string)
-
-    trump := gameInformation["trump"].(string)
-
-    cards := gameInformation["cards"].(map[string]interface{})
-
     uIndex := myslice.GetIndex(username, players)
-
-    kingsCards := gameInformation["kings_cards"].([]string)
 
     response := map[string]interface{}{
         "players":      hokm.GetPlayersWithDirections(players, uIndex),
-        "points":       hokm.GetPoints(points, uIndex),
-        "centerCards":  hokm.GetCenterCards(centerCards, players, uIndex),
-        "turn":         hokm.GetDirection(turn, players, uIndex),
-        "judge":        hokm.GetDirection(judge, players, uIndex),
-        "trump":        trump,
+        "points":       hokm.GetPoints(gameInformation["points"].(map[string]interface{}), uIndex),
+        "centerCards":  hokm.GetCenterCards(gameInformation["center_cards"].(map[string]string), players, uIndex),
+        "turn":         hokm.GetDirection(gameInformation["turn"].(string), players, uIndex),
+        "judge":        hokm.GetDirection(gameInformation["judge"].(string), players, uIndex),
+        "trump":        gameInformation["trump"].(string),
         "timeRemained": 15,
-        "yourCards":    hokm.GetYourCards(cards, username),
-        "kingsCards":   hokm.GetKingsCards(kingsCards, uIndex),
+        "yourCards":    gameInformation["cards"].(map[string]interface{})[username],
+        "kingsCards":   hokm.GetKingsCards(gameInformation["kings_cards"].([]string), uIndex),
     }
 
     return c.JSON(http.StatusOK, response)
@@ -142,10 +143,9 @@ func GetGameId(c echo.Context) error {
 
     sqliteClient := sqlite.GetNewConnection()
 
-    pid, err := strconv.ParseInt(username, 10, 64)
-    if gid, ok := sqlite.DoesPlayerHaveAnActiveGame(sqliteClient, pid); ok {
+    if gid, ok := sqlite.DoesPlayerHaveAnActiveGame(sqliteClient, username); ok {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": "شما در حال حاضر بازی فعال دارید.",
+            "message": trans.Get("You have already an active game."),
             "gameId":  *gid,
         })
     }
@@ -154,11 +154,11 @@ func GetGameId(c echo.Context) error {
 
     go hokm.Matchmaking(ctx, redisClient, username)
 
-    err = redisClient.Receive(context.Background(), redisClient.B().Subscribe().Channel("waiting").Build(), func(msg rueidis.PubSubMessage) {
+    err := redisClient.Receive(context.Background(), redisClient.B().Subscribe().Channel("waiting").Build(), func(msg rueidis.PubSubMessage) {
         message := strings.Split(msg.Message, ",")
         players := message[:len(message)-1]
         if myslice.Has(players, username) {
-            _, _ = sqlite.AddPlayerToGame(sqliteClient, pid, gameId)
+            _, _ = sqlite.AddPlayerToGame(sqliteClient, username, gameId)
             gameId = message[len(message)-1]
             unsubscribeErr := redisClient.Do(ctx, redisClient.B().Unsubscribe().Channel("waiting").Build()).Error()
             if unsubscribeErr != nil {

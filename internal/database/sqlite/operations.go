@@ -5,6 +5,7 @@ import (
     "gopkg.in/telebot.v4"
     "gorm.io/gorm"
     "gorm.io/gorm/clause"
+    "log"
     "time"
 )
 
@@ -27,18 +28,47 @@ func SavePlayer(db *gorm.DB, player *telebot.User, chatId int64) (*database.Play
     return &newPlayer, err
 }
 
-func AddPlayerToGame(db *gorm.DB, playerId int64, gameId string) (*database.Game, error) {
-    newGame := database.Game{
-        GameId:    gameId,
-        PlayerId:  playerId,
-        CreatedAt: time.Now(),
-    }
+func AddPlayerToGame(db *gorm.DB, username, gameId string) (*database.Game, error) {
+    var player database.Player
+    db.First(&player, "username = ?", username)
+
+    newGame := database.Game{GameId: gameId, PlayerId: player.Id, CreatedAt: time.Now()}
 
     err := db.Create(&newGame).Error
 
     return &newGame, err
 }
 
-func DoesPlayerHaveAnActiveGame(db *gorm.DB, playerId int64) (*string, bool) {
+func DoesPlayerHaveAnActiveGame(db *gorm.DB, username string) (*string, bool) {
+    var result struct{ GameId string }
+
+    db.Table("players").
+        Select("games.id").
+        Joins("inner join games on games.player_id = players.id").
+        Where("players.username = ?", username).
+        Where("games.finished_at is null").
+        Scan(&result)
+
+    if result.GameId != "" {
+        return &result.GameId, true
+    }
+
     return nil, false
+}
+
+func DoesPlayerBelongsToThisGame(db *gorm.DB, username, gameid string) bool {
+    var count int64
+
+    err := db.Table("players").
+        Joins("inner join games on games.player_id = players.id").
+        Where("players.username = ?", username).
+        Where("games.id = ?", gameid).
+        Count(&count).Error
+
+    if err != nil {
+        log.Fatal(err)
+        return false
+    }
+
+    return count > 0
 }

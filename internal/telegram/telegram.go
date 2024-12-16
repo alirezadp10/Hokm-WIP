@@ -3,6 +3,8 @@ package telegram
 import (
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
+    "github.com/alirezadp10/hokm/internal/helper/crypto"
+    "github.com/alirezadp10/hokm/internal/helper/trans"
     "gopkg.in/telebot.v4"
     "gorm.io/gorm"
     "log"
@@ -34,10 +36,12 @@ func startHandler(c telebot.Context, db *gorm.DB) error {
         log.Fatalf("couldn't save: %v", err)
     }
 
+    encrypted, _ := crypto.Encrypt([]byte(player.Username))
+
     return c.Send("Let's Play", &telebot.ReplyMarkup{
         InlineKeyboard: [][]telebot.InlineButton{{{
-            Text:   "شروع بازی",
-            WebApp: &telebot.WebApp{URL: os.Getenv("APP_URL") + "?username=" + player.Username},
+            Text:   trans.Get("start the game"),
+            WebApp: &telebot.WebApp{URL: os.Getenv("APP_URL") + "?username=" + string(encrypted)},
         }}},
     })
 }
