@@ -2,6 +2,7 @@ package database
 
 import (
     "context"
+    "github.com/google/uuid"
     "github.com/redis/rueidis"
     "log"
 )
@@ -30,6 +31,11 @@ func Matchmaking(ctx context.Context, userId string) {
                 table.insert(players, player)
             end
 
+            -- Create a game for selected users
+            redis.call('HSET', 'games:' .. KEYS[4], 'players', table.concat(players, ","))
+
+            -- Update users
+
             -- Publish the list of players to a channel 
             redis.call('PUBLISH', KEYS[2], table.concat(players, ","))
         end
@@ -38,7 +44,8 @@ func Matchmaking(ctx context.Context, userId string) {
         return players
 	`
 
-    command := client.B().Eval().Script(luaScript).Numkeys(2).Key("matchmaking", "waiting", userId).Build()
+    gameId := uuid.New().String()
+    command := client.B().Eval().Script(luaScript).Numkeys(2).Key("matchmaking", "waiting", userId, gameId).Build()
     players, err := client.Do(ctx, command).ToArray()
     if err != nil {
         log.Fatalf("could not execute Lua script: %v", err)

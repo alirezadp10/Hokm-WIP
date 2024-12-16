@@ -40,5 +40,6 @@ func startHandler(c telebot.Context, db *gorm.DB) error {
         InlineKeyboard: [][]telebot.InlineButton{{{
             Text:   "شروع بازی",
             WebApp: &telebot.WebApp{URL: os.Getenv("APP_URL") + "?userId=" + playerID},
-        }}}})
+        }}},
+    })
 }
