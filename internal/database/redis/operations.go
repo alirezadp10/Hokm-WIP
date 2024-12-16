@@ -20,20 +20,6 @@ func Matchmaking(ctx context.Context, client rueidis.Client, userId string, game
     }
 }
 
-func GetGamesPlayers(ctx context.Context, client rueidis.Client, gameId string) []string {
-    command := client.B().Hget().Key("game:" + gameId).Field("players").Build()
-    players, err := client.Do(ctx, command).ToString()
-    if err != nil {
-        log.Fatalf("could not resolve players: %v", err)
-    }
-
-    var playersList []string
-
-    _ = json.Unmarshal([]byte(players), &playersList)
-
-    return playersList
-}
-
 func GetGameInformation(ctx context.Context, client rueidis.Client, gameId string) map[string]interface{} {
     result := make(map[string]interface{})
 
