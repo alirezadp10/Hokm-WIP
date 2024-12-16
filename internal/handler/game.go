@@ -183,7 +183,7 @@ func GetGameId(c echo.Context) error {
     }
 
     return c.JSON(http.StatusCreated, map[string]interface{}{
-        "message": "اتاق ساخته شد.",
+        "message": trans.Get("Game has been made."),
         "gameId":  gameId,
     })
 }
