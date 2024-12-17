@@ -5,6 +5,7 @@ import (
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
     "github.com/alirezadp10/hokm/internal/handler"
+    "github.com/alirezadp10/hokm/internal/middleware"
     "github.com/alirezadp10/hokm/internal/telegram"
     "github.com/labstack/echo/v4"
     "github.com/spf13/cobra"
@@ -33,12 +34,12 @@ func serve(cmd *cobra.Command, args []string) {
     e.GET("/", h.GetSplashPage)
     e.GET("/menu", h.GetMenuPage)
     e.GET("/game", h.GetGamePage)
-    e.GET("/game/start", h.GetGameId)
-    e.GET("/game/:gameId", h.GetGameData)
-    e.POST("/game/choose-trump", h.ChooseTrump)
-    e.GET("/game/:gameId/cards", h.GetYourCards)
-    e.POST("/game/:gameId/place", h.PlaceCard)
-    e.GET("/game/:gameId/refresh", h.GetUpdate)
+    e.GET("/game/start", h.GetGameId, middleware.AuthMiddleware)
+    e.GET("/game/:gameId", h.GetGameData, middleware.AuthMiddleware)
+    e.POST("/game/choose-trump", h.ChooseTrump, middleware.AuthMiddleware)
+    e.GET("/game/:gameId/cards", h.GetYourCards, middleware.AuthMiddleware)
+    e.POST("/game/:gameId/place", h.PlaceCard, middleware.AuthMiddleware)
+    e.GET("/game/:gameId/refresh", h.GetUpdate, middleware.AuthMiddleware)
 
     fmt.Println("Server is running at 9090")
     e.Logger.Fatal(e.Start("0.0.0.0:9090"))

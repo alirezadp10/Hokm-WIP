@@ -5,7 +5,6 @@ import (
     "errors"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
-    "github.com/alirezadp10/hokm/internal/helper/crypto"
     "github.com/alirezadp10/hokm/internal/helper/myslice"
     "github.com/alirezadp10/hokm/internal/helper/trans"
     "github.com/alirezadp10/hokm/internal/hokm"
@@ -17,25 +16,10 @@ import (
     "time"
 )
 
-func authUsername(username string) (string, error) {
-    decryptedUsername, err := crypto.Decrypt([]byte(username))
-
-    if err != nil {
-        return "", err
-    }
-
-    return string(decryptedUsername), nil
-}
-
 func (h *Handler) GetGameData(c echo.Context) error {
     gameId := c.QueryParam("gameId")
 
-    username, err := authUsername(c.QueryParam("username"))
-    if err != nil {
-        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-            "message": trans.Get("Username is not valid."),
-        })
-    }
+    username := c.Get("username").(string)
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
@@ -77,12 +61,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
     }
 
-    username, err := authUsername(requestBody.Username)
-    if err != nil {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("Username is not valid."),
-        })
-    }
+    username := c.Get("username").(string)
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, requestBody.Username) {
         return c.JSON(http.StatusUnauthorized, map[string]interface{}{
@@ -106,7 +85,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
         })
     }
 
-    err = redis.SetTrump(ctx, h.redisConnection, requestBody.GameId, requestBody.Trump)
+    err := redis.SetTrump(ctx, h.redisConnection, requestBody.GameId, requestBody.Trump)
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong. Please try again later."),
@@ -124,80 +103,10 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
     return c.JSON(http.StatusOK, response)
 }
 
-func (h *Handler) GetYourCards(c echo.Context) error {
-    time.Sleep(2 * time.Second)
-    response := map[string]interface{}{
-        "trump": "heart",
-        "cards": []interface{}{
-            []interface{}{
-                "3C",
-                "3H",
-                "3S",
-                "8S",
-                "9D",
-            },
-            []interface{}{
-                "AC",
-                "AH",
-                "2S",
-                "6S",
-                "2D",
-            },
-            []interface{}{
-                "JS",
-                "KH",
-                "QD",
-            },
-        },
-    }
-    return c.JSON(http.StatusOK, response)
-}
-
-func (h *Handler) PlaceCard(c echo.Context) error {
-    response := map[string]interface{}{
-        "points": map[string]interface{}{
-            "total":        map[string]interface{}{"right": 4, "down": 2},
-            "currentRound": map[string]interface{}{"right": 0, "down": 3},
-        },
-        "currentTurn":       "down",
-        "timeRemained":      14,
-        "judge":             "right",
-        "whoHasWonTheCards": "up",
-        "whoHasWonTheRound": nil,
-        "whoHasWonTheGame":  nil,
-        "wasKingChanged":    false,
-        //"trumpDeterminationCards": []interface{}{"3H", "3H", "3S", "3S", "4C"},
-        "trumpDeterminationCards": nil,
-    }
-    return c.JSON(http.StatusOK, response)
-}
-
-func (h *Handler) GetUpdate(c echo.Context) error {
-    time.Sleep(2 * time.Second)
-    response := map[string]interface{}{
-        "lastMove": map[string]interface{}{
-            "from": "right",
-            "card": "3C",
-        },
-        "centerCards": map[string]interface{}{"up": "2H", "left": "3H"},
-        "points": map[string]interface{}{
-            "total":        map[string]interface{}{"right": 4, "down": 2},
-            "currentRound": map[string]interface{}{"right": 0, "down": 3},
-        },
-        "currentTurn":       "down",
-        "timeRemained":      14,
-        "judge":             "up",
-        "whoHasWonTheCards": nil,
-        "whoHasWonTheRound": nil,
-        "whoHasWonTheGame":  nil,
-        "wasKingChanged":    false,
-    }
-    return c.JSON(http.StatusOK, response)
-}
-
 func (h *Handler) GetGameId(c echo.Context) error {
     var gameId string
-    username := c.QueryParam("username")
+
+    username := c.Get("username").(string)
 
     ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
     defer cancel()
@@ -243,4 +152,78 @@ func (h *Handler) GetGameId(c echo.Context) error {
         "message": trans.Get("Game has been made."),
         "gameId":  gameId,
     })
+}
+
+// GetYourCards TODO has not implemented
+func (h *Handler) GetYourCards(c echo.Context) error {
+    time.Sleep(2 * time.Second)
+    response := map[string]interface{}{
+        "trump": "heart",
+        "cards": []interface{}{
+            []interface{}{
+                "3C",
+                "3H",
+                "3S",
+                "8S",
+                "9D",
+            },
+            []interface{}{
+                "AC",
+                "AH",
+                "2S",
+                "6S",
+                "2D",
+            },
+            []interface{}{
+                "JS",
+                "KH",
+                "QD",
+            },
+        },
+    }
+    return c.JSON(http.StatusOK, response)
+}
+
+// PlaceCard TODO has not implemented
+func (h *Handler) PlaceCard(c echo.Context) error {
+    response := map[string]interface{}{
+        "points": map[string]interface{}{
+            "total":        map[string]interface{}{"right": 4, "down": 2},
+            "currentRound": map[string]interface{}{"right": 0, "down": 3},
+        },
+        "currentTurn":       "down",
+        "timeRemained":      14,
+        "judge":             "right",
+        "whoHasWonTheCards": "up",
+        "whoHasWonTheRound": nil,
+        "whoHasWonTheGame":  nil,
+        "wasKingChanged":    false,
+        //"trumpDeterminationCards": []interface{}{"3H", "3H", "3S", "3S", "4C"},
+        "trumpDeterminationCards": nil,
+    }
+    return c.JSON(http.StatusOK, response)
+}
+
+// GetUpdate TODO has not implemented
+func (h *Handler) GetUpdate(c echo.Context) error {
+    time.Sleep(2 * time.Second)
+    response := map[string]interface{}{
+        "lastMove": map[string]interface{}{
+            "from": "right",
+            "card": "3C",
+        },
+        "centerCards": map[string]interface{}{"up": "2H", "left": "3H"},
+        "points": map[string]interface{}{
+            "total":        map[string]interface{}{"right": 4, "down": 2},
+            "currentRound": map[string]interface{}{"right": 0, "down": 3},
+        },
+        "currentTurn":       "down",
+        "timeRemained":      14,
+        "judge":             "up",
+        "whoHasWonTheCards": nil,
+        "whoHasWonTheRound": nil,
+        "whoHasWonTheGame":  nil,
+        "wasKingChanged":    false,
+    }
+    return c.JSON(http.StatusOK, response)
 }
