@@ -2,7 +2,8 @@ package cmd
 
 import (
     "fmt"
-    "github.com/alirezadp10/hokm/internal/database"
+    "github.com/alirezadp10/hokm/internal/database/redis"
+    "github.com/alirezadp10/hokm/internal/database/sqlite"
     "github.com/alirezadp10/hokm/internal/handler"
     "github.com/alirezadp10/hokm/internal/telegram"
     "github.com/labstack/echo/v4"
@@ -20,25 +21,25 @@ func init() {
 }
 
 func serve(cmd *cobra.Command, args []string) {
-    db := database.GetNewConnection()
-    go telegram.Start(db)
+    sqliteClient := sqlite.GetNewConnection()
+    redisClient := redis.GetNewConnection()
+
+    go telegram.Start(sqliteClient)
+
+    h := handler.NewHandler(sqliteClient, redisClient)
 
     e := echo.New()
-    //e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-    //    return func(c echo.Context) error {
-    //        c.Response().Header().Set("ngrok-skip-browser-warning", "true")
-    //        return next(c)
-    //    }
-    //})
     e.Static("/assets", "assets")
-    e.GET("/", handler.GetSplashPage)
-    e.GET("/menu", handler.GetMenuPage)
-    e.GET("/game", handler.GetGamePage)
-    e.GET("/game/start", handler.GetGameId)
-    e.GET("/game/:gameId", handler.GetGameData)
-    e.GET("/game/:gameId/cards", handler.GetYourCards)
-    e.POST("/game/:gameId/place", handler.PlaceCard)
-    e.GET("/game/:gameId/refresh", handler.GetUpdate)
+    e.GET("/", h.GetSplashPage)
+    e.GET("/menu", h.GetMenuPage)
+    e.GET("/game", h.GetGamePage)
+    e.GET("/game/start", h.GetGameId)
+    e.GET("/game/:gameId", h.GetGameData)
+    e.POST("/game/choose-trump", h.ChooseTrump)
+    e.GET("/game/:gameId/cards", h.GetYourCards)
+    e.POST("/game/:gameId/place", h.PlaceCard)
+    e.GET("/game/:gameId/refresh", h.GetUpdate)
+
     fmt.Println("Server is running at 9090")
     e.Logger.Fatal(e.Start("0.0.0.0:9090"))
 }

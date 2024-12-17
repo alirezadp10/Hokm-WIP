@@ -6,14 +6,20 @@ import (
     "encoding/json"
     "github.com/redis/rueidis"
     "log"
+    "strings"
 )
 
 //go:embed matchmaking.lua
 var matchmakingScript string
 
 // Matchmaking Find an open game for a player
-func Matchmaking(ctx context.Context, client rueidis.Client, userId string, gameId string) {
-    command := client.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "waiting", userId, gameId).Build()
+func Matchmaking(ctx context.Context, client rueidis.Client, userId string, gameId string, cards [][]string) {
+    command := client.B().Eval().
+        Script(matchmakingScript).
+        Numkeys(2).
+        Key("matchmaking", "waiting").
+        Arg(userId, gameId, strings.Join(cards[0], ","), strings.Join(cards[1], ","), strings.Join(cards[2], ","), strings.Join(cards[3], ",")).
+        Build()
     _, err := client.Do(ctx, command).ToArray()
     if err != nil {
         log.Fatalf("could not execute Lua script: %v", err)
@@ -49,4 +55,12 @@ func GetGameInformation(ctx context.Context, client rueidis.Client, gameId strin
     }
 
     return result
+}
+
+func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump string) error {
+    err := client.Do(ctx, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", trump).Build()).Error()
+    if err != nil {
+        return err
+    }
+    return nil
 }

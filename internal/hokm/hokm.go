@@ -3,7 +3,6 @@ package hokm
 import (
     "context"
     "github.com/alirezadp10/hokm/internal/database/redis"
-    "github.com/alirezadp10/hokm/internal/helper/myslice"
     "github.com/google/uuid"
     "github.com/redis/rueidis"
     "math/rand"
@@ -47,13 +46,12 @@ func SetKingCards() []string {
     }
 }
 
+// GetKingsCards get kings cards
 func GetKingsCards(cards []string, uIndex int) []interface{} {
     var result []interface{}
-    directions := []string{"down", "left", "up", "right"}
     for key, card := range cards {
-        diff := (4 + (uIndex - key)) % 4
         result = append(result, map[string]interface{}{
-            "direction": directions[diff],
+            "direction": GetDirection(key, uIndex),
             "card":      card,
         })
     }
@@ -96,16 +94,17 @@ func GetPoints(points map[string]interface{}, uIndex int) map[string]interface{}
     }
 }
 
-func GetCenterCards(centerCards map[string]string, players []string, uIndex int) map[string]string {
+// GetCenterCards Get center cards
+func GetCenterCards(centerCards map[int]string, uIndex int) map[string]string {
     var result map[string]string
     for key, val := range centerCards {
-        result[GetDirection(key, players, uIndex)] = val
+        result[GetDirection(key, uIndex)] = val
     }
     return result
 }
 
-func GetDirection(username string, players []string, uIndex int) string {
-    pIndex := myslice.GetIndex(username, players)
+// GetDirection Get directions
+func GetDirection(pIndex, uIndex int) string {
     directions := []string{"down", "left", "up", "right"}
     diff := (4 + (uIndex - pIndex)) % 4
     return directions[diff]
@@ -114,5 +113,39 @@ func GetDirection(username string, players []string, uIndex int) string {
 // Matchmaking Find an open game for a player
 func Matchmaking(ctx context.Context, client rueidis.Client, userId string) {
     gameId := uuid.New().String()
-    redis.Matchmaking(ctx, client, userId, gameId)
+    distributedCards := DistributeCards()
+    redis.Matchmaking(ctx, client, userId, gameId, distributedCards)
+}
+
+func DistributeCards() [][]string {
+    localCards := make([]string, len(cards))
+    copy(localCards, cards)
+
+    rand.Seed(time.Now().UnixNano())
+    rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })
+
+    hands := make([][]string, 4)
+    for i := range hands {
+        hands[i] = []string{}
+    }
+
+    for i, card := range cards {
+        player := i % 4
+        hands[player] = append(hands[player], card)
+    }
+
+    return hands
+}
+
+func GetPlayerCards(cards map[int][]string, uIndex int) [][]string {
+    var result [][]string
+    var chunk []string
+    for i, card := range cards[uIndex] {
+        chunk = append(chunk, card)
+        if (i+1)%5 == 0 {
+            result = append(result, chunk)
+            chunk = []string{}
+        }
+    }
+    return result
 }

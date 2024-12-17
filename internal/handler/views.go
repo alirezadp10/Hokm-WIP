@@ -5,7 +5,7 @@ import (
     "net/http"
 )
 
-func GetSplashPage(c echo.Context) error {
+func (h *Handler) GetSplashPage(c echo.Context) error {
     cookie := new(http.Cookie)
     cookie.Name = "userId"
     cookie.Value = c.QueryParam("userId")
@@ -16,10 +16,10 @@ func GetSplashPage(c echo.Context) error {
     return c.File("templates/splash.html")
 }
 
-func GetMenuPage(c echo.Context) error {
+func (h *Handler) GetMenuPage(c echo.Context) error {
     return c.File("templates/menu.html")
 }
 
-func GetGamePage(c echo.Context) error {
+func (h *Handler) GetGamePage(c echo.Context) error {
     return c.File("templates/game.html")
 }
