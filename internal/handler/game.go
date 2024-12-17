@@ -11,14 +11,14 @@ import (
     "github.com/labstack/echo/v4"
     "github.com/redis/rueidis"
     "net/http"
+    "strconv"
     "strings"
-    "time"
 )
 
 func (h *Handler) GetGameId(c echo.Context) error {
-    var gameId string
-
     username := c.Get("username").(string)
+
+    var gameId string
 
     if gid, ok := sqlite.DoesPlayerHaveAnActiveGame(h.sqliteConnection, username); ok {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
@@ -53,16 +53,16 @@ func (h *Handler) GetGameId(c echo.Context) error {
         })
     }
 
-    return c.JSON(http.StatusCreated, map[string]interface{}{
+    return c.JSON(http.StatusOK, map[string]interface{}{
         "message": trans.Get("Game has been made."),
         "gameId":  gameId,
     })
 }
 
 func (h *Handler) GetGameData(c echo.Context) error {
-    gameId := c.QueryParam("gameId")
-
     username := c.Get("username").(string)
+
+    gameId := c.QueryParam("gameId")
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
@@ -76,43 +76,38 @@ func (h *Handler) GetGameData(c echo.Context) error {
 
     uIndex := myslice.GetIndex(username, players)
 
-    response := map[string]interface{}{
+    return c.JSON(http.StatusOK, map[string]interface{}{
         "players":      hokm.GetPlayersWithDirections(players, uIndex),
         "points":       hokm.GetPoints(gameInformation["points"].(map[string]interface{}), uIndex),
         "centerCards":  hokm.GetCenterCards(gameInformation["center_cards"].(map[int]string), uIndex),
         "turn":         hokm.GetDirection(gameInformation["turn"].(int), uIndex),
         "judge":        hokm.GetDirection(gameInformation["judge"].(int), uIndex),
         "trump":        gameInformation["trump"].(string),
-        "timeRemained": 15,
         "yourCards":    gameInformation["cards"].(map[int]interface{})[uIndex],
         "kingsCards":   hokm.GetKingsCards(gameInformation["kings_cards"].([]string), uIndex),
-    }
-
-    return c.JSON(http.StatusOK, response)
+        "timeRemained": 15,
+    })
 }
 
 func (h *Handler) ChooseTrump(c echo.Context) error {
+    username := c.Get("username").(string)
+
     var requestBody struct {
-        Username string `json:"username"`
-        GameId   string `json:"gameId"`
-        Trump    string `json:"trump"`
+        GameId string `json:"gameId"`
+        Trump  string `json:"trump"`
     }
 
     if err := c.Bind(&requestBody); err != nil {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
     }
 
-    username := c.Get("username").(string)
-
-    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, requestBody.Username) {
+    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, requestBody.GameId) {
         return c.JSON(http.StatusUnauthorized, map[string]interface{}{
             "message": trans.Get("It's not your game."),
         })
     }
 
-    ctx := context.Background()
-
-    gameInformation := redis.GetGameInformation(ctx, h.redisConnection, requestBody.GameId)
+    gameInformation := redis.GetGameInformation(h.context, h.redisConnection, requestBody.GameId)
 
     if gameInformation["judge"].(string) != username {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
@@ -126,7 +121,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
         })
     }
 
-    err := redis.SetTrump(ctx, h.redisConnection, requestBody.GameId, requestBody.Trump)
+    err := redis.SetTrump(h.context, h.redisConnection, requestBody.GameId, requestBody.Trump)
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong. Please try again later."),
@@ -137,18 +132,24 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
 
     uIndex := myslice.GetIndex(username, players)
 
-    response := map[string]interface{}{
+    return c.JSON(http.StatusOK, map[string]interface{}{
         "trump": requestBody.Trump,
         "cards": hokm.GetPlayerCards(gameInformation["cards"].(map[int][]string), uIndex),
-    }
-    return c.JSON(http.StatusOK, response)
+    })
 }
 
 func (h *Handler) GetYourCards(c echo.Context) error {
+    username := c.Get("username").(string)
+
     var trump string
     var gameInformation map[string]interface{}
-    username := c.Get("username").(string)
     gameId := c.QueryParam("gameId")
+
+    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
+        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+            "message": trans.Get("It's not your game."),
+        })
+    }
 
     err := redis.Subscribe(h.context, h.redisConnection, "choosing_trump", func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, ",")
@@ -168,14 +169,10 @@ func (h *Handler) GetYourCards(c echo.Context) error {
         if errors.Is(h.context.Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
                 "message": trans.Get("Something went wrong."),
-                "trump":   trump,
-                "cards":   nil,
             })
         }
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong."),
-            "trump":   trump,
-            "cards":   nil,
         })
     }
 
@@ -184,52 +181,106 @@ func (h *Handler) GetYourCards(c echo.Context) error {
     uIndex := myslice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
-        "message": trans.Get("Successfully done."),
-        "cards":   hokm.GetPlayerCards(gameInformation["cards"].(map[int][]string), uIndex),
-        "trump":   trump,
+        "cards": hokm.GetPlayerCards(gameInformation["cards"].(map[int][]string), uIndex),
+        "trump": trump,
     })
 }
 
-// PlaceCard TODO has not implemented
 func (h *Handler) PlaceCard(c echo.Context) error {
-    response := map[string]interface{}{
-        "points": map[string]interface{}{
-            "total":        map[string]interface{}{"right": 4, "down": 2},
-            "currentRound": map[string]interface{}{"right": 0, "down": 3},
-        },
-        "currentTurn":       "down",
-        "timeRemained":      14,
-        "judge":             "right",
-        "whoHasWonTheCards": "up",
-        "whoHasWonTheRound": nil,
-        "whoHasWonTheGame":  nil,
-        "wasKingChanged":    false,
-        //"trumpDeterminationCards": []interface{}{"3H", "3H", "3S", "3S", "4C"},
-        "trumpDeterminationCards": nil,
+    username := c.Get("username").(string)
+
+    var requestBody struct {
+        GameId string `json:"gameId"`
+        Card   string `json:"card"`
     }
-    return c.JSON(http.StatusOK, response)
+
+    if err := c.Bind(&requestBody); err != nil {
+        return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+    }
+
+    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, requestBody.GameId) {
+        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+            "message": trans.Get("It's not your game."),
+        })
+    }
+
+    gameInformation := redis.GetGameInformation(h.context, h.redisConnection, requestBody.GameId)
+
+    players := gameInformation["players"].([]string)
+
+    uIndex := myslice.GetIndex(username, players)
+
+    return c.JSON(http.StatusOK, map[string]interface{}{
+        "points":            hokm.GetPoints(gameInformation["points"].(map[string]interface{}), uIndex),
+        "centerCards":       hokm.GetCenterCards(gameInformation["center_cards"].(map[int]string), uIndex),
+        "kingsCards":        hokm.GetKingsCards(gameInformation["kings_cards"].([]string), uIndex),
+        "turn":              hokm.GetDirection(gameInformation["turn"].(int), uIndex),
+        "judge":             hokm.GetDirection(gameInformation["judge"].(int), uIndex),
+        "whoHasWonTheCards": hokm.GetDirection(gameInformation["who_has_won_the_cards"].(int), uIndex),
+        "whoHasWonTheRound": hokm.GetDirection(gameInformation["who_has_won_the_round"].(int), uIndex),
+        "whoHasWonTheGame":  hokm.GetDirection(gameInformation["who_has_won_the_game"].(int), uIndex),
+        "wasKingChanged":    gameInformation["who_king_changed"].(bool),
+        "timeRemained":      14,
+    })
 }
 
-// GetUpdate TODO has not implemented
 func (h *Handler) GetUpdate(c echo.Context) error {
-    time.Sleep(2 * time.Second)
-    response := map[string]interface{}{
-        "lastMove": map[string]interface{}{
-            "from": "right",
-            "card": "3C",
-        },
-        "centerCards": map[string]interface{}{"up": "2H", "left": "3H"},
-        "points": map[string]interface{}{
-            "total":        map[string]interface{}{"right": 4, "down": 2},
-            "currentRound": map[string]interface{}{"right": 0, "down": 3},
-        },
-        "currentTurn":       "down",
-        "timeRemained":      14,
-        "judge":             "up",
-        "whoHasWonTheCards": nil,
-        "whoHasWonTheRound": nil,
-        "whoHasWonTheGame":  nil,
-        "wasKingChanged":    false,
+    username := c.Get("username").(string)
+
+    var player int
+    var card string
+    var gameInformation map[string]interface{}
+    gameId := c.QueryParam("gameId")
+
+    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
+        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+            "message": trans.Get("It's not your game."),
+        })
     }
-    return c.JSON(http.StatusOK, response)
+
+    err := redis.Subscribe(h.context, h.redisConnection, "place_card", func(msg rueidis.PubSubMessage) {
+        messages := strings.Split(msg.Message, ",")
+        messageId := myslice.HasLike(messages, func(s string) bool {
+            return strings.Contains(s, gameId+"|")
+        })
+        if messageId != -1 {
+            data := strings.Split(messages[messageId], "|")
+            gameInformation = redis.GetGameInformation(h.context, h.redisConnection, data[0])
+            player, _ = strconv.Atoi(data[1])
+            card = data[2]
+            redis.Unsubscribe(h.context, h.redisConnection, "place_card")
+            //cancel()
+        }
+    })
+
+    if err != nil {
+        if errors.Is(h.context.Err(), context.DeadlineExceeded) {
+            return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
+                "message": trans.Get("Something went wrong."),
+            })
+        }
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+            "message": trans.Get("Something went wrong."),
+        })
+    }
+
+    players := gameInformation["players"].([]string)
+
+    uIndex := myslice.GetIndex(username, players)
+
+    return c.JSON(http.StatusOK, map[string]interface{}{
+        "lastMove": map[string]string{
+            "from": hokm.GetDirection(player, uIndex),
+            "card": card,
+        },
+        "centerCards":       hokm.GetCenterCards(gameInformation["center_cards"].(map[int]string), uIndex),
+        "points":            hokm.GetPoints(gameInformation["points"].(map[string]interface{}), uIndex),
+        "turn":              hokm.GetDirection(gameInformation["turn"].(int), uIndex),
+        "judge":             hokm.GetDirection(gameInformation["judge"].(int), uIndex),
+        "whoHasWonTheCards": hokm.GetDirection(gameInformation["who_has_won_the_cards"].(int), uIndex),
+        "whoHasWonTheRound": hokm.GetDirection(gameInformation["who_has_won_the_round"].(int), uIndex),
+        "whoHasWonTheGame":  hokm.GetDirection(gameInformation["who_has_won_the_game"].(int), uIndex),
+        "wasKingChanged":    gameInformation["who_king_changed"].(bool),
+        "timeRemained":      15,
+    })
 }
