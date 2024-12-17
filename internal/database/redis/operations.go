@@ -17,7 +17,7 @@ func Matchmaking(ctx context.Context, client rueidis.Client, userId string, game
     command := client.B().Eval().
         Script(matchmakingScript).
         Numkeys(2).
-        Key("matchmaking", "waiting").
+        Key("matchmaking", "game_creation").
         Arg(userId, gameId, strings.Join(cards[0], ","), strings.Join(cards[1], ","), strings.Join(cards[2], ","), strings.Join(cards[3], ",")).
         Build()
     _, err := client.Do(ctx, command).ToArray()

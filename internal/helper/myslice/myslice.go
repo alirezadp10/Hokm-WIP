@@ -15,6 +15,16 @@ func Has[T comparable](slice []T, element T) bool {
     return false
 }
 
+// HasLike Function to check if a slice contains an element satisfying a predicate
+func HasLike[T any](slice []T, predicate func(T) bool) int {
+    for i, v := range slice {
+        if predicate(v) {
+            return i
+        }
+    }
+    return -1
+}
+
 // GetIndex Find the index of an element
 func GetIndex[T comparable](element T, slice []T) int {
     index := -1

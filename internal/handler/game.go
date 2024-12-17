@@ -16,6 +16,57 @@ import (
     "time"
 )
 
+func (h *Handler) GetGameId(c echo.Context) error {
+    var gameId string
+
+    username := c.Get("username").(string)
+
+    ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+    defer cancel()
+
+    if gid, ok := sqlite.DoesPlayerHaveAnActiveGame(h.sqliteConnection, username); ok {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": trans.Get("You have already an active game."),
+            "gameId":  *gid,
+        })
+    }
+
+    go hokm.Matchmaking(ctx, h.redisConnection, username)
+
+    err := h.redisConnection.Receive(context.Background(), h.redisConnection.B().Subscribe().Channel("game_creation").Build(), func(msg rueidis.PubSubMessage) {
+        message := strings.Split(msg.Message, ",")
+        players := message[:len(message)-1]
+        if myslice.Has(players, username) {
+            _, _ = sqlite.AddPlayerToGame(h.sqliteConnection, username, gameId)
+            gameId = message[len(message)-1]
+            unsubscribeErr := h.redisConnection.Do(ctx, h.redisConnection.B().Unsubscribe().Channel("game_creation").Build()).Error()
+            if unsubscribeErr != nil {
+                log.Println("Error while unsubscribing:", unsubscribeErr)
+            }
+            cancel()
+        }
+    })
+
+    if err != nil {
+        log.Println("Error in subscribing to channel:", err)
+        if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+            return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
+                "message": trans.Get("No body have found. please try again later."),
+                "gameId":  nil,
+            })
+        }
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+            "message": trans.Get("Something went wrong. please try again later."),
+            "gameId":  nil,
+        })
+    }
+
+    return c.JSON(http.StatusCreated, map[string]interface{}{
+        "message": trans.Get("Game has been made."),
+        "gameId":  gameId,
+    })
+}
+
 func (h *Handler) GetGameData(c echo.Context) error {
     gameId := c.QueryParam("gameId")
 
@@ -103,30 +154,25 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
     return c.JSON(http.StatusOK, response)
 }
 
-func (h *Handler) GetGameId(c echo.Context) error {
-    var gameId string
-
+func (h *Handler) GetYourCards(c echo.Context) error {
+    var trump string
+    var gameInformation map[string]interface{}
     username := c.Get("username").(string)
+    gameId := c.QueryParam("gameId")
 
     ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
     defer cancel()
 
-    if gid, ok := sqlite.DoesPlayerHaveAnActiveGame(h.sqliteConnection, username); ok {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("You have already an active game."),
-            "gameId":  *gid,
+    err := h.redisConnection.Receive(context.Background(), h.redisConnection.B().Subscribe().Channel("giving_card").Build(), func(msg rueidis.PubSubMessage) {
+        messages := strings.Split(msg.Message, ",")
+        messageId := myslice.HasLike(messages, func(s string) bool {
+            return strings.Contains(s, gameId+"|")
         })
-    }
-
-    go hokm.Matchmaking(ctx, h.redisConnection, username)
-
-    err := h.redisConnection.Receive(context.Background(), h.redisConnection.B().Subscribe().Channel("waiting").Build(), func(msg rueidis.PubSubMessage) {
-        message := strings.Split(msg.Message, ",")
-        players := message[:len(message)-1]
-        if myslice.Has(players, username) {
-            _, _ = sqlite.AddPlayerToGame(h.sqliteConnection, username, gameId)
-            gameId = message[len(message)-1]
-            unsubscribeErr := h.redisConnection.Do(ctx, h.redisConnection.B().Unsubscribe().Channel("waiting").Build()).Error()
+        if messageId != -1 {
+            data := strings.Split(messages[messageId], "|")
+            gameInformation = redis.GetGameInformation(ctx, h.redisConnection, data[0])
+            trump = data[1]
+            unsubscribeErr := h.redisConnection.Do(ctx, h.redisConnection.B().Unsubscribe().Channel("giving_card").Build()).Error()
             if unsubscribeErr != nil {
                 log.Println("Error while unsubscribing:", unsubscribeErr)
             }
@@ -135,53 +181,30 @@ func (h *Handler) GetGameId(c echo.Context) error {
     })
 
     if err != nil {
-        log.Println("Error subscribing to channel:", err)
+        log.Println("Error in subscribing to channel:", err)
         if errors.Is(ctx.Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
-                "message": "فردی پیدا نشد، بعدا تلاش کنید.",
-                "gameId":  nil,
+                "message": trans.Get("Something went wrong."),
+                "trump":   trump,
+                "cards":   nil,
             })
         }
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-            "message": "مشکلی پیش آمده است، بعدا تلاش کنید.",
-            "gameId":  nil,
+            "message": trans.Get("Something went wrong."),
+            "trump":   trump,
+            "cards":   nil,
         })
     }
 
-    return c.JSON(http.StatusCreated, map[string]interface{}{
-        "message": trans.Get("Game has been made."),
-        "gameId":  gameId,
-    })
-}
+    players := gameInformation["players"].([]string)
 
-// GetYourCards TODO has not implemented
-func (h *Handler) GetYourCards(c echo.Context) error {
-    time.Sleep(2 * time.Second)
-    response := map[string]interface{}{
-        "trump": "heart",
-        "cards": []interface{}{
-            []interface{}{
-                "3C",
-                "3H",
-                "3S",
-                "8S",
-                "9D",
-            },
-            []interface{}{
-                "AC",
-                "AH",
-                "2S",
-                "6S",
-                "2D",
-            },
-            []interface{}{
-                "JS",
-                "KH",
-                "QD",
-            },
-        },
-    }
-    return c.JSON(http.StatusOK, response)
+    uIndex := myslice.GetIndex(username, players)
+
+    return c.JSON(http.StatusOK, map[string]interface{}{
+        "message": trans.Get("Successfully done."),
+        "cards":   hokm.GetPlayerCards(gameInformation["cards"].(map[int][]string), uIndex),
+        "trump":   trump,
+    })
 }
 
 // PlaceCard TODO has not implemented
