@@ -3,8 +3,8 @@ package telegram
 import (
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
-    "github.com/alirezadp10/hokm/internal/helper/crypto"
-    "github.com/alirezadp10/hokm/internal/helper/trans"
+    "github.com/alirezadp10/hokm/internal/utils/crypto"
+    "github.com/alirezadp10/hokm/internal/utils/trans"
     "gopkg.in/telebot.v4"
     "gorm.io/gorm"
     "log"

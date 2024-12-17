@@ -1,4 +1,4 @@
-package myslice
+package my_slice
 
 import (
     "fmt"

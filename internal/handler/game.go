@@ -5,9 +5,9 @@ import (
     "errors"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
-    "github.com/alirezadp10/hokm/internal/helper/myslice"
-    "github.com/alirezadp10/hokm/internal/helper/trans"
     "github.com/alirezadp10/hokm/internal/hokm"
+    "github.com/alirezadp10/hokm/internal/utils/my_slice"
+    "github.com/alirezadp10/hokm/internal/utils/trans"
     "github.com/labstack/echo/v4"
     "github.com/redis/rueidis"
     "net/http"
@@ -32,7 +32,7 @@ func (h *Handler) GetGameId(c echo.Context) error {
     err := redis.Subscribe(h.context, h.redisConnection, "game_creation", func(msg rueidis.PubSubMessage) {
         message := strings.Split(msg.Message, ",")
         players := message[:len(message)-1]
-        if myslice.Has(players, username) {
+        if my_slice.Has(players, username) {
             _, _ = sqlite.AddPlayerToGame(h.sqliteConnection, username, gameId)
             gameId = message[len(message)-1]
             redis.Unsubscribe(h.context, h.redisConnection, "game_creation")
@@ -74,7 +74,7 @@ func (h *Handler) GetGameData(c echo.Context) error {
 
     players := gameInformation["players"].([]string)
 
-    uIndex := myslice.GetIndex(username, players)
+    uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "players":      hokm.GetPlayersWithDirections(players, uIndex),
@@ -130,7 +130,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
 
     players := gameInformation["players"].([]string)
 
-    uIndex := myslice.GetIndex(username, players)
+    uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "trump": requestBody.Trump,
@@ -153,7 +153,7 @@ func (h *Handler) GetYourCards(c echo.Context) error {
 
     err := redis.Subscribe(h.context, h.redisConnection, "choosing_trump", func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, ",")
-        messageId := myslice.HasLike(messages, func(s string) bool {
+        messageId := my_slice.HasLike(messages, func(s string) bool {
             return strings.Contains(s, gameId+"|")
         })
         if messageId != -1 {
@@ -178,7 +178,7 @@ func (h *Handler) GetYourCards(c echo.Context) error {
 
     players := gameInformation["players"].([]string)
 
-    uIndex := myslice.GetIndex(username, players)
+    uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "cards": hokm.GetPlayerCards(gameInformation["cards"].(map[int][]string), uIndex),
@@ -208,7 +208,7 @@ func (h *Handler) PlaceCard(c echo.Context) error {
 
     players := gameInformation["players"].([]string)
 
-    uIndex := myslice.GetIndex(username, players)
+    uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "points":            hokm.GetPoints(gameInformation["points"].(map[string]interface{}), uIndex),
@@ -240,7 +240,7 @@ func (h *Handler) GetUpdate(c echo.Context) error {
 
     err := redis.Subscribe(h.context, h.redisConnection, "place_card", func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, ",")
-        messageId := myslice.HasLike(messages, func(s string) bool {
+        messageId := my_slice.HasLike(messages, func(s string) bool {
             return strings.Contains(s, gameId+"|")
         })
         if messageId != -1 {
@@ -266,7 +266,7 @@ func (h *Handler) GetUpdate(c echo.Context) error {
 
     players := gameInformation["players"].([]string)
 
-    uIndex := myslice.GetIndex(username, players)
+    uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "lastMove": map[string]string{

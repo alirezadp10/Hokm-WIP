@@ -1,7 +1,7 @@
 package middleware
 
 import (
-    "github.com/alirezadp10/hokm/internal/helper/crypto"
+    "github.com/alirezadp10/hokm/internal/utils/crypto"
     "github.com/labstack/echo/v4"
     "net/http"
 )
