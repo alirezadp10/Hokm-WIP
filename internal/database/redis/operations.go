@@ -12,7 +12,6 @@ import (
 //go:embed matchmaking.lua
 var matchmakingScript string
 
-// Matchmaking Find an open game for a player
 func Matchmaking(ctx context.Context, client rueidis.Client, userId string, gameId string, cards [][]string) {
     command := client.B().Eval().
         Script(matchmakingScript).
@@ -63,4 +62,22 @@ func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump string) 
         return err
     }
     return nil
+}
+
+func Subscribe(ctx context.Context, client rueidis.Client, channel string, message func(rueidis.PubSubMessage)) error {
+    err := client.Receive(ctx, client.B().Subscribe().Channel(channel).Build(), message)
+
+    if err != nil {
+        log.Printf("Error in subscribing to %v channel: %v", channel, err)
+        return err
+    }
+
+    return nil
+}
+
+func Unsubscribe(ctx context.Context, client rueidis.Client, channel string) {
+    unsubscribeErr := client.Do(ctx, client.B().Unsubscribe().Channel(channel).Build()).Error()
+    if unsubscribeErr != nil {
+        log.Println("Error while unsubscribing:", unsubscribeErr)
+    }
 }

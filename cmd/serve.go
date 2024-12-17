@@ -1,6 +1,7 @@
 package cmd
 
 import (
+    "context"
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
@@ -9,6 +10,7 @@ import (
     "github.com/alirezadp10/hokm/internal/telegram"
     "github.com/labstack/echo/v4"
     "github.com/spf13/cobra"
+    "time"
 )
 
 var serveCmd = &cobra.Command{
@@ -24,10 +26,12 @@ func init() {
 func serve(cmd *cobra.Command, args []string) {
     sqliteClient := sqlite.GetNewConnection()
     redisClient := redis.GetNewConnection()
+    ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+    defer cancel()
 
     go telegram.Start(sqliteClient)
 
-    h := handler.NewHandler(sqliteClient, redisClient)
+    h := handler.NewHandler(sqliteClient, redisClient, ctx)
 
     e := echo.New()
     e.Static("/assets", "assets")
