@@ -1,5 +1,10 @@
 {
   "start the game": "شروع بازی",
   "You have already an active game.": "شما در حال حاضر بازی فعال دارید.",
-  "Game has been made": "اتاق ساخته شد."
+  "Game has been made.": "اتاق ساخته شد.",
+  "It's not your game.": "این بازی شما نیست.",
+  "Something went wrong, Please try again later.": "خطایی رخ داده است، لطفا بعدا دوباره تلاش کنید.",
+  "No body have found. please try again later.": "کسی پیدا نشد، لطفا بعدا دوباره تلاش کنید.",
+  "You're not judge in this round.": "شما در این راند حاکم نیستید.",
+  "You're not allowed to choose a trump at the moment.": "شما در این راند حق انتخاب حکم را ندارید."
 }

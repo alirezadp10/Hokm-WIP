@@ -124,7 +124,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
     err := redis.SetTrump(h.context, h.redisConnection, requestBody.GameId, requestBody.Trump)
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-            "message": trans.Get("Something went wrong. Please try again later."),
+            "message": trans.Get("Something went wrong, Please try again later."),
         })
     }
 
@@ -168,11 +168,11 @@ func (h *Handler) GetYourCards(c echo.Context) error {
     if err != nil {
         if errors.Is(h.context.Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
-                "message": trans.Get("Something went wrong."),
+                "message": trans.Get("Something went wrong, Please try again later."),
             })
         }
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-            "message": trans.Get("Something went wrong."),
+            "message": trans.Get("Something went wrong, Please try again later."),
         })
     }
 
@@ -256,11 +256,11 @@ func (h *Handler) GetUpdate(c echo.Context) error {
     if err != nil {
         if errors.Is(h.context.Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
-                "message": trans.Get("Something went wrong."),
+                "message": trans.Get("Something went wrong, Please try again later."),
             })
         }
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-            "message": trans.Get("Something went wrong."),
+            "message": trans.Get("Something went wrong, Please try again later."),
         })
     }
 
