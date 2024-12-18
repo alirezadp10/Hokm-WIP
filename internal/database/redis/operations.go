@@ -6,6 +6,7 @@ import (
     "encoding/json"
     "github.com/redis/rueidis"
     "log"
+    "strconv"
     "strings"
 )
 
@@ -75,10 +76,10 @@ func PlaceCard(ctx context.Context, client rueidis.Client, playerIndex int, game
     centerCardsList[playerIndex] = card
     centerCards = strings.Join(centerCardsList, ",")
 
-    cmds := make(rueidis.Commands, 0, 2)
+    cmds := make(rueidis.Commands, 0, 3)
     cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("center_cards", centerCards).Build())
     cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", card).Build())
-    cmds = append(cmds, client.B().Publish().Channel("placing_card").Message(gameId+"|"+playerIndex+"|"+card).Build())
+    cmds = append(cmds, client.B().Publish().Channel("placing_card").Message(gameId+"|"+strconv.Itoa(playerIndex)+"|"+card).Build())
 
     for _, resp := range client.DoMulti(ctx, cmds...) {
         if err := resp.Error(); err != nil {
