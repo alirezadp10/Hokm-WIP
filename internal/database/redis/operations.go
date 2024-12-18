@@ -57,10 +57,35 @@ func GetGameInformation(ctx context.Context, client rueidis.Client, gameId strin
 }
 
 func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump string) error {
-    err := client.Do(ctx, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", trump).Build()).Error()
-    if err != nil {
-        return err
+    cmds := make(rueidis.Commands, 0, 2)
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", trump).Build())
+    cmds = append(cmds, client.B().Publish().Channel("choosing_trump").Message(gameId+"|"+trump).Build())
+
+    for _, resp := range client.DoMulti(ctx, cmds...) {
+        if err := resp.Error(); err != nil {
+            return err
+        }
     }
+
+    return nil
+}
+
+func PlaceCard(ctx context.Context, client rueidis.Client, playerIndex int, gameId, card, centerCards string) error {
+    centerCardsList := strings.Split(centerCards, ",")
+    centerCardsList[playerIndex] = card
+    centerCards = strings.Join(centerCardsList, ",")
+
+    cmds := make(rueidis.Commands, 0, 2)
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("center_cards", centerCards).Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", card).Build())
+    cmds = append(cmds, client.B().Publish().Channel("placing_card").Message(gameId+"|"+playerIndex+"|"+card).Build())
+
+    for _, resp := range client.DoMulti(ctx, cmds...) {
+        if err := resp.Error(); err != nil {
+            return err
+        }
+    }
+
     return nil
 }
 

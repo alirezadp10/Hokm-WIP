@@ -82,10 +82,10 @@ func (h *Handler) GetGameData(c echo.Context) error {
         "centerCards":  hokm.GetCenterCards(gameInformation["center_cards"].(map[int]string), uIndex),
         "turn":         hokm.GetDirection(gameInformation["turn"].(int), uIndex),
         "judge":        hokm.GetDirection(gameInformation["judge"].(int), uIndex),
+        "timeRemained": hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
+        "kingsCards":   hokm.GetKingsCards(gameInformation["kings_cards"].([]string), uIndex),
         "trump":        gameInformation["trump"].(string),
         "yourCards":    gameInformation["cards"].(map[int]interface{})[uIndex],
-        "kingsCards":   hokm.GetKingsCards(gameInformation["kings_cards"].([]string), uIndex),
-        "timeRemained": 15,
     })
 }
 
@@ -210,6 +210,13 @@ func (h *Handler) PlaceCard(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
+    err := redis.PlaceCard(h.context, h.redisConnection, uIndex, requestBody.GameId, requestBody.Card, gameInformation["center_cards"].(string))
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+            "message": trans.Get("Something went wrong, Please try again later."),
+        })
+    }
+
     return c.JSON(http.StatusOK, map[string]interface{}{
         "points":            hokm.GetPoints(gameInformation["points"].(map[string]interface{}), uIndex),
         "centerCards":       hokm.GetCenterCards(gameInformation["center_cards"].(map[int]string), uIndex),
@@ -219,8 +226,8 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         "whoHasWonTheCards": hokm.GetDirection(gameInformation["who_has_won_the_cards"].(int), uIndex),
         "whoHasWonTheRound": hokm.GetDirection(gameInformation["who_has_won_the_round"].(int), uIndex),
         "whoHasWonTheGame":  hokm.GetDirection(gameInformation["who_has_won_the_game"].(int), uIndex),
+        "timeRemained":      hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
         "wasKingChanged":    gameInformation["who_king_changed"].(bool),
-        "timeRemained":      14,
     })
 }
 
@@ -238,7 +245,7 @@ func (h *Handler) GetUpdate(c echo.Context) error {
         })
     }
 
-    err := redis.Subscribe(h.context, h.redisConnection, "place_card", func(msg rueidis.PubSubMessage) {
+    err := redis.Subscribe(h.context, h.redisConnection, "placing_card", func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, ",")
         messageId := my_slice.HasLike(messages, func(s string) bool {
             return strings.Contains(s, gameId+"|")
@@ -248,7 +255,7 @@ func (h *Handler) GetUpdate(c echo.Context) error {
             gameInformation = redis.GetGameInformation(h.context, h.redisConnection, data[0])
             player, _ = strconv.Atoi(data[1])
             card = data[2]
-            redis.Unsubscribe(h.context, h.redisConnection, "place_card")
+            redis.Unsubscribe(h.context, h.redisConnection, "placing_card")
             //cancel()
         }
     })
@@ -280,7 +287,7 @@ func (h *Handler) GetUpdate(c echo.Context) error {
         "whoHasWonTheCards": hokm.GetDirection(gameInformation["who_has_won_the_cards"].(int), uIndex),
         "whoHasWonTheRound": hokm.GetDirection(gameInformation["who_has_won_the_round"].(int), uIndex),
         "whoHasWonTheGame":  hokm.GetDirection(gameInformation["who_has_won_the_game"].(int), uIndex),
+        "timeRemained":      hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
         "wasKingChanged":    gameInformation["who_king_changed"].(bool),
-        "timeRemained":      15,
     })
 }

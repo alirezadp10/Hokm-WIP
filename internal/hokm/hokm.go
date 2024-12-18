@@ -2,6 +2,7 @@ package hokm
 
 import (
     "context"
+    "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/google/uuid"
     "github.com/redis/rueidis"
@@ -44,6 +45,16 @@ func SetKingCards() []string {
             return result
         }
     }
+}
+
+func GetTimeRemained(lastMoveTimestampStr string) time.Duration {
+    lastMoveTimestamp, err := time.Parse(time.RFC3339, lastMoveTimestampStr)
+    if err != nil {
+        fmt.Println("Error parsing timestamp:", err)
+        return 15
+    }
+
+    return 15*time.Second - time.Since(lastMoveTimestamp)
 }
 
 // GetKingsCards get kings cards
