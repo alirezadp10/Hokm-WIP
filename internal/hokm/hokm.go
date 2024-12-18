@@ -181,10 +181,17 @@ func DistributeCards() [][]string {
     return hands
 }
 
-func GetPlayerCards(cards map[int][]string, uIndex int) [][]string {
+func GetPlayerCards(gameCardsString string, uIndex int) [][]string {
     var result [][]string
+    gameCards := make(map[int][]string)
+
+    err := json.Unmarshal([]byte(gameCardsString), &gameCards)
+    if err != nil {
+        fmt.Println("Error unmarshalling:", err)
+    }
+
     var chunk []string
-    for i, card := range cards[uIndex] {
+    for i, card := range gameCards[uIndex] {
         chunk = append(chunk, card)
         if (i+1)%5 == 0 {
             result = append(result, chunk)

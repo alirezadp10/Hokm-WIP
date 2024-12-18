@@ -137,7 +137,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "trump": requestBody.Trump,
-        "cards": hokm.GetPlayerCards(gameInformation["cards"].(map[int][]string), uIndex),
+        "cards": hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
     })
 }
 
@@ -184,7 +184,7 @@ func (h *Handler) GetYourCards(c echo.Context) error {
     uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
-        "cards": hokm.GetPlayerCards(gameInformation["cards"].(map[int][]string), uIndex),
+        "cards": hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
         "trump": trump,
     })
 }
