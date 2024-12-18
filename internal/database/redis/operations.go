@@ -8,18 +8,22 @@ import (
     "log"
     "strconv"
     "strings"
+    "time"
 )
 
 //go:embed matchmaking.lua
 var matchmakingScript string
 
 func Matchmaking(ctx context.Context, client rueidis.Client, userId string, gameId string, cards [][]string) {
-    command := client.B().Eval().
-        Script(matchmakingScript).
-        Numkeys(2).
-        Key("matchmaking", "game_creation").
-        Arg(userId, gameId, strings.Join(cards[0], ","), strings.Join(cards[1], ","), strings.Join(cards[2], ","), strings.Join(cards[3], ",")).
-        Build()
+    currentTime := strconv.FormatInt(time.Now().Unix(), 10) // Convert to string
+    command := client.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
+        userId,
+        gameId,
+        `["`+strings.Join(cards[0], `","`)+`"]`,
+        `["`+strings.Join(cards[1], `","`)+`"]`,
+        `["`+strings.Join(cards[2], `","`)+`"]`,
+        `["`+strings.Join(cards[3], `","`)+`"]`,
+        currentTime).Build()
     _, err := client.Do(ctx, command).ToArray()
     if err != nil {
         log.Fatalf("could not execute Lua script: %v", err)
@@ -37,6 +41,10 @@ func GetGameInformation(ctx context.Context, client rueidis.Client, gameId strin
         "players_cards",
         "judge",
         "trump",
+        "turn",
+        "last_move_timestamp",
+        "cards",
+        "kings_cards",
     }
 
     command := client.B().Hmget().Key("game:" + gameId).Field(fields...).Build()

@@ -2,11 +2,14 @@ package hokm
 
 import (
     "context"
+    "encoding/json"
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/google/uuid"
     "github.com/redis/rueidis"
     "math/rand"
+    "strconv"
+    "strings"
     "time"
 )
 
@@ -25,7 +28,6 @@ func SetKingCards() []string {
     copy(localCards, cards)
 
     // Shuffle the local copy
-    rand.Seed(time.Now().UnixNano())
     rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })
 
     // Result to hold the selected cards
@@ -48,19 +50,44 @@ func SetKingCards() []string {
 }
 
 func GetTimeRemained(lastMoveTimestampStr string) time.Duration {
-    lastMoveTimestamp, err := time.Parse(time.RFC3339, lastMoveTimestampStr)
+    // Convert the string to an integer (Unix timestamp)
+    lastMoveTimestampInt, err := strconv.ParseInt(lastMoveTimestampStr, 10, 64)
     if err != nil {
         fmt.Println("Error parsing timestamp:", err)
-        return 15
+        return 15 * time.Second // Return default duration if parsing fails
     }
 
-    return 15*time.Second - time.Since(lastMoveTimestamp)
+    // Convert Unix timestamp to time.Time
+    lastMoveTimestamp := time.Unix(lastMoveTimestampInt, 0)
+
+    // Calculate time remaining
+    timeElapsed := time.Since(lastMoveTimestamp)
+    timeRemaining := 15*time.Second - timeElapsed
+
+    // Ensure non-negative duration
+    if timeRemaining < 0 {
+        timeRemaining = 0
+    }
+
+    timeRemaining = timeRemaining.Round(time.Second)
+
+    return timeRemaining
 }
 
 // GetKingsCards get kings cards
-func GetKingsCards(cards []string, uIndex int) []interface{} {
+func GetKingsCards(cards string, uIndex int) []interface{} {
     var result []interface{}
-    for key, card := range cards {
+    if cards == "" {
+        return result
+    }
+
+    kingsCards := make(map[int]string)
+    err := json.Unmarshal([]byte(cards), &kingsCards)
+    if err != nil {
+        fmt.Println("Error unmarshalling:", err)
+    }
+
+    for key, card := range kingsCards {
         result = append(result, map[string]interface{}{
             "direction": GetDirection(key, uIndex),
             "card":      card,
@@ -80,34 +107,41 @@ func GetPlayersWithDirections(players []string, uIndex int) map[string]interface
 }
 
 // GetPoints Get Game Points
-func GetPoints(points map[string]interface{}, uIndex int) map[string]interface{} {
-    var downTotalPoints, rightTotalPoints, downRoundPoints, rightRoundPoints int
-
-    if uIndex%2 == 0 {
-        downTotalPoints = points["total"].(map[string]int)["0"]
-        downRoundPoints = points["round"].(map[string]int)["0"]
-        rightTotalPoints = points["total"].(map[string]int)["1"]
-        rightRoundPoints = points["round"].(map[string]int)["1"]
-    } else {
-        downTotalPoints = points["total"].(map[string]int)["1"]
-        downRoundPoints = points["round"].(map[string]int)["1"]
-        rightTotalPoints = points["total"].(map[string]int)["0"]
-        rightRoundPoints = points["round"].(map[string]int)["0"]
+func GetPoints(pointsString string, uIndex int) map[string]map[string]string {
+    points := make(map[string]string)
+    err := json.Unmarshal([]byte(pointsString), &points)
+    if err != nil {
+        fmt.Println("Error unmarshalling:", err)
     }
 
-    return map[string]interface{}{
-        "total": map[string]int{
+    var downTotalPoints, rightTotalPoints, downRoundPoints, rightRoundPoints string
+
+    if uIndex%2 == 0 {
+        downTotalPoints = strings.Split(points["total"], ",")[0]
+        downRoundPoints = strings.Split(points["round"], ",")[0]
+        rightTotalPoints = strings.Split(points["total"], ",")[1]
+        rightRoundPoints = strings.Split(points["round"], ",")[1]
+    } else {
+        downTotalPoints = strings.Split(points["total"], ",")[1]
+        downRoundPoints = strings.Split(points["round"], ",")[1]
+        rightTotalPoints = strings.Split(points["total"], ",")[0]
+        rightRoundPoints = strings.Split(points["round"], ",")[0]
+    }
+
+    return map[string]map[string]string{
+        "total": {
             "down": downTotalPoints, "right": rightTotalPoints,
         },
-        "currentRound": map[string]int{
+        "currentRound": {
             "down": downRoundPoints, "right": rightRoundPoints,
         },
     }
 }
 
 // GetCenterCards Get center cards
-func GetCenterCards(centerCards map[int]string, uIndex int) map[string]string {
-    var result map[string]string
+func GetCenterCards(centerCardsString string, uIndex int) map[string]string {
+    result := make(map[string]string)
+    centerCards := strings.Split(centerCardsString, ",")
     for key, val := range centerCards {
         result[GetDirection(key, uIndex)] = val
     }
@@ -132,7 +166,6 @@ func DistributeCards() [][]string {
     localCards := make([]string, len(cards))
     copy(localCards, cards)
 
-    rand.Seed(time.Now().UnixNano())
     rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })
 
     hands := make([][]string, 4)
@@ -159,4 +192,13 @@ func GetPlayerCards(cards map[int][]string, uIndex int) [][]string {
         }
     }
     return result
+}
+
+func GetYourCards(gameCardsString string, uIndex int) []string {
+    gameCards := make(map[int][]string)
+    err := json.Unmarshal([]byte(gameCardsString), &gameCards)
+    if err != nil {
+        fmt.Println("Error unmarshalling:", err)
+    }
+    return gameCards[uIndex]
 }
