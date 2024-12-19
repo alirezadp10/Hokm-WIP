@@ -62,7 +62,7 @@ func DoesPlayerBelongsToThisGame(db *gorm.DB, username, gameId string) bool {
     err := db.Table("players").
         Joins("inner join games on games.player_id = players.id").
         Where("players.username = ?", username).
-        Where("games.id = ?", gameId).
+        Where("games.game_id = ?", gameId).
         Count(&count).Error
 
     if err != nil {

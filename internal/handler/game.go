@@ -68,7 +68,7 @@ func (h *Handler) GetGameId(c echo.Context) error {
 func (h *Handler) GetGameData(c echo.Context) error {
     username := c.Get("username").(string)
 
-    gameId := c.QueryParam("gameId")
+    gameId := c.Param("gameId")
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
@@ -152,7 +152,7 @@ func (h *Handler) GetYourCards(c echo.Context) error {
 
     var trump string
     var gameInformation map[string]interface{}
-    gameId := c.QueryParam("gameId")
+    gameId := c.Param("gameId")
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
         return c.JSON(http.StatusUnauthorized, map[string]interface{}{
