@@ -45,7 +45,7 @@ func GetGameInformation(ctx context.Context, client rueidis.Client, gameId strin
         "turn",
         "last_move_timestamp",
         "cards",
-        "kings_cards",
+        "judge_cards",
     }
 
     command := client.B().Hmget().Key("game:" + gameId).Field(fields...).Build()

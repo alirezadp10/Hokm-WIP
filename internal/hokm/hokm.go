@@ -89,20 +89,20 @@ func GetTimeRemained(lastMoveTimestampStr string) time.Duration {
     return timeRemaining
 }
 
-// GetKingsCards get kings cards
-func GetKingsCards(cards string, uIndex int) []interface{} {
+// GetjudgeCards get kings cards
+func GetjudgeCards(cards string, uIndex int) []interface{} {
     var result []interface{}
     if cards == "" {
         return result
     }
 
-    kingsCards := make(map[int]string)
-    err := json.Unmarshal([]byte(cards), &kingsCards)
+    judgeCards := make(map[int]string)
+    err := json.Unmarshal([]byte(cards), &judgeCards)
     if err != nil {
         fmt.Println("Error unmarshalling:", err)
     }
 
-    for key, card := range kingsCards {
+    for key, card := range judgeCards {
         result = append(result, map[string]interface{}{
             "direction": GetDirection(key, uIndex),
             "card":      card,

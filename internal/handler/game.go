@@ -102,23 +102,27 @@ func (h *Handler) GetGameData(c echo.Context) error {
 
 func (h *Handler) ChooseTrump(c echo.Context) error {
     username := c.Get("username").(string)
+    gameId := c.Param("gameId")
 
     var requestBody struct {
-        GameId string `json:"gameId"`
-        Trump  string `json:"trump"`
+        Trump string `json:"trump"`
     }
 
     if err := c.Bind(&requestBody); err != nil {
-        return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+        return c.JSON(http.StatusBadRequest, map[string]string{"error": trans.Get("Invalid JSON.")})
     }
 
-    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, requestBody.GameId) {
-        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+    if !my_slice.Has([]string{"heart", "diamond", "club", "spade"}, requestBody.Trump) {
+        return c.JSON(http.StatusBadRequest, map[string]string{"error": trans.Get("Invalid trump.")})
+    }
+
+    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("It's not your game."),
         })
     }
 
-    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, requestBody.GameId)
+    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, gameId)
 
     if gameInformation["judge"].(string) != username {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
@@ -132,7 +136,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
         })
     }
 
-    err := redis.SetTrump(c.Request().Context(), h.redisConnection, requestBody.GameId, requestBody.Trump)
+    err := redis.SetTrump(c.Request().Context(), h.redisConnection, gameId, requestBody.Trump)
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),
@@ -151,13 +155,13 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
 
 func (h *Handler) GetYourCards(c echo.Context) error {
     username := c.Get("username").(string)
+    gameId := c.Param("gameId")
 
     var trump string
     var gameInformation map[string]interface{}
-    gameId := c.Param("gameId")
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
-        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("It's not your game."),
         })
     }
@@ -199,29 +203,29 @@ func (h *Handler) GetYourCards(c echo.Context) error {
 
 func (h *Handler) PlaceCard(c echo.Context) error {
     username := c.Get("username").(string)
+    gameId := c.Param("gameId")
 
     var requestBody struct {
-        GameId string `json:"gameId"`
-        Card   string `json:"card"`
+        Card string `json:"card"`
     }
 
     if err := c.Bind(&requestBody); err != nil {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
     }
 
-    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, requestBody.GameId) {
-        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+    if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("It's not your game."),
         })
     }
 
-    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, requestBody.GameId)
+    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, gameId)
 
     players := strings.Split(gameInformation["players"].(string), ",")
 
     uIndex := my_slice.GetIndex(username, players)
 
-    err := redis.PlaceCard(c.Request().Context(), h.redisConnection, uIndex, requestBody.GameId, requestBody.Card, gameInformation["center_cards"].(string))
+    err := redis.PlaceCard(c.Request().Context(), h.redisConnection, uIndex, gameId, requestBody.Card, gameInformation["center_cards"].(string))
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),
@@ -254,7 +258,7 @@ func (h *Handler) GetUpdate(c echo.Context) error {
     gameId := c.QueryParam("gameId")
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
-        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("It's not your game."),
         })
     }
