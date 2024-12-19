@@ -43,7 +43,7 @@ func DoesPlayerHaveAnActiveGame(db *gorm.DB, username string) (*string, bool) {
     var result struct{ GameId string }
 
     db.Table("players").
-        Select("games.id").
+        Select("games.game_id").
         Joins("inner join games on games.player_id = players.id").
         Where("players.username = ?", username).
         Where("games.finished_at is null").
@@ -56,13 +56,13 @@ func DoesPlayerHaveAnActiveGame(db *gorm.DB, username string) (*string, bool) {
     return nil, false
 }
 
-func DoesPlayerBelongsToThisGame(db *gorm.DB, username, gameid string) bool {
+func DoesPlayerBelongsToThisGame(db *gorm.DB, username, gameId string) bool {
     var count int64
 
     err := db.Table("players").
         Joins("inner join games on games.player_id = players.id").
         Where("players.username = ?", username).
-        Where("games.id = ?", gameid).
+        Where("games.id = ?", gameId).
         Count(&count).Error
 
     if err != nil {

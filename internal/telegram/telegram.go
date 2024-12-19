@@ -40,7 +40,7 @@ func startHandler(c telebot.Context, db *gorm.DB) error {
         log.Fatalf("couldn't save: %v", err)
     }
 
-    encrypted, _ := crypto.Encrypt([]byte(player.Username))
+    encrypted, _ := crypto.Encrypt(player.Username)
 
     return c.Send("Let's Play", &telebot.ReplyMarkup{
         InlineKeyboard: [][]telebot.InlineButton{{{

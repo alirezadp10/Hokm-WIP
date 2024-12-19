@@ -3,11 +3,13 @@ package handler
 import (
     "context"
     "errors"
+    "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
     "github.com/alirezadp10/hokm/internal/hokm"
     "github.com/alirezadp10/hokm/internal/utils/my_slice"
     "github.com/alirezadp10/hokm/internal/utils/trans"
+    "github.com/google/uuid"
     "github.com/labstack/echo/v4"
     "github.com/redis/rueidis"
     "net/http"
@@ -27,14 +29,18 @@ func (h *Handler) GetGameId(c echo.Context) error {
         })
     }
 
-    go hokm.Matchmaking(c.Request().Context(), h.redisConnection, username)
+    gameId = uuid.New().String()
+    go hokm.Matchmaking(c.Request().Context(), h.redisConnection, username, gameId)
 
     err := redis.Subscribe(c.Request().Context(), h.redisConnection, "game_creation", func(msg rueidis.PubSubMessage) {
-        message := strings.Split(msg.Message, ",")
-        players := message[:len(message)-1]
+        message := strings.Split(msg.Message, "|")
+        players := strings.Split(message[0], ",")
         if my_slice.Has(players, username) {
-            _, _ = sqlite.AddPlayerToGame(h.sqliteConnection, username, gameId)
-            gameId = message[len(message)-1]
+            gameId = message[1]
+            _, err := sqlite.AddPlayerToGame(h.sqliteConnection, username, gameId)
+            if err != nil {
+                fmt.Println(err)
+            }
             redis.Unsubscribe(c.Request().Context(), h.redisConnection, "game_creation")
             //cancel()
         }

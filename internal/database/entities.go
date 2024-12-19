@@ -11,13 +11,15 @@ type Player struct {
     LastName  string
     Username  string
     Score     uint
+    Games     []Game `gorm:"foreignkey:PlayerId"`
     UpdatedAt time.Time
     JoinedAt  time.Time
 }
 
 type Game struct {
-    GameId     string `gorm:"primaryKey"`
-    PlayerId   int64  `gorm:"foreignKey"`
+    Id         int64 `gorm:"primaryKey"`
+    GameId     string
+    PlayerId   int64
     CreatedAt  time.Time
-    FinishedAt time.Time
+    FinishedAt *time.Time
 }

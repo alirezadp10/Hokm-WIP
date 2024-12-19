@@ -11,7 +11,7 @@ import (
 )
 
 // Encrypt encrypts the plaintext and returns a Base64-encoded ciphertext
-func Encrypt(plainText []byte) (string, error) {
+func Encrypt(plainText string) (string, error) {
     // Ensure the app key is of the correct length
     appKey := os.Getenv("APP_KEY")
     if len(appKey) != 32 {
@@ -25,7 +25,7 @@ func Encrypt(plainText []byte) (string, error) {
     }
 
     // Generate a random IV
-    cipherText := make([]byte, aes.BlockSize+len(plainText))
+    cipherText := make([]byte, aes.BlockSize+len([]byte(plainText)))
     iv := cipherText[:aes.BlockSize]
     if _, err := io.ReadFull(rand.Reader, iv); err != nil {
         return "", err
@@ -33,7 +33,7 @@ func Encrypt(plainText []byte) (string, error) {
 
     // Encrypt the plaintext
     stream := cipher.NewCFBEncrypter(block, iv)
-    stream.XORKeyStream(cipherText[aes.BlockSize:], plainText)
+    stream.XORKeyStream(cipherText[aes.BlockSize:], []byte(plainText))
 
     // Encode the ciphertext as Base64
     return base64.StdEncoding.EncodeToString(cipherText), nil

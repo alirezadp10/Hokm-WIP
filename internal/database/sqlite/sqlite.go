@@ -14,7 +14,7 @@ func GetNewConnection() *gorm.DB {
         log.Fatalf("failed to connect database: %v", err)
     }
 
-    err = db.AutoMigrate(&database.Player{})
+    err = db.AutoMigrate(&database.Player{}, &database.Game{})
     if err != nil {
         log.Fatalf("failed to migrate database: %v", err)
     }

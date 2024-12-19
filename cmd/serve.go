@@ -37,7 +37,7 @@ func serve(cmd *cobra.Command, args []string) {
     e.GET("/", h.GetSplashPage)
     e.GET("/menu", h.GetMenuPage)
     e.GET("/game", h.GetGamePage)
-    e.GET("/game/start", h.GetGameId, middleware.AuthMiddleware(sqliteClient))
+    e.POST("/game/start", h.GetGameId, middleware.AuthMiddleware(sqliteClient))
     e.GET("/game/:gameId", h.GetGameData, middleware.AuthMiddleware(sqliteClient))
     e.POST("/game/choose-trump", h.ChooseTrump, middleware.AuthMiddleware(sqliteClient))
     e.GET("/game/:gameId/cards", h.GetYourCards, middleware.AuthMiddleware(sqliteClient))

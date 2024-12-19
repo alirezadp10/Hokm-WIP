@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
-    "github.com/google/uuid"
     "github.com/redis/rueidis"
     "math/rand"
     "strconv"
@@ -156,8 +155,8 @@ func GetDirection(pIndex, uIndex int) string {
 }
 
 // Matchmaking Find an open game for a player
-func Matchmaking(ctx context.Context, client rueidis.Client, userId string) {
-    gameId := uuid.New().String()
+func Matchmaking(ctx context.Context, client rueidis.Client, userId, gameId string) {
+    time.Sleep(1 * time.Second)
     distributedCards := DistributeCards()
     redis.Matchmaking(ctx, client, userId, gameId, distributedCards)
 }
