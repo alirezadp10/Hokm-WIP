@@ -228,6 +228,10 @@ func (h *Handler) PlaceCard(c echo.Context) error {
 
     gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, gameId)
 
+    // check selected card
+    // check winner
+    //
+
     players := strings.Split(gameInformation["players"].(string), ",")
 
     uIndex := my_slice.GetIndex(username, players)
@@ -250,7 +254,7 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         "whoHasWonTheCards": hokm.GetDirection(gameInformation["who_has_won_the_cards"].(int), uIndex),
         "whoHasWonTheRound": hokm.GetDirection(gameInformation["who_has_won_the_round"].(int), uIndex),
         "whoHasWonTheGame":  hokm.GetDirection(gameInformation["who_has_won_the_game"].(int), uIndex),
-        "wasKingChanged":    gameInformation["who_king_changed"].(string),
+        "wasJudgeChanged":   gameInformation["who_king_changed"].(string),
         "trump":             gameInformation["trump"],
     })
 }
@@ -312,6 +316,6 @@ func (h *Handler) GetUpdate(c echo.Context) error {
         "whoHasWonTheCards": hokm.GetDirection(gameInformation["who_has_won_the_cards"].(int), uIndex),
         "whoHasWonTheRound": hokm.GetDirection(gameInformation["who_has_won_the_round"].(int), uIndex),
         "whoHasWonTheGame":  hokm.GetDirection(gameInformation["who_has_won_the_game"].(int), uIndex),
-        "wasKingChanged":    gameInformation["who_king_changed"].(string),
+        "wasJudgeChanged":   gameInformation["who_king_changed"].(string),
     })
 }
