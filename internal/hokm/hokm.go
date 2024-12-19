@@ -138,11 +138,13 @@ func GetPoints(pointsString string, uIndex int) map[string]map[string]string {
 }
 
 // GetCenterCards Get center cards
-func GetCenterCards(centerCardsString string, uIndex int) map[string]string {
-    result := make(map[string]string)
-    centerCards := strings.Split(centerCardsString, ",")
-    for key, val := range centerCards {
+func GetCenterCards(centerCards string, uIndex int) map[string]interface{} {
+    result := make(map[string]interface{})
+    for key, val := range strings.Split(centerCards, ",") {
         result[GetDirection(key, uIndex)] = val
+        if val == "0" {
+            result[GetDirection(key, uIndex)] = nil
+        }
     }
     return result
 }
