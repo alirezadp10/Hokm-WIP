@@ -1,6 +1,7 @@
 package telegram
 
 import (
+    "context"
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
     "github.com/alirezadp10/hokm/internal/utils/crypto"
@@ -12,7 +13,7 @@ import (
     "time"
 )
 
-func Start(db *gorm.DB) {
+func Start(ctx context.Context, db *gorm.DB) {
     bot, err := telebot.NewBot(telebot.Settings{
         Token:  os.Getenv("TELEGRAM_BOT_TOKEN"),
         Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
@@ -27,7 +28,10 @@ func Start(db *gorm.DB) {
     })
 
     fmt.Println("Bot is running...")
-    bot.Start()
+    go bot.Start()
+    <-ctx.Done()
+    fmt.Println("Shutting down bot...")
+    bot.Stop()
 }
 
 func startHandler(c telebot.Context, db *gorm.DB) error {

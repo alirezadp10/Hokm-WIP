@@ -27,21 +27,21 @@ func (h *Handler) GetGameId(c echo.Context) error {
         })
     }
 
-    go hokm.Matchmaking(h.context, h.redisConnection, username)
+    go hokm.Matchmaking(c.Request().Context(), h.redisConnection, username)
 
-    err := redis.Subscribe(h.context, h.redisConnection, "game_creation", func(msg rueidis.PubSubMessage) {
+    err := redis.Subscribe(c.Request().Context(), h.redisConnection, "game_creation", func(msg rueidis.PubSubMessage) {
         message := strings.Split(msg.Message, ",")
         players := message[:len(message)-1]
         if my_slice.Has(players, username) {
             _, _ = sqlite.AddPlayerToGame(h.sqliteConnection, username, gameId)
             gameId = message[len(message)-1]
-            redis.Unsubscribe(h.context, h.redisConnection, "game_creation")
+            redis.Unsubscribe(c.Request().Context(), h.redisConnection, "game_creation")
             //cancel()
         }
     })
 
     if err != nil {
-        if errors.Is(h.context.Err(), context.DeadlineExceeded) {
+        if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
                 "message": trans.Get("No body have found. please try again later."),
                 "gameId":  nil,
@@ -70,7 +70,7 @@ func (h *Handler) GetGameData(c echo.Context) error {
         })
     }
 
-    gameInformation := redis.GetGameInformation(h.context, h.redisConnection, gameId)
+    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, gameId)
 
     players := strings.Split(gameInformation["players"].(string), ",")
 
@@ -110,7 +110,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
         })
     }
 
-    gameInformation := redis.GetGameInformation(h.context, h.redisConnection, requestBody.GameId)
+    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, requestBody.GameId)
 
     if gameInformation["judge"].(string) != username {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
@@ -124,7 +124,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
         })
     }
 
-    err := redis.SetTrump(h.context, h.redisConnection, requestBody.GameId, requestBody.Trump)
+    err := redis.SetTrump(c.Request().Context(), h.redisConnection, requestBody.GameId, requestBody.Trump)
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),
@@ -154,22 +154,22 @@ func (h *Handler) GetYourCards(c echo.Context) error {
         })
     }
 
-    err := redis.Subscribe(h.context, h.redisConnection, "choosing_trump", func(msg rueidis.PubSubMessage) {
+    err := redis.Subscribe(c.Request().Context(), h.redisConnection, "choosing_trump", func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, ",")
         messageId := my_slice.HasLike(messages, func(s string) bool {
             return strings.Contains(s, gameId+"|")
         })
         if messageId != -1 {
             data := strings.Split(messages[messageId], "|")
-            gameInformation = redis.GetGameInformation(h.context, h.redisConnection, data[0])
+            gameInformation = redis.GetGameInformation(c.Request().Context(), h.redisConnection, data[0])
             trump = data[1]
-            redis.Unsubscribe(h.context, h.redisConnection, "choosing_trump")
+            redis.Unsubscribe(c.Request().Context(), h.redisConnection, "choosing_trump")
             //cancel()
         }
     })
 
     if err != nil {
-        if errors.Is(h.context.Err(), context.DeadlineExceeded) {
+        if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
                 "message": trans.Get("Something went wrong, Please try again later."),
             })
@@ -207,13 +207,13 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         })
     }
 
-    gameInformation := redis.GetGameInformation(h.context, h.redisConnection, requestBody.GameId)
+    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, requestBody.GameId)
 
     players := strings.Split(gameInformation["players"].(string), ",")
 
     uIndex := my_slice.GetIndex(username, players)
 
-    err := redis.PlaceCard(h.context, h.redisConnection, uIndex, requestBody.GameId, requestBody.Card, gameInformation["center_cards"].(string))
+    err := redis.PlaceCard(c.Request().Context(), h.redisConnection, uIndex, requestBody.GameId, requestBody.Card, gameInformation["center_cards"].(string))
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),
@@ -255,23 +255,23 @@ func (h *Handler) GetUpdate(c echo.Context) error {
         })
     }
 
-    err := redis.Subscribe(h.context, h.redisConnection, "placing_card", func(msg rueidis.PubSubMessage) {
+    err := redis.Subscribe(c.Request().Context(), h.redisConnection, "placing_card", func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, ",")
         messageId := my_slice.HasLike(messages, func(s string) bool {
             return strings.Contains(s, gameId+"|")
         })
         if messageId != -1 {
             data := strings.Split(messages[messageId], "|")
-            gameInformation = redis.GetGameInformation(h.context, h.redisConnection, data[0])
+            gameInformation = redis.GetGameInformation(c.Request().Context(), h.redisConnection, data[0])
             player, _ = strconv.Atoi(data[1])
             card = data[2]
-            redis.Unsubscribe(h.context, h.redisConnection, "placing_card")
+            redis.Unsubscribe(c.Request().Context(), h.redisConnection, "placing_card")
             //cancel()
         }
     })
 
     if err != nil {
-        if errors.Is(h.context.Err(), context.DeadlineExceeded) {
+        if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
                 "message": trans.Get("Something went wrong, Please try again later."),
             })

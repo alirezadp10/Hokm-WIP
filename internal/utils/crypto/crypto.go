@@ -4,47 +4,72 @@ import (
     "crypto/aes"
     "crypto/cipher"
     "crypto/rand"
-    "fmt"
+    "encoding/base64"
+    "errors"
     "io"
     "os"
 )
 
-func Encrypt(plainText []byte) ([]byte, error) {
-    block, err := aes.NewCipher([]byte(os.Getenv("APP_KEY")))
+// Encrypt encrypts the plaintext and returns a Base64-encoded ciphertext
+func Encrypt(plainText []byte) (string, error) {
+    // Ensure the app key is of the correct length
+    appKey := os.Getenv("APP_KEY")
+    if len(appKey) != 32 {
+        return "", errors.New("APP_KEY must be 32 bytes long for AES-256")
+    }
+
+    // Create a new AES cipher block
+    block, err := aes.NewCipher([]byte(appKey))
     if err != nil {
-        return nil, err
+        return "", err
     }
 
     // Generate a random IV
     cipherText := make([]byte, aes.BlockSize+len(plainText))
     iv := cipherText[:aes.BlockSize]
     if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-        return nil, err
+        return "", err
     }
 
     // Encrypt the plaintext
     stream := cipher.NewCFBEncrypter(block, iv)
     stream.XORKeyStream(cipherText[aes.BlockSize:], plainText)
 
-    return cipherText, nil
+    // Encode the ciphertext as Base64
+    return base64.StdEncoding.EncodeToString(cipherText), nil
 }
 
-func Decrypt(cipherText []byte) ([]byte, error) {
-    block, err := aes.NewCipher([]byte(os.Getenv("APP_KEY")))
+// Decrypt decrypts a Base64-encoded ciphertext and returns the plaintext
+func Decrypt(cipherTextBase64 string) (string, error) {
+    // Ensure the app key is of the correct length
+    appKey := os.Getenv("APP_KEY")
+    if len(appKey) != 32 {
+        return "", errors.New("APP_KEY must be 32 bytes long for AES-256")
+    }
+
+    // Decode the Base64-encoded ciphertext
+    cipherText, err := base64.StdEncoding.DecodeString(cipherTextBase64)
     if err != nil {
-        return nil, err
+        return "", err
     }
 
+    // Create a new AES cipher block
+    block, err := aes.NewCipher([]byte(appKey))
+    if err != nil {
+        return "", err
+    }
+
+    // Extract the IV from the ciphertext
     if len(cipherText) < aes.BlockSize {
-        return nil, fmt.Errorf("cipher text too short")
+        return "", errors.New("ciphertext too short")
     }
-
     iv := cipherText[:aes.BlockSize]
     cipherText = cipherText[aes.BlockSize:]
 
     // Decrypt the ciphertext
     stream := cipher.NewCFBDecrypter(block, iv)
-    stream.XORKeyStream(cipherText, cipherText)
+    plainText := make([]byte, len(cipherText))
+    stream.XORKeyStream(plainText, cipherText)
 
-    return cipherText, nil
+    return string(plainText), nil
 }

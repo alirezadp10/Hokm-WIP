@@ -72,3 +72,16 @@ func DoesPlayerBelongsToThisGame(db *gorm.DB, username, gameid string) bool {
 
     return count > 0
 }
+
+func CheckPlayerExistence(db *gorm.DB, username string) bool {
+    var count int64
+
+    err := db.Table("players").Where("username = ?", username).Count(&count).Error
+
+    if err != nil {
+        log.Fatal(err)
+        return false
+    }
+
+    return count > 0
+}
