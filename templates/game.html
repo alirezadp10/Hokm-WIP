@@ -172,7 +172,7 @@
             });
     }
 
-    async function getYourCards(judge) {
+    async function getYourCards(king) {
         fetch(`/game/${gameId}/cards`, {
             method: 'GET',
             headers: {
@@ -180,10 +180,10 @@
             },
         })
             .then((response) => response.json())
-            .then((data) => getYourCardsActions(data, judge))
+            .then((data) => getYourCardsActions(data, king))
             .catch(async (error) => {
                 await sleep(1000)
-                await getYourCards(judge)
+                await getYourCards(king)
                 console.error('Error:', error)
             });
     }
@@ -191,22 +191,22 @@
     async function updateGameUI(data) {
         updatePlayerNames(data.players);
         updateTotalRoundScores(data.points.total);
-        let judge = data.judge
+        let king = data.king
         if (isItFirstRound(data)) {
             await firstKingDetermination(data.firstKingDeterminationCards)
-            document.getElementById(`${judge}-player`).innerHTML = "👑 " + document.getElementById(`${judge}-player`).innerHTML;
+            document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
             await sleep(500);
-            let cards = judge === "down" ? data.trumpDeterminationCards : ["back", "back", "back", "back", "back"];
-            await distribute(judge, cards)
-            if (judge === "down") {
+            let cards = king === "down" ? data.trumpDeterminationCards : ["back", "back", "back", "back", "back"];
+            await distribute(king, cards)
+            if (king === "down") {
                 countdown = setInterval(updateTimer, 1000);
                 updateTime(20)
                 document.getElementById("trump-box").removeAttribute("hidden")
             } else {
-                await getYourCards(judge);
+                await getYourCards(king);
             }
         } else {
-            document.getElementById(`${judge}-player`).innerHTML = "👑 " + document.getElementById(`${judge}-player`).innerHTML;
+            document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
             updateTurn(data.currentTurn);
             updateTime(data.timeRemained);
             updateCenterCards(data.centerCards);
@@ -389,10 +389,10 @@
         audio.play();
     }
 
-    async function getYourCardsActions(data, judge) {
+    async function getYourCardsActions(data, king) {
         updateTrump(data.trump);
         document.getElementById("deck").remove()
-        await continueDistributing(data, getNextIndex(judge))
+        await continueDistributing(data, getNextIndex(king))
         await refresh()
     }
 
@@ -425,24 +425,24 @@
                         alert("right has won the game!")
                     }
                 } else {
-                    let judge = data.judge
+                    let king = data.king
                     let cards
-                    if (judge === "down") {
+                    if (king === "down") {
                         cards = data.trumpDeterminationCards;
                     } else {
                         cards = ["back", "back", "back", "back", "back"];
                     }
                     if (data.wasKingChanged) {
-                        document.getElementById(`${judge}-player`).innerHTML = "👑 " + document.getElementById(`${judge}-player`).innerHTML;
+                        document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
                     }
                     await sleep(500);
-                    await distribute(judge, cards)
-                    if (judge === "down") {
+                    await distribute(king, cards)
+                    if (king === "down") {
                         countdown = setInterval(updateTimer, 1000);
                         updateTime(20)
                         document.getElementById("trump-box").removeAttribute("hidden")
                     } else {
-                        getYourCards(judge);
+                        getYourCards(king);
                     }
                 }
             }

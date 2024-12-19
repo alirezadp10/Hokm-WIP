@@ -7,13 +7,12 @@ import (
     "github.com/redis/rueidis"
     "log"
     "strconv"
-    "strings"
 )
 
 //go:embed matchmaking.lua
 var matchmakingScript string
 
-func Matchmaking(ctx context.Context, client rueidis.Client, cards []string, userId, gameId, lastMoveTimestamps, judge, judgeCards string) {
+func Matchmaking(ctx context.Context, client rueidis.Client, cards []string, userId, gameId, lastMoveTimestamps, king, kingCards string) {
     command := client.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
         userId,
         gameId,
@@ -22,8 +21,8 @@ func Matchmaking(ctx context.Context, client rueidis.Client, cards []string, use
         cards[2],
         cards[3],
         lastMoveTimestamps,
-        judge,
-        judgeCards,
+        king,
+        kingCards,
     ).Build()
     _, err := client.Do(ctx, command).ToArray()
     if err != nil {
@@ -40,13 +39,13 @@ func GetGameInformation(ctx context.Context, client rueidis.Client, gameId strin
         "center_cards",
         "current_turn",
         "players_cards",
-        "judge",
+        "king",
         "trump",
         "turn",
         "last_move_timestamp",
         "cards",
-        "judge_cards",
-        "has_judge_cards_finished",
+        "king_cards",
+        "has_king_cards_finished",
     }
 
     command := client.B().Hmget().Key("game:" + gameId).Field(fields...).Build()
@@ -67,10 +66,12 @@ func GetGameInformation(ctx context.Context, client rueidis.Client, gameId strin
     return result
 }
 
-func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump string) error {
-    cmds := make(rueidis.Commands, 0, 3)
+func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump, uIndex, lastMoveTimestamp string) error {
+    cmds := make(rueidis.Commands, 0, 5)
     cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", trump).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("has_judge_cards_finished", "true").Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("has_king_cards_finished", "true").Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("turn", uIndex).Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("last_move_timestamp", lastMoveTimestamp).Build())
     cmds = append(cmds, client.B().Publish().Channel("choosing_trump").Message(gameId+"|"+trump).Build())
 
     for _, resp := range client.DoMulti(ctx, cmds...) {
@@ -83,13 +84,8 @@ func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump string) 
 }
 
 func PlaceCard(ctx context.Context, client rueidis.Client, playerIndex int, gameId, card, centerCards string) error {
-    centerCardsList := strings.Split(centerCards, ",")
-    centerCardsList[playerIndex] = card
-    centerCards = strings.Join(centerCardsList, ",")
-
-    cmds := make(rueidis.Commands, 0, 3)
+    cmds := make(rueidis.Commands, 0, 2)
     cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("center_cards", centerCards).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", card).Build())
     cmds = append(cmds, client.B().Publish().Channel("placing_card").Message(gameId+"|"+strconv.Itoa(playerIndex)+"|"+card).Build())
 
     for _, resp := range client.DoMulti(ctx, cmds...) {
