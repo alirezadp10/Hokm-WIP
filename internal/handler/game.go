@@ -82,15 +82,12 @@ func (h *Handler) GetGameData(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
-    judgeIndex, _ := strconv.Atoi(gameInformation["judge"].(string))
-    turnIndex, _ := strconv.Atoi(gameInformation["turn"].(string))
-
     return c.JSON(http.StatusOK, map[string]interface{}{
         "players":      hokm.GetPlayersWithDirections(players, uIndex),
         "points":       hokm.GetPoints(gameInformation["points"].(string), uIndex),
         "centerCards":  hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":         hokm.GetDirection(turnIndex, uIndex),
-        "judge":        hokm.GetDirection(judgeIndex, uIndex),
+        "turn":         hokm.GetTurn(gameInformation["turn"].(string), uIndex),
+        "judge":        hokm.GetJudge(gameInformation["judge"].(string), uIndex),
         "timeRemained": hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
         "kingsCards":   hokm.GetKingsCards(gameInformation["kings_cards"].(string), uIndex),
         "yourCards":    hokm.GetYourCards(gameInformation["cards"].(string), uIndex),
@@ -226,15 +223,12 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         })
     }
 
-    judgeIndex, _ := strconv.Atoi(gameInformation["judge"].(string))
-    turnIndex, _ := strconv.Atoi(gameInformation["turn"].(string))
-
     return c.JSON(http.StatusOK, map[string]interface{}{
         "players":           hokm.GetPlayersWithDirections(players, uIndex),
         "points":            hokm.GetPoints(gameInformation["points"].(string), uIndex),
         "centerCards":       hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":              hokm.GetDirection(turnIndex, uIndex),
-        "judge":             hokm.GetDirection(judgeIndex, uIndex),
+        "turn":              hokm.GetTurn(gameInformation["turn"].(string), uIndex),
+        "judge":             hokm.GetJudge(gameInformation["judge"].(string), uIndex),
         "timeRemained":      hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
         "kingsCards":        hokm.GetKingsCards(gameInformation["kings_cards"].(string), uIndex),
         "yourCards":         hokm.GetYourCards(gameInformation["cards"].(string), uIndex),
@@ -291,9 +285,6 @@ func (h *Handler) GetUpdate(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
-    judgeIndex, _ := strconv.Atoi(gameInformation["judge"].(string))
-    turnIndex, _ := strconv.Atoi(gameInformation["turn"].(string))
-
     return c.JSON(http.StatusOK, map[string]interface{}{
         "lastMove": map[string]string{
             "from": hokm.GetDirection(player, uIndex),
@@ -301,8 +292,8 @@ func (h *Handler) GetUpdate(c echo.Context) error {
         },
         "points":            hokm.GetPoints(gameInformation["points"].(string), uIndex),
         "centerCards":       hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":              hokm.GetDirection(turnIndex, uIndex),
-        "judge":             hokm.GetDirection(judgeIndex, uIndex),
+        "turn":              hokm.GetTurn(gameInformation["turn"].(string), uIndex),
+        "judge":             hokm.GetJudge(gameInformation["judge"].(string), uIndex),
         "timeRemained":      hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
         "whoHasWonTheCards": hokm.GetDirection(gameInformation["who_has_won_the_cards"].(int), uIndex),
         "whoHasWonTheRound": hokm.GetDirection(gameInformation["who_has_won_the_round"].(int), uIndex),

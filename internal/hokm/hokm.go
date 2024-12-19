@@ -48,6 +48,16 @@ func SetKingCards() []string {
     }
 }
 
+func GetJudge(judgeIndex string, uIndex int) string {
+    judgeI, _ := strconv.Atoi(judgeIndex)
+    return GetDirection(judgeI, uIndex)
+}
+
+func GetTurn(turnIndex string, uIndex int) string {
+    turnI, _ := strconv.Atoi(turnIndex)
+    return GetDirection(turnI, uIndex)
+}
+
 func GetTimeRemained(lastMoveTimestampStr string) time.Duration {
     // Convert the string to an integer (Unix timestamp)
     lastMoveTimestampInt, err := strconv.ParseInt(lastMoveTimestampStr, 10, 64)
