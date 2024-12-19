@@ -6,5 +6,7 @@
   "Something went wrong, Please try again later.": "خطایی رخ داده است، لطفا بعدا دوباره تلاش کنید.",
   "No body have found. please try again later.": "کسی پیدا نشد، لطفا بعدا دوباره تلاش کنید.",
   "You're not judge in this round.": "شما در این راند حاکم نیستید.",
-  "You're not allowed to choose a trump at the moment.": "شما در این راند حق انتخاب حکم را ندارید."
+  "You're not allowed to choose a trump at the moment.": "شما در این راند حق انتخاب حکم را ندارید.",
+  "Invalid trump.": "حکم نامعتبر.",
+  "Invalid JSON." : "ورودی نا معتبر است."
 }

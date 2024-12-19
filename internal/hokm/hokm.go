@@ -51,6 +51,15 @@ func chooseFirstJudge() (string, string) {
     }
 }
 
+func GetJudgeCards(judgeCardsString string) []string {
+    var judgeCards []string
+    err := json.Unmarshal([]byte(judgeCardsString), &judgeCards)
+    if err != nil {
+        fmt.Println("Error unmarshalling:", err)
+    }
+    return judgeCards
+}
+
 func GetJudge(judgeIndex string, uIndex int) string {
     judgeI, _ := strconv.Atoi(judgeIndex)
     return GetDirection(judgeI, uIndex)

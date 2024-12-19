@@ -36,6 +36,8 @@ if count >= 4 then
 
     redis.call('HSET', 'game:' .. ARGV[2], 'judge_cards', ARGV[9])
 
+    redis.call('HSET', 'game:' .. ARGV[2], 'has_judge_cards_finished', "false")
+
     -- Publish the list of players to a channel
     redis.call('PUBLISH', KEYS[2], table.concat(players, ",") .. "|" .. ARGV[2])
 end

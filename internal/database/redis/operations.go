@@ -46,6 +46,7 @@ func GetGameInformation(ctx context.Context, client rueidis.Client, gameId strin
         "last_move_timestamp",
         "cards",
         "judge_cards",
+        "has_judge_cards_finished",
     }
 
     command := client.B().Hmget().Key("game:" + gameId).Field(fields...).Build()
@@ -67,8 +68,9 @@ func GetGameInformation(ctx context.Context, client rueidis.Client, gameId strin
 }
 
 func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump string) error {
-    cmds := make(rueidis.Commands, 0, 2)
+    cmds := make(rueidis.Commands, 0, 3)
     cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", trump).Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("has_judge_cards_finished", "true").Build())
     cmds = append(cmds, client.B().Publish().Channel("choosing_trump").Message(gameId+"|"+trump).Build())
 
     for _, resp := range client.DoMulti(ctx, cmds...) {

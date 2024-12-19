@@ -89,14 +89,16 @@ func (h *Handler) GetGameData(c echo.Context) error {
     uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
-        "players":      hokm.GetPlayersWithDirections(players, uIndex),
-        "points":       hokm.GetPoints(gameInformation["points"].(string), uIndex),
-        "centerCards":  hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":         hokm.GetTurn(gameInformation["turn"].(string), uIndex),
-        "judge":        hokm.GetJudge(gameInformation["judge"].(string), uIndex),
-        "timeRemained": hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-        "playerCards":  hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
-        "trump":        gameInformation["trump"],
+        "players":                  hokm.GetPlayersWithDirections(players, uIndex),
+        "points":                   hokm.GetPoints(gameInformation["points"].(string), uIndex),
+        "centerCards":              hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
+        "turn":                     hokm.GetTurn(gameInformation["turn"].(string), uIndex),
+        "judge":                    hokm.GetJudge(gameInformation["judge"].(string), uIndex),
+        "judge_cards":              hokm.GetJudgeCards(gameInformation["judge_cards"].(string)),
+        "timeRemained":             hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
+        "playerCards":              hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
+        "has_judge_cards_finished": gameInformation["has_judge_cards_finished"].(string),
+        "trump":                    gameInformation["trump"],
     })
 }
 
@@ -124,13 +126,17 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
 
     gameInformation := redis.GetGameInformation(c.Request().Context(), h.redisConnection, gameId)
 
-    if gameInformation["judge"].(string) != username {
+    players := strings.Split(gameInformation["players"].(string), ",")
+
+    uIndex := my_slice.GetIndex(username, players)
+
+    if gameInformation["judge"].(string) != strconv.Itoa(uIndex) {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("You're not judge in this round."),
         })
     }
 
-    if gameInformation["trump"] != nil {
+    if gameInformation["trump"].(string) != "" {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("You're not allowed to choose a trump at the moment."),
         })
@@ -142,10 +148,6 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
             "message": trans.Get("Something went wrong, Please try again later."),
         })
     }
-
-    players := strings.Split(gameInformation["players"].(string), ",")
-
-    uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "trump": requestBody.Trump,
