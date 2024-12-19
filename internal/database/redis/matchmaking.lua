@@ -26,6 +26,8 @@ if count >= 4 then
         [3] = cjson.decode(ARGV[6])
     }))
 
+    redis.call('HSET', 'game:' .. ARGV[2], 'lead_suit', '')
+
     redis.call('HSET', 'game:' .. ARGV[2], 'trump', '')
 
     redis.call('HSET', 'game:' .. ARGV[2], 'turn', '')
@@ -37,6 +39,14 @@ if count >= 4 then
     redis.call('HSET', 'game:' .. ARGV[2], 'king_cards', ARGV[9])
 
     redis.call('HSET', 'game:' .. ARGV[2], 'has_king_cards_finished', "false")
+
+    redis.call('HSET', 'game:' .. ARGV[2], 'was_king_changed', '')
+
+    redis.call('HSET', 'game:' .. ARGV[2], 'who_has_won_the_cards', '')
+
+    redis.call('HSET', 'game:' .. ARGV[2], 'who_has_won_the_round', '')
+
+    redis.call('HSET', 'game:' .. ARGV[2], 'who_has_won_the_game', '')
 
     -- Publish the list of players to a channel
     redis.call('PUBLISH', KEYS[2], table.concat(players, ",") .. "|" .. ARGV[2])

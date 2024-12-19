@@ -6,10 +6,10 @@ import (
 )
 
 type Handler struct {
-    sqliteConnection *gorm.DB
-    redisConnection  rueidis.Client
+    sqlite *gorm.DB
+    redis  rueidis.Client
 }
 
 func NewHandler(sqlite *gorm.DB, redis rueidis.Client) *Handler {
-    return &Handler{sqliteConnection: sqlite, redisConnection: redis}
+    return &Handler{sqlite: sqlite, redis: redis}
 }

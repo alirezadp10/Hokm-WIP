@@ -20,6 +20,11 @@ var cards = []string{
     "01S", "02S", "03S", "04S", "05S", "06S", "07S", "08S", "09S", "10S", "JS", "QS", "KS", // Spades
 }
 
+// Map to determine card rank
+var rank = map[string]int{
+    "02": 2, "03": 3, "04": 4, "05": 5, "06": 6, "07": 7, "08": 8, "09": 9, "10": 10, "J": 11, "Q": 12, "K": 13, "01": 14,
+}
+
 // chooseFirstKing selects the first player with a king card and returns the cards sequence and the player's index
 func chooseFirstKing() (string, string) {
     localCards := make([]string, len(cards)) // Create a copy of the cards to shuffle
@@ -189,4 +194,87 @@ func chunkCards(gameCards map[int][]string, uIndex int) [][]string {
     }
     result = append(result, chunk) // Add remaining cards
     return result
+}
+
+func UpdateCenterCards(cards string, newCard string, uIndex int) string {
+    centerCardsList := strings.Split(cards, ",")
+    centerCardsList[uIndex] = newCard
+    return strings.Join(centerCardsList, ",")
+}
+
+func FindCardsWinner(cards, trump, leadSuit string) string {
+    centerCards := strings.Split(cards, ",")
+
+    for _, card := range centerCards {
+        if card == "" {
+            return ""
+        }
+    }
+
+    highestRank := -1
+    winner := 0
+
+    for i, card := range centerCards {
+        cardSuit := GetCardSuit(card)        // Extract suit of the card
+        cardRank := rank[card[:len(card)-1]] // Get the rank of the card (number or face)
+
+        // Check if the card is a trump
+        if cardSuit == trump {
+            cardRank += 100 // Increase trump card rank to always beat non-trump cards
+        } else if cardSuit != leadSuit {
+            continue // Skip non-lead-suit and non-trump cards
+        }
+
+        // Update the winner if this card has a higher rank
+        if cardRank > highestRank {
+            highestRank = cardRank
+            winner = i
+        }
+    }
+
+    return strconv.Itoa(winner)
+}
+
+func GetCardSuit(card string) string {
+    if len(card) == 0 {
+        return ""
+    }
+    return string(card[len(card)-1])
+}
+
+func UpdatePoints(pointsString, cardsWinnerString string) (string, string, string) {
+    points := make(map[string]string)
+    err := json.Unmarshal([]byte(pointsString), &points) // Parse JSON string
+    if err != nil {
+        fmt.Println("Error unmarshalling:", err)
+    }
+
+    cardsWinner, _ := strconv.Atoi(cardsWinnerString)
+
+    oldRoundPoints, _ := strconv.Atoi(strings.Split(points["round"], ",")[cardsWinner%2])
+    roundPoints := strings.Split(points["round"], ",")
+    roundPoints[cardsWinner%2] = strconv.Itoa(oldRoundPoints + 1)
+    points["round"] = strings.Join(roundPoints, ",")
+
+    roundWinner := ""
+    oldTotalPoints, _ := strconv.Atoi(strings.Split(points["total"], ",")[cardsWinner%2])
+    if oldRoundPoints+1 == 7 {
+        points["round"] = "0,0"
+        totalPoints := strings.Split(points["total"], ",")
+        totalPoints[cardsWinner%2] = strconv.Itoa(oldTotalPoints + 1)
+        points["total"] = strings.Join(totalPoints, ",")
+        roundWinner = strconv.Itoa(cardsWinner % 2)
+    }
+
+    gameWinner := ""
+    if oldTotalPoints+1 == 7 {
+        totalPoints := strings.Split(points["total"], ",")
+        totalPoints[cardsWinner%2] = strconv.Itoa(oldTotalPoints + 1)
+        points["total"] = strings.Join(totalPoints, ",")
+        gameWinner = strconv.Itoa(cardsWinner % 2)
+    }
+
+    pointsStr, _ := json.Marshal(points)
+
+    return string(pointsStr), roundWinner, gameWinner
 }
