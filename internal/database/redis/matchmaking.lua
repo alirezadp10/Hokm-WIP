@@ -16,7 +16,7 @@ if count >= 4 then
 
     redis.call('HSET', 'game:' .. ARGV[2], 'points', '{"total":"0,0","round":"0,0"}')
 
-    redis.call('HSET', 'game:' .. ARGV[2], 'center_cards', '0,0,0,0')
+    redis.call('HSET', 'game:' .. ARGV[2], 'center_cards', ',,,')
 
     -- Set players cards
     redis.call('HSET', 'game:' .. ARGV[2], 'cards', cjson.encode({
@@ -26,13 +26,11 @@ if count >= 4 then
         [3] = cjson.decode(ARGV[6])
     }))
 
-    redis.call('HSET', 'game:' .. ARGV[2], 'kings_cards', '')
+    redis.call('HSET', 'game:' .. ARGV[2], 'trump', '')
 
-    redis.call('HSET', 'game:' .. ARGV[2], 'trump', '-1')
+    redis.call('HSET', 'game:' .. ARGV[2], 'judge', ARGV[8])
 
-    redis.call('HSET', 'game:' .. ARGV[2], 'judge', '-1')
-
-    redis.call('HSET', 'game:' .. ARGV[2], 'turn', '-1')
+    redis.call('HSET', 'game:' .. ARGV[2], 'turn', '')
 
     redis.call('HSET', 'game:' .. ARGV[2], 'last_move_timestamp', ARGV[7])
 

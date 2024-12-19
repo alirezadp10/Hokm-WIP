@@ -70,6 +70,12 @@ func (h *Handler) GetGameData(c echo.Context) error {
 
     gameId := c.Param("gameId")
 
+    if sqlite.HasGameFinished(h.sqliteConnection, gameId) {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": trans.Get("The game has already finished."),
+        })
+    }
+
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqliteConnection, username, gameId) {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("It's not your game."),
@@ -89,8 +95,7 @@ func (h *Handler) GetGameData(c echo.Context) error {
         "turn":         hokm.GetTurn(gameInformation["turn"].(string), uIndex),
         "judge":        hokm.GetJudge(gameInformation["judge"].(string), uIndex),
         "timeRemained": hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-        "kingsCards":   hokm.GetKingsCards(gameInformation["kings_cards"].(string), uIndex),
-        "yourCards":    hokm.GetYourCards(gameInformation["cards"].(string), uIndex),
+        "playerCards":  hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
         "trump":        gameInformation["trump"],
     })
 }
@@ -230,8 +235,7 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         "turn":              hokm.GetTurn(gameInformation["turn"].(string), uIndex),
         "judge":             hokm.GetJudge(gameInformation["judge"].(string), uIndex),
         "timeRemained":      hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-        "kingsCards":        hokm.GetKingsCards(gameInformation["kings_cards"].(string), uIndex),
-        "yourCards":         hokm.GetYourCards(gameInformation["cards"].(string), uIndex),
+        "playerCards":       hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
         "whoHasWonTheCards": hokm.GetDirection(gameInformation["who_has_won_the_cards"].(int), uIndex),
         "whoHasWonTheRound": hokm.GetDirection(gameInformation["who_has_won_the_round"].(int), uIndex),
         "whoHasWonTheGame":  hokm.GetDirection(gameInformation["who_has_won_the_game"].(int), uIndex),

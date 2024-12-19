@@ -6,6 +6,7 @@ import (
     "encoding/json"
     "github.com/redis/rueidis"
     "log"
+    "math/rand"
     "strconv"
     "strings"
     "time"
@@ -15,6 +16,8 @@ import (
 var matchmakingScript string
 
 func Matchmaking(ctx context.Context, client rueidis.Client, userId string, gameId string, cards [][]string) {
+    rand.Seed(time.Now().UnixNano())
+    judge := strconv.Itoa(rand.Intn(4))
     currentTime := strconv.FormatInt(time.Now().Unix(), 10) // Convert to string
     command := client.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
         userId,
@@ -23,7 +26,9 @@ func Matchmaking(ctx context.Context, client rueidis.Client, userId string, game
         `["`+strings.Join(cards[1], `","`)+`"]`,
         `["`+strings.Join(cards[2], `","`)+`"]`,
         `["`+strings.Join(cards[3], `","`)+`"]`,
-        currentTime).Build()
+        currentTime,
+        judge,
+    ).Build()
     _, err := client.Do(ctx, command).ToArray()
     if err != nil {
         log.Fatalf("could not execute Lua script: %v", err)

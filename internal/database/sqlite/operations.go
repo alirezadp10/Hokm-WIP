@@ -85,3 +85,11 @@ func CheckPlayerExistence(db *gorm.DB, username string) bool {
 
     return count > 0
 }
+
+func HasGameFinished(db *gorm.DB, gameId string) bool {
+    var game database.Game
+
+    db.Table("games").Where("game_id = ?", gameId).First(&game)
+
+    return game.FinishedAt != nil
+}

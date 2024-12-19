@@ -152,9 +152,6 @@ func GetCenterCards(centerCards string, uIndex int) map[string]interface{} {
     result := make(map[string]interface{})
     for key, val := range strings.Split(centerCards, ",") {
         result[GetDirection(key, uIndex)] = val
-        if val == "0" {
-            result[GetDirection(key, uIndex)] = nil
-        }
     }
     return result
 }
@@ -193,14 +190,17 @@ func DistributeCards() [][]string {
 }
 
 func GetPlayerCards(gameCardsString string, uIndex int) [][]string {
-    var result [][]string
     gameCards := make(map[int][]string)
-
     err := json.Unmarshal([]byte(gameCardsString), &gameCards)
     if err != nil {
         fmt.Println("Error unmarshalling:", err)
     }
 
+    return chunkCards(gameCards, uIndex)
+}
+
+func chunkCards(gameCards map[int][]string, uIndex int) [][]string {
+    var result [][]string
     var chunk []string
     for i, card := range gameCards[uIndex] {
         chunk = append(chunk, card)
@@ -209,14 +209,6 @@ func GetPlayerCards(gameCardsString string, uIndex int) [][]string {
             chunk = []string{}
         }
     }
+    result = append(result, chunk)
     return result
-}
-
-func GetYourCards(gameCardsString string, uIndex int) []string {
-    gameCards := make(map[int][]string)
-    err := json.Unmarshal([]byte(gameCardsString), &gameCards)
-    if err != nil {
-        fmt.Println("Error unmarshalling:", err)
-    }
-    return gameCards[uIndex]
 }
