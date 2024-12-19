@@ -54,6 +54,9 @@ func GetJudge(judgeIndex string, uIndex int) string {
 }
 
 func GetTurn(turnIndex string, uIndex int) string {
+    if turnIndex == "" {
+        return ""
+    }
     turnI, _ := strconv.Atoi(turnIndex)
     return GetDirection(turnI, uIndex)
 }
