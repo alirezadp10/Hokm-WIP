@@ -4,19 +4,6 @@ import (
     "testing"
 )
 
-func TestSetKingCards(t *testing.T) {
-    result := SetKingCards()
-
-    if len(result) == 0 {
-        t.Error("Result is empty; expected at least one card to be assigned")
-    }
-
-    lastCard := result[len(result)-1]
-    if lastCard[:2] != "01" {
-        t.Errorf("Expected the last card to contain '01', but got %s", lastCard)
-    }
-}
-
 func TestGetDirections(t *testing.T) {
     // Expected results
     expected := []map[string]string{

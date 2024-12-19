@@ -20,8 +20,8 @@ var cards = []string{
     "01S", "02S", "03S", "04S", "05S", "06S", "07S", "08S", "09S", "10S", "JS", "QS", "KS",
 }
 
-// SetKingCards Function to randomly select king cards
-func SetKingCards() []string {
+// chooseFirstJudge Function to randomly select king cards
+func chooseFirstJudge() (string, string) {
     // Create a local copy of the cards
     localCards := make([]string, len(cards))
     copy(localCards, cards)
@@ -30,21 +30,24 @@ func SetKingCards() []string {
     rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })
 
     // Result to hold the selected cards
-    var result []string
+    var cardsList []string
 
+    i := 0
     // Assign cards to players
     for {
         // Take the first card and remove it from the local deck
         card := localCards[0]
         localCards = localCards[1:]
 
-        // Add the card to the result
-        result = append(result, card)
+        // Add the card to the cards
+        cardsList = append(cardsList, card)
 
         // If the card has "01", stop
         if card[:2] == "01" {
-            return result
+            return `["` + strings.Join(cardsList, `","`) + `"]`, strconv.Itoa(i % 4)
         }
+
+        i++
     }
 }
 
@@ -169,11 +172,16 @@ func GetDirection(pIndex, uIndex int) string {
 // Matchmaking Find an open game for a player
 func Matchmaking(ctx context.Context, client rueidis.Client, userId, gameId string) {
     time.Sleep(1 * time.Second)
-    distributedCards := DistributeCards()
-    redis.Matchmaking(ctx, client, userId, gameId, distributedCards)
+    distributedCards := distributeCards()
+
+    lastMoveTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
+
+    judgeCards, judge := chooseFirstJudge()
+
+    redis.Matchmaking(ctx, client, distributedCards, userId, gameId, lastMoveTimestamp, judge, judgeCards)
 }
 
-func DistributeCards() [][]string {
+func distributeCards() []string {
     localCards := make([]string, len(cards))
     copy(localCards, cards)
 
@@ -189,7 +197,13 @@ func DistributeCards() [][]string {
         hands[player] = append(hands[player], card)
     }
 
-    return hands
+    result := make([]string, 4)
+
+    for i := 0; i < 4; i++ {
+        result[i] = `["` + strings.Join(hands[i], `","`) + `"]`
+    }
+
+    return result
 }
 
 func GetPlayerCards(gameCardsString string, uIndex int) [][]string {
