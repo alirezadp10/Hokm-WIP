@@ -88,18 +88,23 @@ func (h *Handler) GetGameData(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
-    return c.JSON(http.StatusOK, map[string]interface{}{
-        "players":                  hokm.GetPlayersWithDirections(players, uIndex),
-        "points":                   hokm.GetPoints(gameInformation["points"].(string), uIndex),
-        "centerCards":              hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":                     hokm.GetTurn(gameInformation["turn"].(string), uIndex),
-        "judge":                    hokm.GetJudge(gameInformation["judge"].(string), uIndex),
-        "judge_cards":              hokm.GetJudgeCards(gameInformation["judge_cards"].(string)),
-        "timeRemained":             hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-        "playerCards":              hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
-        "has_judge_cards_finished": gameInformation["has_judge_cards_finished"].(string),
-        "trump":                    gameInformation["trump"],
-    })
+    response := map[string]interface{}{
+        "players":               hokm.GetPlayersWithDirections(players, uIndex),
+        "points":                hokm.GetPoints(gameInformation["points"].(string), uIndex),
+        "centerCards":           hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
+        "turn":                  hokm.GetTurn(gameInformation["turn"].(string), uIndex),
+        "judge":                 hokm.GetJudge(gameInformation["judge"].(string), uIndex),
+        "judgeCards":            hokm.GetJudgeCards(gameInformation["judge_cards"].(string)),
+        "timeRemained":          hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
+        "hasJudgeCardsFinished": gameInformation["has_judge_cards_finished"].(string),
+        "trump":                 gameInformation["trump"],
+    }
+
+    if response["hasJudgeCardsFinished"] == "false" {
+        response["playerCards"] = hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex)
+    }
+
+    return c.JSON(http.StatusOK, response)
 }
 
 func (h *Handler) ChooseTrump(c echo.Context) error {
@@ -136,7 +141,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
         })
     }
 
-    if gameInformation["trump"].(string) != "" {
+    if gameInformation["has_judge_cards_finished"].(string) == "true" {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("You're not allowed to choose a trump at the moment."),
         })
@@ -248,7 +253,6 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         "wasKingChanged":    gameInformation["who_king_changed"].(string),
         "trump":             gameInformation["trump"],
     })
-
 }
 
 func (h *Handler) GetUpdate(c echo.Context) error {
