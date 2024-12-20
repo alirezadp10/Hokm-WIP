@@ -12,6 +12,9 @@ import (
 //go:embed matchmaking.lua
 var matchmakingScript string
 
+//go:embed placeCard.lua
+var placeCardScript string
+
 var gameFields = []string{
     "players",
     "points",
@@ -81,6 +84,7 @@ func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump, uIndex,
 
     for _, resp := range client.DoMulti(ctx, cmds...) {
         if err := resp.Error(); err != nil {
+            log.Fatalf("could not execute Lua script: %v", err)
             return err
         }
     }
@@ -89,21 +93,27 @@ func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump, uIndex,
 }
 
 func PlaceCard(ctx context.Context, client rueidis.Client, playerIndex int, gameId, card, centerCards, leadSuit, cardsWinner, points, turn, king, wasKingChanged string, cards []string) error {
-    cmds := make(rueidis.Commands, 0, 9)
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("center_cards", centerCards).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("lead_suit", leadSuit).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("who_has_won_the_cards", cardsWinner).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("points", points).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("turn", turn).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("king", king).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("was_king_changed", wasKingChanged).Build())
-    cmds = append(cmds, client.B().Eval().Script(matchmakingScript).Numkeys(1).Key(gameId).Arg(cards[0], cards[1], cards[2], cards[3]).Build())
-    cmds = append(cmds, client.B().Publish().Channel("placing_card").Message(gameId+"|"+strconv.Itoa(playerIndex)+"|"+card).Build())
+    cmd := client.B().Eval().Script(placeCardScript).Numkeys(1).Key("game:"+gameId).Arg(
+        centerCards,
+        leadSuit,
+        cardsWinner,
+        points,
+        turn,
+        king,
+        wasKingChanged,
+        cards[0],
+        cards[1],
+        cards[2],
+        cards[3],
+        strconv.Itoa(playerIndex),
+        card,
+    ).Build()
 
-    for _, resp := range client.DoMulti(ctx, cmds...) {
-        if err := resp.Error(); err != nil {
-            return err
-        }
+    err := client.Do(ctx, cmd).Error()
+
+    if err != nil {
+        log.Fatalf("could not execute Lua script: %v", err)
+        return err
     }
 
     return nil

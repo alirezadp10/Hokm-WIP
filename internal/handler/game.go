@@ -44,7 +44,6 @@ func (h *Handler) GetGameId(c echo.Context) error {
                 fmt.Println(err)
             }
             redis.Unsubscribe(c.Request().Context(), h.redis, "game_creation")
-            //cancel()
         }
     })
 
@@ -191,7 +190,6 @@ func (h *Handler) GetYourCards(c echo.Context) error {
                 data := strings.Split(messages[messageId], "|")
                 trump = data[1]
                 redis.Unsubscribe(c.Request().Context(), h.redis, "choosing_trump")
-                //cancel()
             }
         })
 
@@ -255,19 +253,23 @@ func (h *Handler) PlaceCard(c echo.Context) error {
 
     isSelectedCardForUser := false
 
-    if leadSuit != "" && gameInformation["trump"].(string) != hokm.GetCardSuit(requestBody.Card) {
-        for _, cards := range hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex) {
-            for _, card := range cards {
-                if card == requestBody.Card {
-                    isSelectedCardForUser = true
-                }
-                if gameInformation["trump"].(string) == hokm.GetCardSuit(card) {
-                    return c.JSON(http.StatusForbidden, map[string]interface{}{
-                        "message": trans.Get("You're not allowed to select this card."),
-                    })
-                }
+    doesPlayerHaveLeadSuitCard := false
+
+    for _, cards := range hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex) {
+        for _, card := range cards {
+            if card == requestBody.Card {
+                isSelectedCardForUser = true
+            }
+            if hokm.GetCardSuit(card) == gameInformation["trump"].(string) {
+                doesPlayerHaveLeadSuitCard = true
             }
         }
+    }
+
+    if leadSuit != "" && doesPlayerHaveLeadSuitCard && hokm.GetCardSuit(requestBody.Card) != leadSuit {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": trans.Get("You're not allowed to select this card."),
+        })
     }
 
     if !isSelectedCardForUser {
@@ -282,17 +284,9 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         })
     }
 
-    if gameInformation["trump"].(string) == "" {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("It's not your turn."),
-        })
-    }
-
-    if gameInformation["lead_suit"].(string) != "" {
+    if gameInformation["lead_suit"].(string) == "" {
         leadSuit = hokm.GetCardSuit(requestBody.Card)
     }
-
-    centerCards := hokm.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
 
     cardsWinner := hokm.FindCardsWinner(
         gameInformation["center_cards"].(string), gameInformation["trump"].(string), gameInformation["lead_suit"].(string),
@@ -314,6 +308,8 @@ func (h *Handler) PlaceCard(c echo.Context) error {
     turn := hokm.GetNewTurn(gameInformation["turn"].(string))
 
     cards := hokm.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
+
+    centerCards := hokm.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex, cardsWinner)
 
     err := redis.PlaceCard(
         c.Request().Context(),
@@ -383,6 +379,10 @@ func (h *Handler) GetUpdate(c echo.Context) error {
         })
     }
 
+    players := strings.Split(gameInformation["players"].(string), ",")
+
+    uIndex := my_slice.GetIndex(username, players)
+
     err := redis.Subscribe(c.Request().Context(), h.redis, "placing_card", func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, ",")
         messageId := my_slice.HasLike(messages, func(s string) bool {
@@ -394,10 +394,8 @@ func (h *Handler) GetUpdate(c echo.Context) error {
             player, _ = strconv.Atoi(data[1])
             card = data[2]
             redis.Unsubscribe(c.Request().Context(), h.redis, "placing_card")
-            //cancel()
         }
     })
-
     if err != nil {
         if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
@@ -408,10 +406,6 @@ func (h *Handler) GetUpdate(c echo.Context) error {
             "message": trans.Get("Something went wrong, Please try again later."),
         })
     }
-
-    players := strings.Split(gameInformation["players"].(string), ",")
-
-    uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "lastMove": map[string]string{

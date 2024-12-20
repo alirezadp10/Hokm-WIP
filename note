@@ -1,0 +1,28 @@
+APP_KEY=E2UAlCvPvD6m1jS0bAXk8vYjPvD6m1jS
+
+DB_NAME=/home/alireza/Desktop/Hokm/internal/database/sqlite/hokm.db
+
+
+amir:
+urk="user-reference-key:7m2m5O5dIZZDvx9lb/ggD1qX22M="
+
+samaneh:
+urk="user-reference-key:oXsm32kJxuhhIOXHn9POz5foyiVFp0o="
+
+sara:
+urk="user-reference-key:m+FyM/BH6X3BpB4XPRl0zhA/sV8="
+
+alireza:
+urk="user-reference-key:pYDxoz+dEioqSohwtRCT/ci0M+TG/DA="
+
+gameid="5e713f0a-acdd-42ac-bf74-1a570738c43b"
+
+curl -X POST http://127.0.0.1:9090/game/start --header $urk
+
+curl -X GET http://127.0.0.1:9090/game/$gameid --header $urk
+
+curl -X POST http://127.0.0.1:9090/game/$gameid/choose-trump --header $urk --header "content-type: application/json" -d '{"trump":"D"}'
+
+curl -X GET http://127.0.0.1:9090/game/$gameid/cards --header $urk
+
+curl -X POST http://127.0.0.1:9090/game/$gameid/place --header $urk --header "content-type: application/json" -d '{"card":"02S"}'
