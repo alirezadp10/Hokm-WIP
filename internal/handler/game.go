@@ -104,7 +104,7 @@ func (h *Handler) GetGameData(c echo.Context) error {
         "trump":                gameInformation["trump"],
     }
 
-    if response["hasKingCardsFinished"] == "false" {
+    if response["hasKingCardsFinished"] == "true" {
         response["playerCards"] = hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex)
     }
 
@@ -370,14 +370,15 @@ func (h *Handler) GetUpdate(c echo.Context) error {
 
     var player int
     var card string
-    var gameInformation map[string]interface{}
-    gameId := c.QueryParam("gameId")
+    gameId := c.Param("gameId")
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqlite, username, gameId) {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("It's not your game."),
         })
     }
+
+    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redis, gameId)
 
     players := strings.Split(gameInformation["players"].(string), ",")
 

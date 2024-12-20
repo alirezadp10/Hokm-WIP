@@ -93,7 +93,7 @@
     let countdown;
     let gameId = {{.gameId}}
 
-    fetchGameData(gameId);
+        fetchGameData(gameId);
 
     async function fetchGameData(gameId) {
         fetch(`/game/${gameId}`, {
@@ -215,19 +215,19 @@
             updateTurn(data.currentTurn);
             updateTime(data.timeRemained);
             updateCenterCards(data.centerCards);
-            updateYourCards(data.yourCards);
+            updateYourCards(data.playerCards);
             updateTrump(data.trump);
             updateCurrentRoundScores(data.points.currentRound);
         }
     }
 
     function isItFirstRound(data) {
-        return data.firstKingDeterminationCards.length;
+        return data.hasKingCardsFinished === "false";
     }
 
     function updatePlayerNames(players) {
         Object.entries(players).forEach(([direction, player]) => {
-            document.getElementById(`${direction}-player`).textContent = player.name
+            document.getElementById(`${direction}-player`).textContent = player.username
         });
     }
 
@@ -248,15 +248,19 @@
     function updateCenterCards(centerCards) {
         document.getElementById("center-cards").innerHTML = ""
         Object.entries(centerCards).forEach(([direction, card]) => {
-            placeCard(direction, card, false, false);
+            if (card) {
+                placeCard(direction, card, false, false);
+            }
         });
     }
 
     function updateYourCards(yourCards) {
         const handCards = document.getElementById("hand-cards");
-        yourCards.forEach((card) => {
-            const newCard = createCardElement(card, ["card"], "selectCard(this)");
-            handCards.appendChild(newCard);
+        yourCards.forEach((cards) => {
+            cards.forEach((card) => {
+                const newCard = createCardElement(card, ["card"], "selectCard(this)");
+                handCards.appendChild(newCard);
+            })
         });
     }
 
@@ -273,16 +277,16 @@
 
     function updateTrump(trump) {
         switch (trump) {
-            case "heart":
+            case "H":
                 document.getElementById("trump").innerHTML = '<img alt="h" src="/assets/img/hearts.png" style="width: 20px; border: none">'
                 break
-            case "club":
+            case "C":
                 document.getElementById("trump").innerHTML = '<img alt="c" src="/assets/img/clubs.png" style="width: 20px; border: none">'
                 break
-            case "spade":
+            case "S":
                 document.getElementById("trump").innerHTML = '<img alt="s" src="/assets/img/spades.png" style="width: 20px; border: none">'
                 break
-            case "diamond":
+            case "D":
                 document.getElementById("trump").innerHTML = '<img alt="d" src="/assets/img/diamonds.png" style="width: 20px; border: none">'
         }
     }
@@ -497,25 +501,25 @@
 
                     let card
                     if (direction === "down") {
-                        card = createCardElement(cardSrc, ["card","dealing"], "selectCard(this)")
+                        card = createCardElement(cardSrc, ["card", "dealing"], "selectCard(this)")
                         card.style.setProperty('--target-x', `-60px`);
                         card.style.setProperty('--target-y', `150px`);
                     }
 
                     if (direction === "right") {
-                        card = createCardElement(cardSrc, ["card","dealing"])
+                        card = createCardElement(cardSrc, ["card", "dealing"])
                         card.style.setProperty('--target-x', `40px`);
                         card.style.setProperty('--target-y', `0px`);
                     }
 
                     if (direction === "left") {
-                        card = createCardElement(cardSrc, ["card","dealing"])
+                        card = createCardElement(cardSrc, ["card", "dealing"])
                         card.style.setProperty('--target-x', `-160px`);
                         card.style.setProperty('--target-y', `0px`);
                     }
 
                     if (direction === "up") {
-                        card = createCardElement(cardSrc, ["card","dealing"])
+                        card = createCardElement(cardSrc, ["card", "dealing"])
                         card.style.setProperty('--target-x', `-60px`);
                         card.style.setProperty('--target-y', `-150px`);
                     }
