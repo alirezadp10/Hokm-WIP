@@ -7,6 +7,7 @@ import (
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
     "github.com/alirezadp10/hokm/internal/hokm"
+    "github.com/alirezadp10/hokm/internal/utils/my_bool"
     "github.com/alirezadp10/hokm/internal/utils/my_slice"
     "github.com/alirezadp10/hokm/internal/utils/trans"
     "github.com/google/uuid"
@@ -48,6 +49,9 @@ func (h *Handler) GetGameId(c echo.Context) error {
     })
 
     if err != nil {
+        if errors.Is(err, context.Canceled) {
+            redis.RemovePlayerList(context.Background(), h.redis, "matchmaking", username)
+        }
         if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
                 "message": trans.Get("No body have found. please try again later."),
@@ -214,8 +218,6 @@ func (h *Handler) GetYourCards(c echo.Context) error {
 }
 
 func (h *Handler) PlaceCard(c echo.Context) error {
-    // check trump has chosen
-
     username := c.Get("username").(string)
     gameId := c.Param("gameId")
 
@@ -224,11 +226,13 @@ func (h *Handler) PlaceCard(c echo.Context) error {
     }
 
     if err := c.Bind(&requestBody); err != nil {
-        return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+        return c.JSON(http.StatusBadRequest, map[string]string{"message": trans.Get("Invalid JSON.")})
     }
 
-    //validation for card
-    // check selected card for the user
+    if !my_slice.Has(hokm.Cards, requestBody.Card) {
+        return c.JSON(http.StatusBadRequest, map[string]string{"message": trans.Get("Invalid Card.")})
+    }
+
     // remove card from player's cards
 
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqlite, username, gameId) {
@@ -243,17 +247,22 @@ func (h *Handler) PlaceCard(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
+    leadSuit := gameInformation["lead_suit"].(string)
+
     if gameInformation["turn"].(string) != strconv.Itoa(uIndex) {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("It's not your turn."),
         })
     }
 
-    leadSuit := gameInformation["lead_suit"].(string)
+    isSelectedCardForUser := false
 
     if leadSuit != "" && gameInformation["trump"].(string) != hokm.GetCardSuit(requestBody.Card) {
         for _, cards := range hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex) {
             for _, card := range cards {
+                if card == requestBody.Card {
+                    isSelectedCardForUser = true
+                }
                 if gameInformation["trump"].(string) == hokm.GetCardSuit(card) {
                     return c.JSON(http.StatusForbidden, map[string]interface{}{
                         "message": trans.Get("You're not allowed to select this card."),
@@ -261,6 +270,24 @@ func (h *Handler) PlaceCard(c echo.Context) error {
                 }
             }
         }
+    }
+
+    if !isSelectedCardForUser {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": trans.Get("You're not allowed to select this card."),
+        })
+    }
+
+    if gameInformation["trump"].(string) == "" {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": trans.Get("It's not your turn."),
+        })
+    }
+
+    if gameInformation["trump"].(string) == "" {
+        return c.JSON(http.StatusForbidden, map[string]interface{}{
+            "message": trans.Get("It's not your turn."),
+        })
     }
 
     if gameInformation["lead_suit"].(string) != "" {
@@ -275,18 +302,35 @@ func (h *Handler) PlaceCard(c echo.Context) error {
 
     gameWinner := ""
     roundWinner := ""
+    wasKingChanged := false
+    king := gameInformation["king"].(string)
     points := gameInformation["points"].(string)
 
     if cardsWinner != "" {
         points, roundWinner, gameWinner = hokm.UpdatePoints(points, cardsWinner)
+        king = hokm.GiveKing(roundWinner, king)
+        wasKingChanged = king == gameInformation["king"].(string)
         leadSuit = ""
     }
 
-    //change the turn
-    // update wasKingChanged
+    turn := hokm.GetNewTurn(gameInformation["turn"].(string))
+
+    cards := hokm.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
 
     err := redis.PlaceCard(
-        c.Request().Context(), h.redis, uIndex, gameId, requestBody.Card, centerCards, leadSuit, cardsWinner, points,
+        c.Request().Context(),
+        h.redis,
+        uIndex,
+        gameId,
+        requestBody.Card,
+        centerCards,
+        leadSuit,
+        cardsWinner,
+        points,
+        turn,
+        king,
+        my_bool.ToString(wasKingChanged),
+        cards,
     )
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{

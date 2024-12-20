@@ -5,6 +5,7 @@ import (
     "encoding/json"
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
+    "github.com/alirezadp10/hokm/internal/utils/my_slice"
     "github.com/redis/rueidis"
     "math/rand"
     "strconv"
@@ -12,8 +13,8 @@ import (
     "time"
 )
 
-// Global cards list representing all cards in a deck
-var cards = []string{
+// Cards Global cards list representing all cards in a deck
+var Cards = []string{
     "01C", "02C", "03C", "04C", "05C", "06C", "07C", "08C", "09C", "10C", "JC", "QC", "KC", // Clubs
     "01D", "02D", "03D", "04D", "05D", "06D", "07D", "08D", "09D", "10D", "JD", "QD", "KD", // Diamonds
     "01H", "02H", "03H", "04H", "05H", "06H", "07H", "08H", "09H", "10H", "JH", "QH", "KH", // Hearts
@@ -27,8 +28,8 @@ var rank = map[string]int{
 
 // chooseFirstKing selects the first player with a king card and returns the cards sequence and the player's index
 func chooseFirstKing() (string, string) {
-    localCards := make([]string, len(cards)) // Create a copy of the cards to shuffle
-    copy(localCards, cards)
+    localCards := make([]string, len(Cards)) // Create a copy of the cards to shuffle
+    copy(localCards, Cards)
 
     rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] }) // Shuffle cards
 
@@ -50,8 +51,8 @@ func chooseFirstKing() (string, string) {
 }
 
 // GetKingCards splits a comma-separated king cards string into a slice
-func GetKingCards(kingCardsString string) []string {
-    return strings.Split(kingCardsString, ",")
+func GetKingCards(cards string) []string {
+    return strings.Split(cards, ",")
 }
 
 // GetKing returns the direction of the king player relative to the current user
@@ -101,7 +102,7 @@ func GetPlayersWithDirections(players []string, uIndex int) map[string]interface
 // GetPoints processes the points string and organizes them by player direction
 func GetPoints(pointsString string, uIndex int) map[string]map[string]string {
     points := make(map[string]string)
-    err := json.Unmarshal([]byte(pointsString), &points) // Parse JSON string
+    err := json.Unmarshal([]byte(pointsString), &points)
     if err != nil {
         fmt.Println("Error unmarshalling:", err)
     }
@@ -152,12 +153,12 @@ func Matchmaking(ctx context.Context, client rueidis.Client, userId, gameId stri
 
 // distributeCards shuffles and deals cards to 4 players
 func distributeCards() []string {
-    localCards := make([]string, len(cards))
-    copy(localCards, cards)
+    localCards := make([]string, len(Cards))
+    copy(localCards, Cards)
     rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })
 
     hands := make([][]string, 4) // Initialize hands for 4 players
-    for i, card := range cards {
+    for i, card := range localCards {
         player := i % 4 // Determine player index
         hands[player] = append(hands[player], card)
     }
@@ -171,9 +172,9 @@ func distributeCards() []string {
 }
 
 // GetPlayerCards parses and chunks the cards for a specific player
-func GetPlayerCards(gameCardsString string, uIndex int) [][]string {
+func GetPlayerCards(cards string, uIndex int) [][]string {
     gameCards := make(map[int][]string)
-    err := json.Unmarshal([]byte(gameCardsString), &gameCards) // Parse JSON string
+    err := json.Unmarshal([]byte(cards), &gameCards)
     if err != nil {
         fmt.Println("Error unmarshalling:", err)
     }
@@ -244,7 +245,7 @@ func GetCardSuit(card string) string {
 
 func UpdatePoints(pointsString, cardsWinnerString string) (string, string, string) {
     points := make(map[string]string)
-    err := json.Unmarshal([]byte(pointsString), &points) // Parse JSON string
+    err := json.Unmarshal([]byte(pointsString), &points)
     if err != nil {
         fmt.Println("Error unmarshalling:", err)
     }
@@ -277,4 +278,36 @@ func UpdatePoints(pointsString, cardsWinnerString string) (string, string, strin
     pointsStr, _ := json.Marshal(points)
 
     return string(pointsStr), roundWinner, gameWinner
+}
+
+func GiveKing(roundWinnerStr, prevKingStr string) string {
+    roundWinner, _ := strconv.Atoi(roundWinnerStr)
+    prevKing, _ := strconv.Atoi(prevKingStr)
+    if roundWinner%2 == prevKing%2 {
+        return prevKingStr
+    }
+    return strconv.Itoa(NextPlayerIndex(roundWinner))
+}
+
+func NextPlayerIndex(index int) int {
+    return (index + 1) % 4
+}
+
+func GetNewTurn(turnStr string) string {
+    turn, _ := strconv.Atoi(turnStr)
+    return strconv.Itoa(NextPlayerIndex(turn))
+}
+
+func UpdateUserCards(cards string, selectedCard string, uIndex int) []string {
+    userCards := make(map[int][]string)
+    err := json.Unmarshal([]byte(cards), &userCards)
+    if err != nil {
+        fmt.Println("Error unmarshalling:", err)
+    }
+    userCards[uIndex] = my_slice.Remove(selectedCard, userCards[uIndex])
+    result := make([]string, 4)
+    for i := 0; i < 4; i++ {
+        result[i] = `["` + strings.Join(userCards[i], `","`) + `"]` // Format hands as JSON strings
+    }
+    return result
 }

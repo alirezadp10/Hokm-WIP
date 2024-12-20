@@ -1,13 +1,11 @@
 package cmd
 
 import (
-    "context"
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
     "github.com/alirezadp10/hokm/internal/handler"
     "github.com/alirezadp10/hokm/internal/middleware"
-    "github.com/alirezadp10/hokm/internal/telegram"
     "github.com/labstack/echo/v4"
     "github.com/spf13/cobra"
 )
@@ -26,9 +24,9 @@ func serve(cmd *cobra.Command, args []string) {
     sqliteClient := sqlite.GetNewConnection()
     redisClient := redis.GetNewConnection()
 
-    ctx, cancel := context.WithCancel(context.Background())
-    defer cancel()
-    go telegram.Start(ctx, sqliteClient)
+    //ctx, cancel := context.WithCancel(context.Background())
+    //defer cancel()
+    //go telegram.Start(ctx, sqliteClient)
 
     h := handler.NewHandler(sqliteClient, redisClient)
 
