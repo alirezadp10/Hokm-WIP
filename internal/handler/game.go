@@ -233,8 +233,6 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, map[string]string{"message": trans.Get("Invalid Card.")})
     }
 
-    // remove card from player's cards
-
     if !sqlite.DoesPlayerBelongsToThisGame(h.sqlite, username, gameId) {
         return c.JSON(http.StatusForbidden, map[string]interface{}{
             "message": trans.Get("It's not your game."),
