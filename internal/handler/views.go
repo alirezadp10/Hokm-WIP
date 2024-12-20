@@ -2,24 +2,23 @@ package handler
 
 import (
     "github.com/labstack/echo/v4"
-    "net/http"
 )
 
 func (h *Handler) GetSplashPage(c echo.Context) error {
-    cookie := new(http.Cookie)
-    cookie.Name = "userId"
-    cookie.Value = c.QueryParam("userId")
-    cookie.Path = "/"
-    cookie.HttpOnly = true
-    cookie.MaxAge = 3600
-    c.SetCookie(cookie)
-    return c.File("templates/splash.html")
+    return c.Render(200, "splash.html", map[string]interface{}{
+        "userReferenceKey": c.QueryParam("user_id"),
+    })
 }
 
 func (h *Handler) GetMenuPage(c echo.Context) error {
-    return c.File("templates/menu.html")
+    return c.Render(200, "menu.html", map[string]interface{}{
+        "userReferenceKey": c.QueryParam("user_id"),
+    })
 }
 
 func (h *Handler) GetGamePage(c echo.Context) error {
-    return c.File("templates/game.html")
+    return c.Render(200, "game.html", map[string]interface{}{
+        "userReferenceKey": c.QueryParam("user_id"),
+        "gameId":           c.QueryParam("game_id"),
+    })
 }

@@ -25,12 +25,10 @@
 
     function startGame(button) {
         setLoading(button);
-        let userId = getCookie('userId')
-        fetch(`/game/start?userId=${userId}`, {method: 'GET'})
+        fetch(`/game/start`, {method: 'POST', headers: {'user-reference-key': {{.userReferenceKey}}}})
             .then((response) => response.json())
             .then((data) => {
-                document.cookie = `gameId=${data.gameId}`;
-                document.location.href = `/game`
+                document.location.href = '/game?user_id=' + encodeURIComponent({{.userReferenceKey}}) + '&game_id=' + data.gameId
             })
             .catch(async (error) => {
                 await sleep(1000)
@@ -38,6 +36,7 @@
                 console.error('Error:', error)
             });
     }
+
     function scoreboard(button) {
         setLoading(button);
         setTimeout(() => {
@@ -63,12 +62,6 @@
         button.disabled = false;
         button.classList.remove("loading");
         button.innerHTML = text;
-    }
-
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
     }
 </script>
 </body>

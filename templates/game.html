@@ -91,7 +91,7 @@
     let isYourTurn = false
     let time;
     let countdown;
-    let gameId = getCookie('gameId')
+    let gameId = {{.gameId}}
 
     fetchGameData(gameId);
 
@@ -100,13 +100,14 @@
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'user-reference-key': {{.userReferenceKey}}
             },
         })
             .then((response) => response.json())
             .then((data) => updateGameUI(data))
             .catch(async (error) => {
                 await sleep(1000)
-                await fetchGameData(gameId)
+                // await fetchGameData(gameId)
                 console.error('Error:', error)
             });
     }
@@ -116,13 +117,14 @@
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'user-reference-key': {{.userReferenceKey}}
             },
         })
             .then((response) => response.json())
             .then((data) => refreshActions(data))
             .catch(async (error) => {
                 await sleep(1000)
-                await refresh()
+                // await refresh()
                 console.error('Error:', error)
             });
     }
@@ -132,6 +134,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'user-reference-key': {{.userReferenceKey}}
             },
             body: {
                 'trump': type
@@ -141,7 +144,7 @@
             .then((data) => trumpDetermineActions(data))
             .catch(async (error) => {
                 await sleep(1000)
-                await trumpDetermine(type)
+                // await trumpDetermine(type)
                 console.error('Error:', error)
             });
     }
@@ -157,6 +160,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'user-reference-key': {{.userReferenceKey}}
             },
             body: {
                 'card': card.getAttribute("alt")
@@ -167,7 +171,7 @@
             .catch(async (error) => {
                 isYourTurn = true
                 await sleep(1000)
-                await selectCard(card)
+                // await selectCard(card)
                 console.error('Error:', error)
             });
     }
@@ -177,13 +181,14 @@
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'user-reference-key': {{.userReferenceKey}}
             },
         })
             .then((response) => response.json())
             .then((data) => getYourCardsActions(data, king))
             .catch(async (error) => {
                 await sleep(1000)
-                await getYourCards(king)
+                // await getYourCards(king)
                 console.error('Error:', error)
             });
     }
@@ -676,12 +681,6 @@
     function endTimer(timerElement) {
         timerElement.style.fontSize = "15px";
         timerElement.textContent = "Time's up!";
-    }
-
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
     }
 </script>
 </body>

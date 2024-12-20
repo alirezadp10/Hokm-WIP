@@ -8,6 +8,8 @@ import (
     "github.com/alirezadp10/hokm/internal/middleware"
     "github.com/labstack/echo/v4"
     "github.com/spf13/cobra"
+    "html/template"
+    "io"
 )
 
 var serveCmd = &cobra.Command{
@@ -18,6 +20,14 @@ var serveCmd = &cobra.Command{
 
 func init() {
     rootCmd.AddCommand(serveCmd)
+}
+
+type Template struct {
+    templates *template.Template
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+    return t.templates.ExecuteTemplate(w, name, data)
 }
 
 func serve(cmd *cobra.Command, args []string) {
@@ -31,6 +41,10 @@ func serve(cmd *cobra.Command, args []string) {
     h := handler.NewHandler(sqliteClient, redisClient)
 
     e := echo.New()
+
+    t := &Template{templates: template.Must(template.ParseGlob("templates/*.html"))}
+    e.Renderer = t
+
     e.Static("/assets", "assets")
     e.GET("/", h.GetSplashPage)
     e.GET("/menu", h.GetMenuPage)

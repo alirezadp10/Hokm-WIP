@@ -12,8 +12,9 @@ func AuthMiddleware(db *gorm.DB) echo.MiddlewareFunc {
     return func(next echo.HandlerFunc) echo.HandlerFunc {
         return func(c echo.Context) error {
             username := c.Request().Header.Get("user-reference-key")
+
             if username == "" {
-                return c.JSON(http.StatusBadRequest, map[string]string{"error": "user-reference-key is required"})
+                return c.JSON(http.StatusBadRequest, map[string]string{"gameId": "user-reference-key is required"})
             }
 
             // Decrypt and authenticate
