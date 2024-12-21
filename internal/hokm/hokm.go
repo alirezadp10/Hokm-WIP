@@ -197,10 +197,7 @@ func chunkCards(gameCards map[int][]string, uIndex int) [][]string {
     return result
 }
 
-func UpdateCenterCards(cards string, newCard string, uIndex int, cardsWinner string) string {
-    if cardsWinner != "" {
-        return ",,,"
-    }
+func UpdateCenterCards(cards string, newCard string, uIndex int) string {
     centerCardsList := strings.Split(cards, ",")
     centerCardsList[uIndex] = newCard
     return strings.Join(centerCardsList, ",")

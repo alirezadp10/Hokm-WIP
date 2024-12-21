@@ -12,7 +12,7 @@ import (
 //go:embed matchmaking.lua
 var matchmakingScript string
 
-//go:embed placeCard.lua
+//go:embed place-card.lua
 var placeCardScript string
 
 var gameFields = []string{
@@ -92,8 +92,8 @@ func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump, uIndex,
     return nil
 }
 
-func PlaceCard(ctx context.Context, client rueidis.Client, playerIndex int, gameId, card, centerCards, leadSuit, cardsWinner, points, turn, king, wasKingChanged string, cards []string) error {
-    cmd := client.B().Eval().Script(placeCardScript).Numkeys(1).Key("game:"+gameId).Arg(
+func PlaceCard(ctx context.Context, client rueidis.Client, playerIndex int, gameId, card, centerCards, leadSuit, cardsWinner, points, turn, king, wasKingChanged, lastMoveTimestamp, trump string, cards []string) error {
+    cmd := client.B().Eval().Script(placeCardScript).Numkeys(1).Key(gameId).Arg(
         centerCards,
         leadSuit,
         cardsWinner,
@@ -107,6 +107,8 @@ func PlaceCard(ctx context.Context, client rueidis.Client, playerIndex int, game
         cards[3],
         strconv.Itoa(playerIndex),
         card,
+        lastMoveTimestamp,
+        trump,
     ).Build()
 
     err := client.Do(ctx, cmd).Error()
