@@ -28,11 +28,17 @@
         fetch(`/game/start`, {method: 'POST', headers: {'user-reference-key': {{.userReferenceKey}}}})
             .then((response) => response.json())
             .then((data) => {
-                document.location.href = '/game?user_id=' + encodeURIComponent({{.userReferenceKey}}) + '&game_id=' + data.gameId
+                // if (data.gameId )
+                if (data.gameId) {
+                    document.location.href = '/game?user_id=' + encodeURIComponent({{.userReferenceKey}}) + '&game_id=' + data.gameId
+                } else {
+                    resetButton(button, "شروع بازی")
+                    alert("دوباره تلاش کنید")
+                }
             })
             .catch(async (error) => {
-                await sleep(1000)
-                await startGame()
+                alert("دوباره تلاش کنید")
+                resetButton(button, "شروع بازی")
                 console.error('Error:', error)
             });
     }

@@ -1,4 +1,16 @@
-redis.call('RPUSH', KEYS[1], ARGV[1])  -- Add player to a queue
+local exists = false
+local list = redis.call('LRANGE', KEYS[1], 0, -1)
+
+for _, value in ipairs(list) do
+    if value == ARGV[1] then
+        exists = true
+        break
+    end
+end
+
+if exists == false then
+    redis.call('RPUSH', KEYS[1], ARGV[1])
+end
 
 local players = {}
 

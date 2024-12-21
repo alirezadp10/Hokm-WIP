@@ -2,7 +2,6 @@ APP_KEY=E2UAlCvPvD6m1jS0bAXk8vYjPvD6m1jS
 
 DB_NAME=/home/alireza/Desktop/Hokm/internal/database/sqlite/hokm.db
 
-
 amir:
 urk="user-reference-key:7m2m5O5dIZZDvx9lb/ggD1qX22M="
 
@@ -12,7 +11,7 @@ urk="user-reference-key:oXsm32kJxuhhIOXHn9POz5foyiVFp0o="
 sara:
 urk="user-reference-key:m+FyM/BH6X3BpB4XPRl0zhA/sV8="
 
-alireza:
+a11r374:
 urk="user-reference-key:pYDxoz+dEioqSohwtRCT/ci0M+TG/DA="
 
 gameid="5e713f0a-acdd-42ac-bf74-1a570738c43b"
