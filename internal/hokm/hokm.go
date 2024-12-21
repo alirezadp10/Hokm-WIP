@@ -72,21 +72,38 @@ func GetTurn(turnIndex string, uIndex int) string {
 
 // GetTimeRemained calculates the time remaining for the player's turn
 func GetTimeRemained(lastMoveTimestampStr string) time.Duration {
+    //fmt.Println("lastMoveTimestampStr")
+    //fmt.Println(lastMoveTimestampStr)
+
     lastMoveTimestampInt, err := strconv.ParseInt(lastMoveTimestampStr, 10, 64) // Convert string to integer
     if err != nil {
         fmt.Println("Error parsing timestamp:", err)
         return 15 * time.Second // Default time if parsing fails
     }
 
+    //fmt.Println("lastMoveTimestampInt")
+    //fmt.Println(lastMoveTimestampInt)
+
     lastMoveTimestamp := time.Unix(lastMoveTimestampInt, 0) // Convert to time.Time
     timeElapsed := time.Since(lastMoveTimestamp)            // Time elapsed since the move
-    timeRemaining := 15*time.Second - timeElapsed           // Calculate remaining time
+
+    //fmt.Println("timeElapsed")
+    //fmt.Println(timeElapsed)
+
+    timeRemaining := 15*time.Second - timeElapsed // Calculate remaining time
+
+    //fmt.Println("timeRemaining")
+    //fmt.Println(timeRemaining)
 
     if timeRemaining < 0 { // Ensure non-negative duration
         timeRemaining = 0
     }
 
-    return timeRemaining.Round(time.Second) // Round to the nearest second
+    x := timeRemaining.Round(time.Second) // Round to the nearest second
+
+    //fmt.Println(x)
+
+    return x
 }
 
 // GetPlayersWithDirections maps usernames to relative directions

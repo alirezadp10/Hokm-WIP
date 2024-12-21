@@ -463,7 +463,7 @@
                         updateTime(20)
                         document.getElementById("trump-box").removeAttribute("hidden")
                     } else {
-                        getYourCards(king);
+                        await getYourCards(king);
                     }
                 }
             }
@@ -666,11 +666,11 @@
     }
 
     function updateTimer() {
-        const timerElement = document.getElementById("timer");
-
-        updateTimerDisplay(timerElement);
-        toggleWarningClass(timerElement);
-        handleTimerCountdown(timerElement);
+        // const timerElement = document.getElementById("timer");
+        //
+        // updateTimerDisplay(timerElement);
+        // toggleWarningClass(timerElement);
+        // handleTimerCountdown(timerElement);
     }
 
     function updateTimerDisplay(timerElement) {

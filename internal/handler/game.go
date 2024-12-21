@@ -320,7 +320,7 @@ func (h *Handler) PlaceCard(c echo.Context) error {
 
     trump := gameInformation["trump"].(string)
 
-    if wasKingChanged {
+    if roundWinner != "" && wasKingChanged {
         trump = ""
     }
 
