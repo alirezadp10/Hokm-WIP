@@ -93,6 +93,7 @@ func (h *Handler) GetGameData(c echo.Context) error {
     uIndex := my_slice.GetIndex(username, players)
 
     response := map[string]interface{}{
+        "beginnerDirection":    hokm.GetDirection(my_slice.GetIndex(players[0], players), uIndex),
         "players":              hokm.GetPlayersWithDirections(players, uIndex),
         "points":               hokm.GetPoints(gameInformation["points"].(string), uIndex),
         "centerCards":          hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
@@ -106,6 +107,8 @@ func (h *Handler) GetGameData(c echo.Context) error {
 
     if response["hasKingCardsFinished"] == "true" {
         response["playerCards"] = hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex)
+    } else if response["king"] == "down" {
+        response["trumpCards"] = hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex)[0]
     }
 
     return c.JSON(http.StatusOK, response)
@@ -162,7 +165,7 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "trump": requestBody.Trump,
-        "cards": hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
+        "cards": hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex)[:2],
     })
 }
 

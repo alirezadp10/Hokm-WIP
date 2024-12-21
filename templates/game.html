@@ -5,7 +5,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حکم</title>
-    <link rel="stylesheet" href="/assets/css/game.css">
+    <link rel="stylesheet" href="/assets/css/game.css?foobar">
     <audio id="card-sound" src="/assets/audio/card-sound.mp3" preload="auto"></audio>
     <audio id="tiktok" src="/assets/audio/tiktok.mp3" preload="auto"></audio>
 </head>
@@ -25,10 +25,10 @@
     <div class="center-cards" id="center-cards">
     </div>
     <div class="trump-box" id="trump-box" hidden>
-        <img src="/assets/img/spades.png" alt="s" onclick="trumpDetermine('s')">
-        <img src="/assets/img/hearts.png" alt="h" onclick="trumpDetermine('h')">
-        <img src="/assets/img/clubs.png" alt="c" onclick="trumpDetermine('c')">
-        <img src="/assets/img/diamonds.png" alt="d" onclick="trumpDetermine('d')">
+        <img src="/assets/img/spades.png" alt="s" onclick="trumpDetermine('S')">
+        <img src="/assets/img/hearts.png" alt="h" onclick="trumpDetermine('H')">
+        <img src="/assets/img/clubs.png" alt="c" onclick="trumpDetermine('C')">
+        <img src="/assets/img/diamonds.png" alt="d" onclick="trumpDetermine('D')">
     </div>
     <div class="down-bar">
         <div class="timer-wrapper">
@@ -93,7 +93,7 @@
     let countdown;
     let gameId = {{.gameId}}
 
-        fetchGameData(gameId);
+    fetchGameData(gameId);
 
     async function fetchGameData(gameId) {
         fetch(`/game/${gameId}`, {
@@ -130,15 +130,15 @@
     }
 
     async function trumpDetermine(type) {
-        fetch(`/game/${gameId}/trump`, {
+        fetch(`/game/${gameId}/choose-trump`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'user-reference-key': {{.userReferenceKey}}
             },
-            body: {
+            body: JSON.stringify({
                 'trump': type
-            }
+            })
         })
             .then((response) => response.json())
             .then((data) => trumpDetermineActions(data))
@@ -162,9 +162,9 @@
                 'Content-Type': 'application/json',
                 'user-reference-key': {{.userReferenceKey}}
             },
-            body: {
+            body: JSON.stringify({
                 'card': card.getAttribute("alt")
-            }
+            })
         })
             .then((response) => response.json())
             .then((data) => selectCardActions(data, card))
@@ -198,10 +198,10 @@
         updateTotalRoundScores(data.points.total);
         let king = data.king
         if (isItFirstRound(data)) {
-            await firstKingDetermination(data.firstKingDeterminationCards)
+            await firstKingDetermination(data.kingCards, data.beginnerDirection)
             document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
             await sleep(500);
-            let cards = king === "down" ? data.trumpDeterminationCards : ["back", "back", "back", "back", "back"];
+            let cards = king === "down" ? data.trumpCards : ["back", "back", "back", "back", "back"];
             await distribute(king, cards)
             if (king === "down") {
                 countdown = setInterval(updateTimer, 1000);
@@ -230,7 +230,7 @@
             document.getElementById(`${direction}-player`).textContent = player.username
         });
     }
-
+2
     function updateTurn(currentTurn) {
         if (currentTurn === "down") {
             isYourTurn = true;
@@ -387,15 +387,15 @@
     }
 
     function playCardSound() {
-        let audio = document.getElementById('card-sound');
-        audio.currentTime = 0;
-        audio.play();
+        // let audio = document.getElementById('card-sound');
+        // audio.currentTime = 0;
+        // audio.play();
     }
 
     function playTiktokSound() {
-        let audio = document.getElementById('tiktok');
-        audio.currentTime = 0;
-        audio.play();
+        // let audio = document.getElementById('tiktok');
+        // audio.currentTime = 0;
+        // audio.play();
     }
 
     async function getYourCardsActions(data, king) {
@@ -459,7 +459,7 @@
         updateTurn(data)
     }
 
-    async function firstKingDetermination(data) {
+    async function firstKingDetermination(cards, beginnerDirection) {
         let deck = document.createElement('div')
         deck.className = 'deck';
         deck.id = 'deck';
@@ -468,12 +468,14 @@
         deckCard.className = 'deck-card';
         deck.appendChild(deckCard)
         document.getElementById("center-cards").appendChild(deck)
-        // await sleep(1500);
-        for (let [_, item] of Object.entries(data)) {
-            await dealCards(item.direction, [item.card], true);
-            // await sleep(500);
+        await sleep(1500);
+        let turn = beginnerDirection
+        for (let [_, card] of Object.entries(cards)) {
+            await dealCards(turn, [card], true);
+            turn = getNextIndex(turn)
+            await sleep(500);
         }
-        // await sleep(1000);
+        await sleep(1000);
         await deck.remove()
     }
 
@@ -544,7 +546,7 @@
                     deck.appendChild(card);
                 }, delay);
 
-                delay += 30; // Delay between each card
+                delay += 300; // Delay between each card
             });
         });
     }

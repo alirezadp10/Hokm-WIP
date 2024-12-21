@@ -46,6 +46,7 @@ func serve(cmd *cobra.Command, args []string) {
     e.Renderer = t
 
     e.Static("/assets", "assets")
+    e.File("/favicon.ico", "assets/favicon.ico")
     e.GET("/", h.GetSplashPage)
     e.GET("/menu", h.GetMenuPage)
     e.GET("/game", h.GetGamePage)
