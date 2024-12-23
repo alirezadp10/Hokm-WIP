@@ -46,7 +46,7 @@ func startHandler(c telebot.Context, db *gorm.DB) error {
     return c.Send("Let's Play", &telebot.ReplyMarkup{
         InlineKeyboard: [][]telebot.InlineButton{{{
             Text:   trans.Get("start the game"),
-            WebApp: &telebot.WebApp{URL: os.Getenv("APP_URL") + "?username=" + url.QueryEscape(encrypted)},
+            WebApp: &telebot.WebApp{URL: os.Getenv("APP_URL") + "?user_id=" + url.QueryEscape(encrypted)},
         }}},
     })
 }

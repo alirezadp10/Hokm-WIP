@@ -87,6 +87,36 @@
     </div>
 </div>
 <script>
+    const valueOrder = {
+        "A": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10, "J": 11, "Q": 12, "K": 13,
+    };
+    const suitOrder = {
+        "S": 1, "H": 2, "D": 3, "C": 4,
+    };
+
+    function sortCards() {
+        const cardsContainer = document.getElementById("hand-cards");
+        const cards = Array.from(cardsContainer.getElementsByClassName("card"));
+
+        const cardData = cards.map(card => {
+            const cardName = card.alt;
+            const value = cardName.slice(0, -1);
+            const suit = cardName.slice(-1);
+            return {card, value, suit};
+        });
+
+        cardData.sort((a, b) => {
+            if (suitOrder[a.suit] !== suitOrder[b.suit]) {
+                return suitOrder[a.suit] - suitOrder[b.suit];
+            }
+            return valueOrder[a.value] - valueOrder[b.value];
+        });
+
+        cardData.forEach(({card}) => {
+            cardsContainer.appendChild(card);
+        });
+    }
+
     const baseURL = "http://localhost:7070"
     let isYourTurn = false
     let time;
@@ -228,6 +258,8 @@
             updateTrump(data.trump);
             updateCurrentRoundScores(data.points.currentRound);
         }
+
+        sortCards();
     }
 
     function isItFirstRound(data) {

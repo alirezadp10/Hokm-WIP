@@ -24,7 +24,7 @@
     });
 
     function startGame(button) {
-        setLoading(button);
+        setLoading(button, "w8 a moment");
         fetch(`/game/start`, {method: 'POST', headers: {'user-reference-key': {{.userReferenceKey}}}})
             .then((response) => response.json())
             .then((data) => {
@@ -52,16 +52,14 @@
     }
 
     function exitGame(button) {
-        setLoading(button);
-        setTimeout(() => {
-            window.close();
-        }, 2000);
+        alert("کار نمیکنه دکمه بالا رو بزن سیک شی:)")
+        window.close();
     }
 
-    function setLoading(button) {
+    function setLoading(button, text) {
         button.disabled = true;
         button.classList.add("loading");
-        button.innerHTML = '<span class="spinner"></span>';
+        button.innerHTML = text + '<span class="spinner"></span>';
     }
 
     function resetButton(button, text) {
