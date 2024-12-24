@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/assets/css/game.css?foobar">
     <audio id="card-sound" src="/assets/audio/card-sound.mp3" preload="auto"></audio>
     <audio id="tiktok" src="/assets/audio/tiktok.mp3" preload="auto"></audio>
+    <script src="/assets/js/telegram-web-app.js"></script>
 </head>
 <body>
 <div class="game-container">
@@ -130,7 +131,7 @@
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'user-reference-key': {{.userReferenceKey}}
+                'Authorization': window.Telegram.WebApp.initData
             },
         })
             .then((response) => response.json())
@@ -147,7 +148,7 @@
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'user-reference-key': {{.userReferenceKey}}
+                'Authorization': window.Telegram.WebApp.initData
             },
         })
             .then((response) => response.json())
@@ -164,7 +165,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'user-reference-key': {{.userReferenceKey}}
+                'Authorization': window.Telegram.WebApp.initData
             },
             body: JSON.stringify({
                 'trump': type
@@ -190,7 +191,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'user-reference-key': {{.userReferenceKey}}
+                'Authorization': window.Telegram.WebApp.initData
             },
             body: JSON.stringify({
                 'card': card.getAttribute("alt")
@@ -220,7 +221,7 @@
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'user-reference-key': {{.userReferenceKey}}
+                'Authorization': window.Telegram.WebApp.initData
             },
         })
             .then((response) => response.json())

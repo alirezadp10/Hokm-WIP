@@ -5,67 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منو</title>
     <link rel="stylesheet" href="/assets/css/menu.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body>
 <div class="game-container">
     <div class="menu">
         <h1 class="game-title">حکم</h1>
         <div class="menu-buttons">
-            <button onclick="startGame(this)">شروع بازی</button>
-            <button onclick="scoreboard(this)">جدول امتیازات</button>
-            <button onclick="exitGame(this)">خروج</button>
+            <button id="start-game">شروع بازی</button>
+            <button id="scoreboard">جدول امتیازات</button>
+            <button id="exit-game">خروج</button>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    window.addEventListener('load', () => {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Add fade-in effect
         document.body.classList.add('fade-in');
+
+        // Event listeners for buttons
+        document.getElementById('start-game').addEventListener('click', handleStartGame);
+        document.getElementById('scoreboard').addEventListener('click', handleScoreboard);
+        document.getElementById('exit-game').addEventListener('click', handleExitGame);
     });
 
-    function startGame(button) {
-        setLoading(button, "w8 a moment");
-        fetch(`/game/start`, {method: 'POST', headers: {'user-reference-key': {{.userReferenceKey}}}})
-            .then((response) => response.json())
-            .then((data) => {
-                // if (data.gameId )
+    const API_ENDPOINTS = {
+        startGame: '/game/start'
+    };
+
+    function handleStartGame(event) {
+        const button = event.target;
+        setLoading(button, "در حال جستوجو...");
+
+        fetch(API_ENDPOINTS.startGame, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'user-reference-key': {{.userReferenceKey}}
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
                 if (data.gameId) {
-                    document.location.href = '/game?user_id=' + encodeURIComponent({{.userReferenceKey}}) + '&game_id=' + data.gameId
+                    window.location.href = `/game?game_id=${data.gameId}`;
                 } else {
-                    resetButton(button, "شروع بازی")
-                    alert("دوباره تلاش کنید")
+                    showError(button, "شروع بازی", "دوباره تلاش کنید");
                 }
             })
-            .catch(async (error) => {
-                alert("دوباره تلاش کنید")
-                resetButton(button, "شروع بازی")
-                console.error('Error:', error)
+            .catch(error => {
+                showError(button, "شروع بازی", "خطایی رخ داد. دوباره تلاش کنید.");
+                console.error('Error:', error);
             });
     }
 
-    function scoreboard(button) {
+    function handleScoreboard(event) {
+        const button = event.target;
         setLoading(button);
+
         setTimeout(() => {
-            alert('در حال آماده‌سازی...');
+            Swal.fire({
+                title: 'در حال آماده‌سازی...',
+                icon: 'info',
+                confirmButtonText: 'باشه'
+            });
             resetButton(button, "جدول امتیازات");
         }, 2000);
     }
 
-    function exitGame(button) {
-        alert("کار نمیکنه دکمه بالا رو بزن سیک شی:)")
+    function handleExitGame() {
         window.close();
     }
 
-    function setLoading(button, text) {
+    function setLoading(button, text = "") {
         button.disabled = true;
         button.classList.add("loading");
-        button.innerHTML = text + '<span class="spinner"></span>';
+        button.innerHTML = text || '<span class="spinner"></span>';
     }
 
     function resetButton(button, text) {
         button.disabled = false;
         button.classList.remove("loading");
         button.innerHTML = text;
+    }
+
+    function showError(button, buttonText, message) {
+        Swal.fire({
+            title: 'خطا',
+            text: message,
+            icon: 'error',
+            confirmButtonText: 'باشه'
+        });
+        resetButton(button, buttonText);
     }
 </script>
 </body>

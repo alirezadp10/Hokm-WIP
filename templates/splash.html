@@ -4,156 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حکم</title>
-    <style>
-        @font-face {
-            font-family: 'Iranian Sans';
-            src: url('/assets/font/Iranian Sans.ttf') format('truetype');
-        }
-
-        body {
-            font-family: 'Iranian Sans', sans-serif;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        .splash-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            opacity: 1;
-            transition: opacity 1.5s ease;
-        }
-
-        .splash-logo {
-            font-size: 3rem;
-            color: white;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
-            margin-bottom: 20px;
-            animation: fadeIn 2s ease-in-out;
-        }
-
-        .loading {
-            direction: rtl;
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.8);
-            animation: blink 1s infinite;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes blink {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/css/splash.css">
 </head>
 <body>
 <div class="splash-container" id="splashContainer">
     <div class="splash-logo">حکم زون</div>
     <div class="loading">در حال بارگذاری...</div>
 </div>
+<script src="/assets/js/telegram-web-app.js?56"></script>
 <script>
-    const imagesToPreload = [
-        '01C.png',
-        '01D.png',
-        '01H.png',
-        '01S.png',
-        '02C.png',
-        '02D.png',
-        '02H.png',
-        '02S.png',
-        '03C.png',
-        '03D.png',
-        '03H.png',
-        '03S.png',
-        '04C.png',
-        '04D.png',
-        '04H.png',
-        '04S.png',
-        '05C.png',
-        '05D.png',
-        '05H.png',
-        '05S.png',
-        '06C.png',
-        '06D.png',
-        '06H.png',
-        '06S.png',
-        '07C.png',
-        '07D.png',
-        '07H.png',
-        '07S.png',
-        '08C.png',
-        '08D.png',
-    ];
     const baseDir = '/assets/img/';
     const splashContainer = document.getElementById('splashContainer');
 
-    const preloadFonts = async () => {
-        try {
-            await document.fonts.load("1em 'Iranian Sans'");
-            console.log("Font loaded successfully.");
-        } catch (error) {
-            console.error("Font loading failed:", error);
-        }
-    };
+    const additionalImages = [
+        "back.png",
+        "bg.jpg",
+        "clubs.png",
+        "diamonds.png",
+        "hearts.png",
+        "JC.png",
+        "JD.png",
+        "JH.png",
+        "JS.png",
+        "KC.png",
+        "KD.png",
+        "KH.png",
+        "KS.png",
+        "QC.png",
+        "QD.png",
+        "QH.png",
+        "QS.png"
+    ];
 
-    const preloadImages = (images, callback) => {
-        let loadedCount = 0;
+    const imagesToPreload = [
+        ...additionalImages,  // Add the custom images first
+        ...Array.from({ length: 52 }, (_, index) => {
+            const rank = ("0" + (index % 13 + 1)).slice(-2);
+            const suit = ['C', 'D', 'H', 'S'][Math.floor(index / 13)];
+            return `${rank}${suit}.png`;
+        })  // Then add the dynamically generated cards
+    ];
 
-        images.forEach(image => {
-            const img = new Image();
-            img.src = `${baseDir}${image}`;
-            img.onload = () => {
-                loadedCount++;
-                if (loadedCount === images.length) {
-                    callback();
-                }
-            };
-            img.onerror = () => {
-                console.error(`Failed to load ${image}`);
-                loadedCount++;
-                if (loadedCount === images.length) {
-                    callback();
-                }
-            };
-        });
+    const preloadFonts = () => document.fonts.load("1em 'Iranian Sans'").then(
+        () => console.log("Font loaded successfully."),
+        error => console.error("Font loading failed:", error)
+    );
+
+    const preloadImages = (images) => {
+        return Promise.all(
+            images.map(image => new Promise(resolve => {
+                const img = new Image();
+                img.src = `${baseDir}${image}`;
+                img.onload = img.onerror = resolve;
+            }))
+        );
     };
 
     const initializeSplashScreen = async () => {
-        await preloadFonts(); // Wait for fonts to load
+        await preloadFonts();
+        await preloadImages(imagesToPreload);
 
-        preloadImages(imagesToPreload, () => {
-            splashContainer.style.opacity = '0';
-
-            setTimeout(() => {
-                document.location.href = `/menu?user_id=` + encodeURIComponent({{.userReferenceKey}});
-            }, 3000);
-        });
+        splashContainer.style.opacity = '0';
+        setTimeout(() => {
+            document.location.href = `/menu?` + window.Telegram.WebApp.initData;
+        }, 3000);
     };
 
     initializeSplashScreen();

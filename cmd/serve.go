@@ -38,7 +38,7 @@ func serve(cmd *cobra.Command, args []string) {
 
     ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
-    go telegram.Start(ctx, sqliteClient)
+    go telegram.Start(ctx)
 
     h := handler.NewHandler(sqliteClient, redisClient)
 
@@ -50,8 +50,9 @@ func serve(cmd *cobra.Command, args []string) {
     e.Static("/assets", "assets")
     e.File("/favicon.ico", "assets/favicon.ico")
     e.GET("/", h.GetSplashPage)
+    //e.POST("/", h.SaveUserData, middleware.AuthMiddleware(sqliteClient))
     e.GET("/menu", h.GetMenuPage)
-    e.GET("/game", h.GetGamePage)
+    e.GET("/game", h.GetGamePage, middleware.AuthMiddleware(sqliteClient))
     e.POST("/game/start", h.GetGameId, middleware.AuthMiddleware(sqliteClient))
     e.GET("/game/:gameId", h.GetGameData, middleware.AuthMiddleware(sqliteClient))
     e.POST("/game/:gameId/choose-trump", h.ChooseTrump, middleware.AuthMiddleware(sqliteClient))

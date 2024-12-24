@@ -1,6 +1,8 @@
 @font-face {
-    font-family: 'Iranian Sans';
-    src: url('/assets/font/Iranian Sans.ttf') format('truetype');
+    font-family: "Iranian Sans";
+    font-display: auto;
+    font-weight: 400;
+    src: url(/assets/font/IRANSansWebFaNum_Light.woff2) format('woff2'), url(/assets/font/IRANSansWebFaNum_Light-1.woff) format('woff'), url(/assets/font/IRANSansWebFaNum_Light.ttf) format('TrueType'), url(/assets/font/IRANSansWebFaNum_Light.eot) format('eot');
 }
 
 body {

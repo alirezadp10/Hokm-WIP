@@ -2,20 +2,19 @@ package sqlite
 
 import (
     "github.com/alirezadp10/hokm/internal/database"
-    "gopkg.in/telebot.v4"
+    "github.com/alirezadp10/hokm/internal/request"
     "gorm.io/gorm"
     "gorm.io/gorm/clause"
     "log"
     "time"
 )
 
-func SavePlayer(db *gorm.DB, player *telebot.User, chatId int64) (*database.Player, error) {
+func SavePlayer(db *gorm.DB, user request.User) (*database.Player, error) {
     newPlayer := database.Player{
-        Id:        player.ID,
-        FirstName: player.FirstName,
-        LastName:  player.LastName,
-        Username:  player.Username,
-        ChatId:    chatId,
+        Id:        user.ID,
+        FirstName: user.FirstName,
+        LastName:  user.LastName,
+        Username:  user.Username,
         UpdatedAt: time.Now(),
         JoinedAt:  time.Now(),
     }
