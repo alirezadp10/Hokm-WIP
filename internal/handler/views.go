@@ -17,7 +17,9 @@ func (h *Handler) GetSplashPage(c echo.Context) error {
 
 func (h *Handler) GetMenuPage(c echo.Context) error {
     var user request.User
+
     err := json.Unmarshal([]byte(c.QueryParam("user")), &user)
+
     if err != nil {
         fmt.Println("Error unmarshalling user JSON:", err)
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "unauthorized"})

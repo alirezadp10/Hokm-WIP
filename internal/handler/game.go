@@ -19,10 +19,6 @@ import (
     "time"
 )
 
-//func (h *Handler) SaveUserData(c echo.Context) error {
-//_, err := sqlite.SavePlayer(h.sqlite, c.Get("user"))
-//}
-
 func (h *Handler) GetGameId(c echo.Context) error {
     username := c.Get("username").(string)
 
