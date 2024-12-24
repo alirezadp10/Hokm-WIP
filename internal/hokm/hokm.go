@@ -138,8 +138,8 @@ func GetPoints(pointsString string, uIndex int) map[string]map[string]string {
     }
 
     return map[string]map[string]string{
-        "total":        {"down": downTotalPoints, "right": rightTotalPoints},
-        "currentRound": {"down": downRoundPoints, "right": rightRoundPoints},
+        "total": {"down": downTotalPoints, "right": rightTotalPoints},
+        "round": {"down": downRoundPoints, "right": rightRoundPoints},
     }
 }
 

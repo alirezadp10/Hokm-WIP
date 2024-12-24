@@ -15,34 +15,121 @@
 <script>
     const baseDir = '/assets/img/';
     const splashContainer = document.getElementById('splashContainer');
-
-    const additionalImages = [
+    const images = [
+        "01C.png",
+        "01C.svg",
+        "01D.png",
+        "01D.svg",
+        "01H.png",
+        "01H.svg",
+        "01S.png",
+        "01S.svg",
+        "02C.png",
+        "02C.svg",
+        "02D.png",
+        "02D.svg",
+        "02H.png",
+        "02H.svg",
+        "02S.png",
+        "02S.svg",
+        "03C.png",
+        "03C.svg",
+        "03D.png",
+        "03D.svg",
+        "03H.png",
+        "03H.svg",
+        "03S.png",
+        "03S.svg",
+        "04C.png",
+        "04C.svg",
+        "04D.png",
+        "04D.svg",
+        "04H.png",
+        "04H.svg",
+        "04S.png",
+        "04S.svg",
+        "05C.png",
+        "05C.svg",
+        "05D.png",
+        "05D.svg",
+        "05H.png",
+        "05H.svg",
+        "05S.png",
+        "05S.svg",
+        "06C.png",
+        "06C.svg",
+        "06D.png",
+        "06D.svg",
+        "06H.png",
+        "06H.svg",
+        "06S.png",
+        "06S.svg",
+        "07C.png",
+        "07C.svg",
+        "07D.png",
+        "07D.svg",
+        "07H.png",
+        "07H.svg",
+        "07S.png",
+        "07S.svg",
+        "08C.png",
+        "08C.svg",
+        "08D.png",
+        "08D.svg",
+        "08H.png",
+        "08H.svg",
+        "08S.png",
+        "08S.svg",
+        "09C.png",
+        "09C.svg",
+        "09D.png",
+        "09D.svg",
+        "09H.png",
+        "09H.svg",
+        "09S.png",
+        "09S.svg",
+        "10C.png",
+        "10C.svg",
+        "10D.png",
+        "10D.svg",
+        "10H.png",
+        "10H.svg",
+        "10S.png",
+        "10S.svg",
         "back.png",
         "bg.jpg",
+        "blackjack2.png",
         "clubs.png",
         "diamonds.png",
         "hearts.png",
         "JC.png",
+        "JC.svg",
         "JD.png",
+        "JD.svg",
         "JH.png",
+        "JH.svg",
         "JS.png",
+        "JS.svg",
         "KC.png",
+        "KC.svg",
         "KD.png",
+        "KD.svg",
         "KH.png",
+        "KH.svg",
         "KS.png",
+        "KS.svg",
         "QC.png",
+        "QC.svg",
         "QD.png",
+        "QD.svg",
         "QH.png",
-        "QS.png"
-    ];
-
-    const imagesToPreload = [
-        ...additionalImages,  // Add the custom images first
-        ...Array.from({ length: 52 }, (_, index) => {
-            const rank = ("0" + (index % 13 + 1)).slice(-2);
-            const suit = ['C', 'D', 'H', 'S'][Math.floor(index / 13)];
-            return `${rank}${suit}.png`;
-        })  // Then add the dynamically generated cards
+        "QH.svg",
+        "QS.png",
+        "QS.svg",
+        "rug.jpg",
+        "rug.webp",
+        "rug2.jpg",
+        "spades.png",
     ];
 
     const preloadFonts = () => document.fonts.load("1em 'Iranian Sans'").then(
@@ -66,7 +153,7 @@
 
         // Preload fonts and images
         await preloadFonts();
-        await preloadImages(imagesToPreload);
+        await preloadImages(images);
 
         // Fade out splash screen
         splashContainer.style.transition = 'opacity 1s ease';

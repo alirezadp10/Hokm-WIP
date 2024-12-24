@@ -432,13 +432,23 @@ func (h *Handler) GetUpdate(c echo.Context) error {
         "wasKingChanged": gameInformation["was_king_changed"].(string),
     }
 
-    if gameInformation["who_has_won_the_cards"].(string) != "" {
-        whoHasWonTheCards, _ := strconv.Atoi(gameInformation["who_has_won_the_cards"].(string))
-        whoHasWonTheRound, _ := strconv.Atoi(gameInformation["who_has_won_the_round"].(string))
-        whoHasWonTheGame, _ := strconv.Atoi(gameInformation["who_has_won_the_game"].(string))
-        response["whoHasWonTheCards"] = hokm.GetDirection(whoHasWonTheCards, uIndex)
-        response["whoHasWonTheRound"] = hokm.GetDirection(whoHasWonTheRound, uIndex)
-        response["whoHasWonTheGame"] = hokm.GetDirection(whoHasWonTheGame, uIndex)
+    cardsWinner, _ := gameInformation["who_has_won_the_cards"].(string)
+    roundWinner, _ := gameInformation["who_has_won_the_round"].(string)
+    gameWinner, _ := gameInformation["who_has_won_the_game"].(string)
+
+    if cardsWinner != "" {
+        cardsWinner, _ := strconv.Atoi(cardsWinner)
+        response["whoHasWonTheCards"] = hokm.GetDirection(cardsWinner, uIndex)
+    }
+
+    if roundWinner != "" {
+        roundWinner, _ := strconv.Atoi(roundWinner)
+        response["whoHasWonTheRound"] = hokm.GetDirection(roundWinner, uIndex)
+    }
+
+    if gameWinner != "" {
+        gameWinner, _ := strconv.Atoi(gameWinner)
+        response["whoHasWonTheGame"] = hokm.GetDirection(gameWinner, uIndex)
     }
 
     return c.JSON(http.StatusOK, response)

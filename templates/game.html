@@ -94,7 +94,7 @@
         "S": 1, "H": 2, "D": 3, "C": 4,
     };
 
-    function sortCards() {
+    async function sortCards() {
         const cardsContainer = document.getElementById("hand-cards");
         const cards = Array.from(cardsContainer.getElementsByClassName("card"));
 
@@ -150,7 +150,7 @@
             },
         })
             .then((response) => response.json())
-            .then((data) => refreshActions(data))
+            .then((data) => placeCardAction(data.lastMove.from, data.lastMove.card, data))
             .catch(async (error) => {
                 await sleep(1000)
                 await refresh()
@@ -241,6 +241,7 @@
             await sleep(500);
             let cards = king === "down" ? data.trumpCards : ["back", "back", "back", "back", "back"];
             await distribute(king, cards)
+            await sortCards();
             if (king === "down") {
                 countdown = setInterval(updateTimer, 1000);
                 updateTime(20)
@@ -255,10 +256,10 @@
             updateCenterCards(data.centerCards);
             updateYourCards(data.playerCards);
             updateTrump(data.trump);
-            updateCurrentRoundScores(data.points.currentRound);
+            updateCurrentRoundScores(data.points.round);
         }
 
-        sortCards();
+        await sortCards();
     }
 
     function isItFirstRound(data) {
@@ -344,28 +345,52 @@
         });
     }
 
-    async function refreshActions(data) {
-        // must be deleted updateCenterCards(data.centerCards);
-        await placeCard(data.lastMove.from, data.lastMove.card)
+    async function placeCardAction(direction, card, data){
+        await placeCard(direction, card)
+        await sleep(1500)
         if (data.whoHasWonTheCards) {
-            // simulateGreenLightningEffect([data.whoHasWonTheRound])
-        }
-        if (data.whoHasWonTheRound === "down" || data.whoHasWonTheRound === "up") {
             await sleep(1000);
-            simulateGreenLightningEffect(["down", "up"])
-            await sleep(2000);
-            clearCenterCards("down")
-            addRoundPoint("down", data.points.currentRound.down)
-            return
+            simulateGreenLightningEffect([data.whoHasWonTheCards])
+            if (data.whoHasWonTheCards === "down" || data.whoHasWonTheCards === "up") {
+                clearCenterCards("down")
+                addRoundPoint("down", data.points.round.down)
+            } else {
+                clearCenterCards("right")
+                addRoundPoint("right", data.points.round.right)
+            }
+            await sleep(1000)
+            if (data.whoHasWonTheRound) {
+                updateTotalRoundScores(data.points.total);
+                if (data.whoHasWonTheGame) {
+                    if (data.whoHasWonTheGame === "down" || data.whoHasWonTheGame === "up") {
+                        alert("down has won the game!")
+                    } else {
+                        alert("right has won the game!")
+                    }
+                } else {
+                    let king = data.king
+                    let cards
+                    if (king === "down") {
+                        cards = data.kingCards;
+                    } else {
+                        cards = ["back", "back", "back", "back", "back"];
+                    }
+                    if (data.wasKingChanged) {
+                        document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
+                    }
+                    await sleep(500);
+                    await distribute(king, cards)
+                    if (king === "down") {
+                        countdown = setInterval(updateTimer, 1000);
+                        updateTime(20)
+                        document.getElementById("trump-box").removeAttribute("hidden")
+                    } else {
+                        await getYourCards(king);
+                    }
+                }
+            }
         }
-        if (data.whoHasWonTheRound === "right" || data.whoHasWonTheRound === "left") {
-            await sleep(1000);
-            simulateGreenLightningEffect(["right", "left"])
-            await sleep(2000);
-            clearCenterCards("right")
-            addRoundPoint("right", data.points.currentRound.right)
-            return
-        }
+
         updateTurn(data.turn)
         updateTime(data.timeRemained);
     }
@@ -455,51 +480,7 @@
         document.getElementById("timer").setAttribute("hidden", "true")
         clearInterval(countdown);
         card.parentElement.removeChild(card);
-        await placeCard("down", card.getAttribute("alt"))
-        await sleep(1500)
-        if (data.whoHasWonTheCards) {
-            await sleep(1000);
-            simulateGreenLightningEffect([data.whoHasWonTheCards])
-            if (data.whoHasWonTheCards === "down" || data.whoHasWonTheCards === "up") {
-                clearCenterCards("down")
-                addRoundPoint("down", data.points.currentRound.down)
-            } else {
-                clearCenterCards("right")
-                addRoundPoint("right", data.points.currentRound.right)
-            }
-            await sleep(1000)
-            if (data.whoHasWonTheRound) {
-                updateTotalRoundScores(data.points.total);
-                if (data.whoHasWonTheGame) {
-                    if (data.whoHasWonTheGame === "down" || data.whoHasWonTheGame === "up") {
-                        alert("down has won the game!")
-                    } else {
-                        alert("right has won the game!")
-                    }
-                } else {
-                    let king = data.king
-                    let cards
-                    if (king === "down") {
-                        cards = data.trumpDeterminationCards;
-                    } else {
-                        cards = ["back", "back", "back", "back", "back"];
-                    }
-                    if (data.wasKingChanged) {
-                        document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
-                    }
-                    await sleep(500);
-                    await distribute(king, cards)
-                    if (king === "down") {
-                        countdown = setInterval(updateTimer, 1000);
-                        updateTime(20)
-                        document.getElementById("trump-box").removeAttribute("hidden")
-                    } else {
-                        await getYourCards(king);
-                    }
-                }
-            }
-        }
-        updateTurn(data)
+        await placeCardAction("down", card.getAttribute("alt"), data)
     }
 
     async function firstKingDetermination(cards, beginnerDirection) {
@@ -530,6 +511,7 @@
         deck.appendChild(deckCard)
         document.getElementById("center-cards").appendChild(deck)
         await dealCards(direction, cards);
+        await sortCards();
     }
 
     function dealCards(direction, cards, isKingDeterminationLevel = false) {
