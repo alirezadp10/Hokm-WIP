@@ -136,7 +136,7 @@
             .then((data) => updateGameUI(data))
             .catch(async (error) => {
                 await sleep(1000)
-                // await fetchGameData(gameId)
+                await fetchGameData(gameId)
                 console.error('Error:', error)
             });
     }
@@ -153,7 +153,7 @@
             .then((data) => refreshActions(data))
             .catch(async (error) => {
                 await sleep(1000)
-                // await refresh()
+                await refresh()
                 console.error('Error:', error)
             });
     }
@@ -173,7 +173,7 @@
             .then((data) => trumpDetermineActions(data))
             .catch(async (error) => {
                 await sleep(1000)
-                // await trumpDetermine(type)
+                await trumpDetermine(type)
                 console.error('Error:', error)
             });
     }
@@ -209,7 +209,7 @@
             .catch(async (error) => {
                 isYourTurn = true
                 await sleep(1000)
-                // await selectCard(card)
+                await selectCard(card)
                 console.error('Error:', error)
             });
     }
@@ -226,7 +226,7 @@
             .then((data) => getYourCardsActions(data, king))
             .catch(async (error) => {
                 await sleep(1000)
-                // await getYourCards(king)
+                await getYourCards(king)
                 console.error('Error:', error)
             });
     }
