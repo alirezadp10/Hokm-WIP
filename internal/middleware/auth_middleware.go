@@ -29,7 +29,7 @@ func AuthMiddleware(db *gorm.DB) echo.MiddlewareFunc {
             }
 
             // Store the decrypted username in context
-            c.Set("username", "decryptedUsername")
+            c.Set("username", decryptedUsername)
 
             // Proceed to the next handler
             return next(c)
