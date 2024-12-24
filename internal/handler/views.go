@@ -8,13 +8,10 @@ import (
     "github.com/alirezadp10/hokm/internal/utils/crypto"
     "github.com/labstack/echo/v4"
     "net/http"
-    "os"
 )
 
 func (h *Handler) GetSplashPage(c echo.Context) error {
-    return c.Render(200, "splash.html", map[string]interface{}{
-        "botToken": os.Getenv("BOT_TOKEN"),
-    })
+    return c.Render(200, "splash.html", nil)
 }
 
 func (h *Handler) GetMenuPage(c echo.Context) error {
@@ -40,7 +37,7 @@ func (h *Handler) GetMenuPage(c echo.Context) error {
 
 func (h *Handler) GetGamePage(c echo.Context) error {
     return c.Render(200, "game.html", map[string]interface{}{
-        "username": c.Get("username"),
-        "gameId":   c.QueryParam("game_id"),
+        "userReferenceKey": c.QueryParam("user_id"),
+        "gameId":           c.QueryParam("game_id"),
     })
 }
