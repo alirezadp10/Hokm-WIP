@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/assets/css/game.css?foobar">
     <audio id="card-sound" src="/assets/audio/card-sound.mp3" preload="auto"></audio>
     <audio id="tiktok" src="/assets/audio/tiktok.mp3" preload="auto"></audio>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body>
 <div class="game-container">
@@ -86,6 +87,7 @@
         </div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     const valueOrder = {
         "A": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10, "J": 11, "Q": 12, "K": 13,
@@ -203,7 +205,11 @@
                 }
                 isYourTurn = true
                 if (response.status === 403) {
-                    alert(data.message)
+                    Swal.fire({
+                        title: data.message,
+                        icon: 'danger',
+                        confirmButtonText: 'باشه'
+                    });
                 }
             })
             .catch(async (error) => {
@@ -363,9 +369,17 @@
                 updateTotalRoundScores(data.points.total);
                 if (data.whoHasWonTheGame) {
                     if (data.whoHasWonTheGame === "down" || data.whoHasWonTheGame === "up") {
-                        alert("down has won the game!")
+                        Swal.fire({
+                            title: "شما بازی رو بردید!",
+                            icon: 'info',
+                            confirmButtonText: 'باشه'
+                        });
                     } else {
-                        alert("right has won the game!")
+                        Swal.fire({
+                            title: "شما بازی رو باختید!",
+                            icon: 'danger',
+                            confirmButtonText: 'باشه'
+                        });
                     }
                 } else {
                     let king = data.king

@@ -304,15 +304,16 @@ func (h *Handler) PlaceCard(c echo.Context) error {
     king := gameInformation["king"].(string)
     points := gameInformation["points"].(string)
 
+    turn := hokm.GetNewTurn(gameInformation["turn"].(string))
+
     if cardsWinner != "" {
         points, roundWinner, gameWinner = hokm.UpdatePoints(points, cardsWinner)
         king = hokm.GiveKing(roundWinner, king)
+        turn = cardsWinner
         wasKingChanged = king == gameInformation["king"].(string)
         leadSuit = ""
         centerCards = ",,,"
     }
-
-    turn := hokm.GetNewTurn(gameInformation["turn"].(string))
 
     cards := hokm.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
 
