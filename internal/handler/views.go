@@ -8,6 +8,7 @@ import (
     "github.com/alirezadp10/hokm/internal/utils/crypto"
     "github.com/labstack/echo/v4"
     "net/http"
+    "strconv"
 )
 
 func (h *Handler) GetSplashPage(c echo.Context) error {
@@ -28,7 +29,9 @@ func (h *Handler) GetMenuPage(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "unauthorized"})
     }
 
-    _, _ = sqlite.SavePlayer(h.sqlite, user)
+    chatInstance, _ := strconv.ParseInt(c.QueryParam("chat_instance"), 10, 64)
+
+    _, _ = sqlite.SavePlayer(h.sqlite, user, chatInstance)
 
     return c.Render(200, "menu.html", map[string]interface{}{
         "userReferenceKey": encryptedUsername,

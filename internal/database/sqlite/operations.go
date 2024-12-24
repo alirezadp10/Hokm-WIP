@@ -9,12 +9,13 @@ import (
     "time"
 )
 
-func SavePlayer(db *gorm.DB, user request.User) (*database.Player, error) {
+func SavePlayer(db *gorm.DB, user request.User, chatId int64) (*database.Player, error) {
     newPlayer := database.Player{
         Id:        user.ID,
         FirstName: user.FirstName,
         LastName:  user.LastName,
         Username:  user.Username,
+        ChatId:    chatId,
         UpdatedAt: time.Now(),
         JoinedAt:  time.Now(),
     }
