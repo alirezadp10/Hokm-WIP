@@ -162,14 +162,14 @@ func GetDirection(pIndex, uIndex int) string {
 // Matchmaking assigns players to a game and initializes game data in Redis
 func Matchmaking(ctx context.Context, client rueidis.Client, userId, gameId string) {
     time.Sleep(1 * time.Second)                                   // Simulate delay for matchmaking
-    distributedCards := distributeCards()                         // Distribute cards among players
+    distributedCards := DistributeCards()                         // Distribute cards among players
     lastMoveTimestamp := strconv.FormatInt(time.Now().Unix(), 10) // Record timestamp
     kingCards, king := chooseFirstKing()                          // Determine king cards and player
     redis.Matchmaking(ctx, client, distributedCards, userId, gameId, lastMoveTimestamp, king, kingCards)
 }
 
-// distributeCards shuffles and deals cards to 4 players
-func distributeCards() []string {
+// DistributeCards shuffles and deals cards to 4 players
+func DistributeCards() []string {
     localCards := make([]string, len(Cards))
     copy(localCards, Cards)
     rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })

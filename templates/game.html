@@ -138,7 +138,7 @@
             .then((data) => updateGameUI(data))
             .catch(async (error) => {
                 await sleep(1000)
-                await fetchGameData(gameId)
+                // await fetchGameData(gameId)
                 console.error('Error:', error)
             });
     }
@@ -155,7 +155,7 @@
             .then((data) => placeCardAction(data.lastMove.from, data.lastMove.card, data))
             .catch(async (error) => {
                 await sleep(1000)
-                await refresh()
+                // await refresh()
                 console.error('Error:', error)
             });
     }
@@ -175,7 +175,7 @@
             .then((data) => trumpDetermineActions(data))
             .catch(async (error) => {
                 await sleep(1000)
-                await trumpDetermine(type)
+                // await trumpDetermine(type)
                 console.error('Error:', error)
             });
     }
@@ -205,17 +205,13 @@
                 }
                 isYourTurn = true
                 if (response.status === 403) {
-                    Swal.fire({
-                        title: data.message,
-                        icon: 'danger',
-                        confirmButtonText: 'باشه'
-                    });
+                    showError(data.message)
                 }
             })
             .catch(async (error) => {
                 isYourTurn = true
                 await sleep(1000)
-                await selectCard(card)
+                // await selectCard(card)
                 console.error('Error:', error)
             });
     }
@@ -232,7 +228,7 @@
             .then((data) => getYourCardsActions(data, king))
             .catch(async (error) => {
                 await sleep(1000)
-                await getYourCards(king)
+                // await getYourCards(king)
                 console.error('Error:', error)
             });
     }
@@ -243,29 +239,44 @@
         let king = data.king
         if (isItFirstRound(data)) {
             await firstKingDetermination(data.kingCards, data.beginnerDirection)
+            await ["up","down","right","left"].forEach(function (direction) {
+                document.getElementById(`${direction}-player`).innerHTML = document.getElementById(`${direction}-player`).innerHTML.replace('👑 ', '');
+            })
             document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
             await sleep(500);
-            let cards = king === "down" ? data.trumpCards : ["back", "back", "back", "back", "back"];
-            await distribute(king, cards)
-            await sortCards();
-            if (king === "down") {
-                countdown = setInterval(updateTimer, 1000);
-                updateTime(20)
-                document.getElementById("trump-box").removeAttribute("hidden")
-            } else {
-                await getYourCards(king);
-            }
-        } else {
-            document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
-            updateTurn(data.turn);
-            updateTime(data.timeRemained);
-            updateCenterCards(data.centerCards);
-            updateYourCards(data.playerCards);
-            updateTrump(data.trump);
-            updateCurrentRoundScores(data.points.round);
+            await chooseTrump(data)
+            return
         }
 
+        if (data.isItNewRound) {
+            await chooseTrump(data)
+        }
+
+        ["up","down","right","left"].forEach(function (direction) {
+            document.getElementById(`${direction}-player`).innerHTML = document.getElementById(`${direction}-player`).innerHTML.replace('👑 ', '');
+        })
+        document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
+        updateTurn(data.turn);
+        updateTime(data.timeRemained);
+        updateCenterCards(data.centerCards);
+        updateYourCards(data.playerCards);
+        updateTrump(data.trump);
+        updateCurrentRoundScores(data.points.round);
+
         await sortCards();
+    }
+
+    async function chooseTrump(data){
+        let cards = data.king === "down" ? data.trumpCards : ["back", "back", "back", "back", "back"];
+        await distribute(data.king, cards)
+        await sortCards();
+        if (data.king === "down") {
+            countdown = setInterval(updateTimer, 1000);
+            updateTime(20)
+            document.getElementById("trump-box").removeAttribute("hidden")
+        } else {
+            await getYourCards(data.king);
+        }
     }
 
     function isItFirstRound(data) {
@@ -279,6 +290,10 @@
     }
 
     function updateTurn(turn) {
+        ["up","down","right","left"].forEach(function (direction) {
+            document.getElementById(`${direction}-player`).innerHTML = document.getElementById(`${direction}-player`).innerHTML.replace('🟢 ', '');
+        })
+        document.getElementById(`${turn}-player`).innerHTML = "🟢 " + document.getElementById(`${turn}-player`).innerHTML;
         if (turn === "down") {
             isYourTurn = true;
             countdown = setInterval(updateTimer, 1000);
@@ -390,6 +405,9 @@
                         cards = ["back", "back", "back", "back", "back"];
                     }
                     if (data.wasKingChanged) {
+                        ["up","down","right","left"].forEach(function (direction) {
+                            document.getElementById(`${direction}-player`).innerHTML = document.getElementById(`${direction}-player`).innerHTML.replace('👑 ', '');
+                        })
                         document.getElementById(`${king}-player`).innerHTML = "👑 " + document.getElementById(`${king}-player`).innerHTML;
                     }
                     await sleep(500);
@@ -403,8 +421,13 @@
                     }
                 }
             }
+            if (data.isItNewRound) {
+                document.getElementById("hand-cards").innerHTML = ""
+                document.getElementById("right-score-cards-container").innerHTML = "";
+                document.getElementById("down-score-cards-container").innerHTML = "";
+                await chooseTrump(data)
+            }
         }
-
         updateTurn(data.turn)
         updateTime(data.timeRemained);
     }
@@ -432,6 +455,18 @@
         return directions[nextIndex];
     }
 
+    function getPrevIndex(direction) {
+        const directions = ["up", "left", "down", "right"];
+        const index = directions.indexOf(direction);
+
+        if (index === -1) {
+            throw new Error("Invalid direction");
+        }
+
+        const nextIndex = (index - 1) % directions.length;
+        return directions[nextIndex];
+    }
+
     async function continueDistributing(data, direction) {
         let arr = rearrangeArray(direction)
         for (let [_, cards] of Object.entries(data.cards)) {
@@ -449,6 +484,7 @@
     }
 
     async function trumpDetermineActions(data) {
+        updateTrump(data.trump);
         document.getElementById("trump-box").setAttribute("hidden", "true")
         document.getElementById("timer").setAttribute("hidden", "true")
         clearInterval(countdown);

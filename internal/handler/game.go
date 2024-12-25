@@ -301,21 +301,29 @@ func (h *Handler) PlaceCard(c echo.Context) error {
     gameWinner := ""
     roundWinner := ""
     wasKingChanged := false
+    isItNewRound := "false"
     king := gameInformation["king"].(string)
     points := gameInformation["points"].(string)
 
     turn := hokm.GetNewTurn(gameInformation["turn"].(string))
 
+    cards := hokm.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
+
     if cardsWinner != "" {
         points, roundWinner, gameWinner = hokm.UpdatePoints(points, cardsWinner)
+        if roundWinner == "" {
+            turn = cardsWinner
+        } else {
+            turn = ""
+            cards = hokm.DistributeCards()
+            isItNewRound = "true"
+        }
         king = hokm.GiveKing(roundWinner, king)
-        turn = cardsWinner
         wasKingChanged = king == gameInformation["king"].(string)
+
         leadSuit = ""
         centerCards = ",,,"
     }
-
-    cards := hokm.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
 
     lastMoveTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
@@ -325,23 +333,30 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         trump = ""
     }
 
+    params := redis.PlaceCardParams{
+        GameId:            gameId,
+        Card:              requestBody.Card,
+        CenterCards:       centerCards,
+        LeadSuit:          leadSuit,
+        CardsWinner:       cardsWinner,
+        Points:            points,
+        Turn:              turn,
+        King:              king,
+        WasKingChanged:    my_bool.ToString(wasKingChanged),
+        LastMoveTimestamp: lastMoveTimestamp,
+        Trump:             trump,
+        IsItNewRound:      isItNewRound,
+        Cards:             cards,
+        PlayerIndex:       uIndex,
+    }
+
+    // Call PlaceCard with the params struct
     err := redis.PlaceCard(
         c.Request().Context(),
         h.redis,
-        uIndex,
-        gameId,
-        requestBody.Card,
-        centerCards,
-        leadSuit,
-        cardsWinner,
-        points,
-        turn,
-        king,
-        my_bool.ToString(wasKingChanged),
-        lastMoveTimestamp,
-        trump,
-        cards,
+        params,
     )
+
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),
@@ -425,12 +440,16 @@ func (h *Handler) GetUpdate(c echo.Context) error {
             "from": hokm.GetDirection(player, uIndex),
             "card": card,
         },
-        "points":         hokm.GetPoints(gameInformation["points"].(string), uIndex),
-        "centerCards":    hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":           hokm.GetTurn(gameInformation["turn"].(string), uIndex),
-        "king":           hokm.GetKing(gameInformation["king"].(string), uIndex),
-        "timeRemained":   hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-        "wasKingChanged": gameInformation["was_king_changed"].(string),
+        "points":            hokm.GetPoints(gameInformation["points"].(string), uIndex),
+        "centerCards":       hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
+        "turn":              hokm.GetTurn(gameInformation["turn"].(string), uIndex),
+        "king":              hokm.GetKing(gameInformation["king"].(string), uIndex),
+        "timeRemained":      hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
+        "wasKingChanged":    gameInformation["was_king_changed"].(string),
+        "trump":             gameInformation["trump"],
+        "whoHasWonTheCards": "",
+        "whoHasWonTheRound": "",
+        "whoHasWonTheGame":  "",
     }
 
     cardsWinner, _ := gameInformation["who_has_won_the_cards"].(string)

@@ -4,6 +4,7 @@ import (
     "context"
     _ "embed"
     "encoding/json"
+    "fmt"
     "github.com/redis/rueidis"
     "log"
     "strconv"
@@ -92,30 +93,58 @@ func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump, uIndex,
     return nil
 }
 
-func PlaceCard(ctx context.Context, client rueidis.Client, playerIndex int, gameId, card, centerCards, leadSuit, cardsWinner, points, turn, king, wasKingChanged, lastMoveTimestamp, trump string, cards []string) error {
-    cmd := client.B().Eval().Script(placeCardScript).Numkeys(1).Key(gameId).Arg(
-        centerCards,
-        leadSuit,
-        cardsWinner,
-        points,
-        turn,
-        king,
-        wasKingChanged,
-        cards[0],
-        cards[1],
-        cards[2],
-        cards[3],
-        strconv.Itoa(playerIndex),
-        card,
-        lastMoveTimestamp,
-        trump,
-    ).Build()
+// Define a struct for the parameters to reduce argument clutter
+type PlaceCardParams struct {
+    GameId            string
+    Card              string
+    CenterCards       string
+    LeadSuit          string
+    CardsWinner       string
+    Points            string
+    Turn              string
+    King              string
+    WasKingChanged    string
+    LastMoveTimestamp string
+    Trump             string
+    IsItNewRound      string
+    Cards             []string
+    PlayerIndex       int
+}
 
-    err := client.Do(ctx, cmd).Error()
+func PlaceCard(
+        ctx context.Context,
+        client rueidis.Client,
+        params PlaceCardParams,
+) error {
+    // Prepare the arguments for the Lua script, ensuring they are of type []string
+    args := []string{
+        params.CenterCards,
+        params.LeadSuit,
+        params.CardsWinner,
+        params.Points,
+        params.Turn,
+        params.King,
+        params.WasKingChanged,
+        params.Cards[0],
+        params.Cards[1],
+        params.Cards[2],
+        params.Cards[3],
+        strconv.Itoa(params.PlayerIndex),
+        params.Card,
+        params.LastMoveTimestamp,
+        params.Trump,
+        params.IsItNewRound,
+    }
 
-    if err != nil {
-        log.Fatalf("could not execute Lua script: %v", err)
-        return err
+    // Create and execute the Lua script
+    cmd := client.B().Eval().Script(placeCardScript).
+        Numkeys(1).
+        Key(params.GameId).
+        Arg(args...).Build()
+
+    if err := client.Do(ctx, cmd).Error(); err != nil {
+        // Handle error gracefully instead of logging fatal
+        return fmt.Errorf("could not execute Lua script: %w", err)
     }
 
     return nil

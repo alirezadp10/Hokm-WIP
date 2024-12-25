@@ -60,6 +60,8 @@ if count >= 4 then
 
     redis.call('HSET', 'game:' .. ARGV[2], 'who_has_won_the_game', '')
 
+    redis.call('HSET', 'game:' .. ARGV[2], 'is_it_new_round', 'false')
+
     -- Publish the list of players to a channel
     redis.call('PUBLISH', KEYS[2], table.concat(players, ",") .. "|" .. ARGV[2])
 end
