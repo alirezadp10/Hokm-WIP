@@ -6,7 +6,10 @@ import (
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
-    "github.com/alirezadp10/hokm/internal/hokm"
+    "github.com/alirezadp10/hokm/internal/service/cards_service"
+    "github.com/alirezadp10/hokm/internal/service/game_service"
+    "github.com/alirezadp10/hokm/internal/service/players_service"
+    "github.com/alirezadp10/hokm/internal/service/points_service"
     "github.com/alirezadp10/hokm/internal/utils/my_bool"
     "github.com/alirezadp10/hokm/internal/utils/my_slice"
     "github.com/alirezadp10/hokm/internal/utils/trans"
@@ -32,7 +35,7 @@ func (h *Handler) GetGameId(c echo.Context) error {
     }
 
     gameId = uuid.New().String()
-    go hokm.Matchmaking(c.Request().Context(), h.redis, username, gameId)
+    go game_service.Matchmaking(c.Request().Context(), h.redis, username, gameId)
 
     err := redis.Subscribe(c.Request().Context(), h.redis, "game_creation", func(msg rueidis.PubSubMessage) {
         message := strings.Split(msg.Message, "|")
@@ -93,22 +96,22 @@ func (h *Handler) GetGameData(c echo.Context) error {
     uIndex := my_slice.GetIndex(username, players)
 
     response := map[string]interface{}{
-        "beginnerDirection":    hokm.GetDirection(my_slice.GetIndex(players[0], players), uIndex),
-        "players":              hokm.GetPlayersWithDirections(players, uIndex),
-        "points":               hokm.GetPoints(gameInformation["points"].(string), uIndex),
-        "centerCards":          hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":                 hokm.GetTurn(gameInformation["turn"].(string), uIndex),
-        "king":                 hokm.GetKing(gameInformation["king"].(string), uIndex),
-        "kingCards":            hokm.GetKingCards(gameInformation["king_cards"].(string)),
-        "timeRemained":         hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
+        "beginnerDirection":    players_service.GetDirection(my_slice.GetIndex(players[0], players), uIndex),
+        "players":              players_service.GetPlayersWithDirections(players, uIndex),
+        "points":               points_service.GetPoints(gameInformation["points"].(string), uIndex),
+        "centerCards":          cards_service.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
+        "turn":                 players_service.GetTurn(gameInformation["turn"].(string), uIndex),
+        "king":                 cards_service.GetKing(gameInformation["king"].(string), uIndex),
+        "kingCards":            cards_service.GetKingCards(gameInformation["king_cards"].(string)),
+        "timeRemained":         players_service.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
         "hasKingCardsFinished": gameInformation["has_king_cards_finished"].(string),
         "trump":                gameInformation["trump"],
     }
 
     if response["hasKingCardsFinished"] == "true" {
-        response["playerCards"] = hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex)
+        response["playerCards"] = cards_service.GetPlayerCards(gameInformation["cards"].(string), uIndex)
     } else if response["king"] == "down" {
-        response["trumpCards"] = hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex)[0]
+        response["trumpCards"] = cards_service.GetPlayerCards(gameInformation["cards"].(string), uIndex)[0]
     }
 
     return c.JSON(http.StatusOK, response)
