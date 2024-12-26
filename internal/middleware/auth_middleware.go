@@ -2,7 +2,7 @@ package middleware
 
 import (
     "github.com/alirezadp10/hokm/internal/database/sqlite"
-    "github.com/alirezadp10/hokm/internal/utils/crypto"
+    "github.com/alirezadp10/hokm/internal/util/crypto"
     "github.com/labstack/echo/v4"
     "gorm.io/gorm"
     "net/http"

@@ -1,0 +1,59 @@
+package validator
+
+import (
+    "github.com/alirezadp10/hokm/internal/service/game_service"
+    "github.com/alirezadp10/hokm/internal/util/errors"
+    "github.com/alirezadp10/hokm/internal/util/my_slice"
+    "github.com/alirezadp10/hokm/internal/util/trans"
+    "net/http"
+    "strconv"
+)
+
+type ChooseTrumpValidatorData struct {
+    GameInformation map[string]interface{}
+    UIndex          int
+    Username        string
+    GameID          string
+    Trump           string
+}
+
+func ChooseTrumpValidator(s game_service.GameService, data ChooseTrumpValidatorData) *errors.ValidationError {
+    if !my_slice.Has([]string{"H", "D", "C", "S"}, data.Trump) {
+        return &errors.ValidationError{
+            StatusCode: http.StatusBadRequest,
+            Message:    trans.Get("Invalid trump."),
+        }
+    }
+
+    ok, err := s.GameRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
+
+    if err != nil {
+        return &errors.ValidationError{
+            StatusCode: http.StatusInternalServerError,
+            Message:    trans.Get("Something went wrong. Please try again later."),
+        }
+    }
+
+    if ok == false {
+        return &errors.ValidationError{
+            StatusCode: http.StatusForbidden,
+            Message:    trans.Get("It's not your game."),
+        }
+    }
+
+    if data.GameInformation["king"].(string) != strconv.Itoa(data.UIndex) {
+        return &errors.ValidationError{
+            StatusCode: http.StatusForbidden,
+            Message:    trans.Get("You're not king in this round."),
+        }
+    }
+
+    if data.GameInformation["has_king_cards_finished"].(string) == "true" {
+        return &errors.ValidationError{
+            StatusCode: http.StatusForbidden,
+            Message:    trans.Get("You're not allowed to choose a trump at the moment."),
+        }
+    }
+
+    return nil
+}

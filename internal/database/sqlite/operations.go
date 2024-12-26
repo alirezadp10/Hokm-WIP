@@ -28,49 +28,15 @@ func SavePlayer(db *gorm.DB, user request.User, chatId int64) (*database.Player,
     return &newPlayer, err
 }
 
-func AddPlayerToGame(db *gorm.DB, username, gameId string) (*database.Game, error) {
+func AddPlayerToGame(db *gorm.DB, username, gameID string) (*database.Game, error) {
     var player database.Player
     db.First(&player, "username = ?", username)
 
-    newGame := database.Game{GameId: gameId, PlayerId: player.Id, CreatedAt: time.Now()}
+    newGame := database.Game{GameId: gameID, PlayerId: player.Id, CreatedAt: time.Now()}
 
     err := db.Create(&newGame).Error
 
     return &newGame, err
-}
-
-func DoesPlayerHaveAnActiveGame(db *gorm.DB, username string) (*string, bool) {
-    var result struct{ GameId string }
-
-    db.Table("players").
-        Select("games.game_id").
-        Joins("inner join games on games.player_id = players.id").
-        Where("players.username = ?", username).
-        Where("games.finished_at is null").
-        Scan(&result)
-
-    if result.GameId != "" {
-        return &result.GameId, true
-    }
-
-    return nil, false
-}
-
-func DoesPlayerBelongsToThisGame(db *gorm.DB, username, gameId string) bool {
-    var count int64
-
-    err := db.Table("players").
-        Joins("inner join games on games.player_id = players.id").
-        Where("players.username = ?", username).
-        Where("games.game_id = ?", gameId).
-        Count(&count).Error
-
-    if err != nil {
-        log.Fatal(err)
-        return false
-    }
-
-    return count > 0
 }
 
 func CheckPlayerExistence(db *gorm.DB, username string) bool {
@@ -84,12 +50,4 @@ func CheckPlayerExistence(db *gorm.DB, username string) bool {
     }
 
     return count > 0
-}
-
-func HasGameFinished(db *gorm.DB, gameId string) bool {
-    var game database.Game
-
-    db.Table("games").Where("game_id = ?", gameId).First(&game)
-
-    return game.FinishedAt != nil
 }

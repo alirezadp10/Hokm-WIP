@@ -6,13 +6,11 @@ import (
     "fmt"
     "github.com/alirezadp10/hokm/internal/database/redis"
     "github.com/alirezadp10/hokm/internal/database/sqlite"
-    "github.com/alirezadp10/hokm/internal/service/cards_service"
-    "github.com/alirezadp10/hokm/internal/service/game_service"
-    "github.com/alirezadp10/hokm/internal/service/players_service"
-    "github.com/alirezadp10/hokm/internal/service/points_service"
-    "github.com/alirezadp10/hokm/internal/utils/my_bool"
-    "github.com/alirezadp10/hokm/internal/utils/my_slice"
-    "github.com/alirezadp10/hokm/internal/utils/trans"
+    "github.com/alirezadp10/hokm/internal/transformer"
+    "github.com/alirezadp10/hokm/internal/util/my_bool"
+    "github.com/alirezadp10/hokm/internal/util/my_slice"
+    "github.com/alirezadp10/hokm/internal/util/trans"
+    "github.com/alirezadp10/hokm/internal/validator"
     "github.com/google/uuid"
     "github.com/labstack/echo/v4"
     "github.com/redis/rueidis"
@@ -22,27 +20,26 @@ import (
     "time"
 )
 
-func (h *Handler) GetGameId(c echo.Context) error {
+func (h *Handler) CreateGame(c echo.Context) error {
     username := c.Get("username").(string)
 
-    var gameId string
-
-    if gid, ok := sqlite.DoesPlayerHaveAnActiveGame(h.sqlite, username); ok {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("You have already an active game."),
-            "gameId":  *gid,
-        })
+    if err := validator.CreateGameValidator(h.GameService, validator.CreateGameValidatorData{
+        Username: username,
+    }); err != nil {
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
     }
 
-    gameId = uuid.New().String()
-    go game_service.Matchmaking(c.Request().Context(), h.redis, username, gameId)
+    gameID := uuid.New().String()
+    distributedCards := h.CardsService.DistributeCards()
+    kingCards, king := h.PlayersService.ChooseFirstKing()
+    go h.GameService.Matchmaking(c.Request().Context(), h.redis, username, gameID, distributedCards, kingCards, king)
 
     err := redis.Subscribe(c.Request().Context(), h.redis, "game_creation", func(msg rueidis.PubSubMessage) {
         message := strings.Split(msg.Message, "|")
         players := strings.Split(message[0], ",")
         if my_slice.Has(players, username) {
-            gameId = message[1]
-            _, err := sqlite.AddPlayerToGame(h.sqlite, username, gameId)
+            gameID = message[1]
+            _, err := sqlite.AddPlayerToGame(h.sqlite, username, gameID)
             if err != nil {
                 fmt.Println(err)
             }
@@ -57,109 +54,85 @@ func (h *Handler) GetGameId(c echo.Context) error {
         if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
                 "message": trans.Get("No body have found. please try again later."),
-                "gameId":  nil,
+                "gameID":  nil,
             })
         }
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong. please try again later."),
-            "gameId":  nil,
+            "gameID":  nil,
         })
     }
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "message": trans.Get("Game has been made."),
-        "gameId":  gameId,
+        "gameID":  gameID,
     })
 }
 
-func (h *Handler) GetGameData(c echo.Context) error {
+func (h *Handler) GetGameInformation(c echo.Context) error {
     username := c.Get("username").(string)
+    gameID := c.Param("gameID")
 
-    gameId := c.Param("gameId")
-
-    if sqlite.HasGameFinished(h.sqlite, gameId) {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("The game has already finished."),
-        })
+    if err := validator.GetGameInformationValidator(h.GameService, validator.GetGameInformationValidatorData{
+        Username: username,
+        GameID:   gameID,
+    }); err != nil {
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
     }
 
-    if !sqlite.DoesPlayerBelongsToThisGame(h.sqlite, username, gameId) {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("It's not your game."),
-        })
-    }
+    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
-    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redis, gameId)
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong. Please try again later.")})
+    }
 
     players := strings.Split(gameInformation["players"].(string), ",")
 
     uIndex := my_slice.GetIndex(username, players)
 
-    response := map[string]interface{}{
-        "beginnerDirection":    players_service.GetDirection(my_slice.GetIndex(players[0], players), uIndex),
-        "players":              players_service.GetPlayersWithDirections(players, uIndex),
-        "points":               points_service.GetPoints(gameInformation["points"].(string), uIndex),
-        "centerCards":          cards_service.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":                 players_service.GetTurn(gameInformation["turn"].(string), uIndex),
-        "king":                 cards_service.GetKing(gameInformation["king"].(string), uIndex),
-        "kingCards":            cards_service.GetKingCards(gameInformation["king_cards"].(string)),
-        "timeRemained":         players_service.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-        "hasKingCardsFinished": gameInformation["has_king_cards_finished"].(string),
-        "trump":                gameInformation["trump"],
-    }
-
-    if response["hasKingCardsFinished"] == "true" {
-        response["playerCards"] = cards_service.GetPlayerCards(gameInformation["cards"].(string), uIndex)
-    } else if response["king"] == "down" {
-        response["trumpCards"] = cards_service.GetPlayerCards(gameInformation["cards"].(string), uIndex)[0]
-    }
-
-    return c.JSON(http.StatusOK, response)
+    return c.JSON(http.StatusOK, transformer.GameInformationTransformer(h, transformer.GameInformationTransformerData{
+        GameInformation: gameInformation,
+        Players:         players,
+        UIndex:          uIndex,
+    }))
 }
 
 func (h *Handler) ChooseTrump(c echo.Context) error {
-    username := c.Get("username").(string)
-    gameId := c.Param("gameId")
-
     var requestBody struct {
         Trump string `json:"trump"`
     }
+
+    username := c.Get("username").(string)
+    gameID := c.Param("gameID")
 
     if err := c.Bind(&requestBody); err != nil {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": trans.Get("Invalid JSON.")})
     }
 
-    if !my_slice.Has([]string{"H", "D", "C", "S"}, requestBody.Trump) {
-        return c.JSON(http.StatusBadRequest, map[string]string{"error": trans.Get("Invalid trump.")})
-    }
+    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
-    if !sqlite.DoesPlayerBelongsToThisGame(h.sqlite, username, gameId) {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("It's not your game."),
-        })
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong. Please try again later.")})
     }
-
-    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redis, gameId)
 
     players := strings.Split(gameInformation["players"].(string), ",")
 
     uIndex := my_slice.GetIndex(username, players)
 
-    if gameInformation["king"].(string) != strconv.Itoa(uIndex) {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("You're not king in this round."),
-        })
-    }
-
-    if gameInformation["has_king_cards_finished"].(string) == "true" {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("You're not allowed to choose a trump at the moment."),
-        })
+    if err := validator.ChooseTrumpValidator(h.GameService, validator.ChooseTrumpValidatorData{
+        GameInformation: gameInformation,
+        UIndex:          uIndex,
+        Trump:           requestBody.Trump,
+        GameID:          gameID,
+        Username:        username,
+    }); err != nil {
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
     }
 
     lastMoveTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
-    err := redis.SetTrump(c.Request().Context(), h.redis, gameId, requestBody.Trump, strconv.Itoa(uIndex), lastMoveTimestamp)
+    err = redis.SetTrump(c.Request().Context(), h.redis, gameID, requestBody.Trump, strconv.Itoa(uIndex), lastMoveTimestamp)
+
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),
@@ -168,22 +141,27 @@ func (h *Handler) ChooseTrump(c echo.Context) error {
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "trump":        requestBody.Trump,
-        "cards":        hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex)[1:],
-        "timeRemained": hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
+        "cards":        h.CardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex)[1:],
+        "timeRemained": h.PlayersService.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
     })
 }
 
-func (h *Handler) GetYourCards(c echo.Context) error {
+func (h *Handler) GetCards(c echo.Context) error {
     username := c.Get("username").(string)
-    gameId := c.Param("gameId")
+    gameID := c.Param("gameID")
 
-    if !sqlite.DoesPlayerBelongsToThisGame(h.sqlite, username, gameId) {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("It's not your game."),
-        })
+    if err := validator.GetCardsValidator(h.GameService, validator.GetCardsValidatorData{
+        Username: username,
+        GameID:   gameID,
+    }); err != nil {
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
     }
 
-    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redis, gameId)
+    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
+
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong. Please try again later.")})
+    }
 
     trump := gameInformation["trump"].(string)
 
@@ -191,7 +169,7 @@ func (h *Handler) GetYourCards(c echo.Context) error {
         err := redis.Subscribe(c.Request().Context(), h.redis, "choosing_trump", func(msg rueidis.PubSubMessage) {
             messages := strings.Split(msg.Message, ",")
             messageId := my_slice.HasLike(messages, func(s string) bool {
-                return strings.Contains(s, gameId+"|")
+                return strings.Contains(s, gameID+"|")
             })
             if messageId != -1 {
                 data := strings.Split(messages[messageId], "|")
@@ -217,14 +195,14 @@ func (h *Handler) GetYourCards(c echo.Context) error {
     uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
-        "cards": hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
+        "cards": h.CardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex),
         "trump": trump,
     })
 }
 
 func (h *Handler) PlaceCard(c echo.Context) error {
     username := c.Get("username").(string)
-    gameId := c.Param("gameId")
+    gameID := c.Param("gameID")
 
     var requestBody struct {
         Card string `json:"card"`
@@ -234,199 +212,160 @@ func (h *Handler) PlaceCard(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, map[string]string{"message": trans.Get("Invalid JSON.")})
     }
 
-    if !my_slice.Has(hokm.Cards, requestBody.Card) {
-        return c.JSON(http.StatusBadRequest, map[string]string{"message": trans.Get("Invalid Card.")})
-    }
-
-    if !sqlite.DoesPlayerBelongsToThisGame(h.sqlite, username, gameId) {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("It's not your game."),
-        })
-    }
-
-    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redis, gameId)
+    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     players := strings.Split(gameInformation["players"].(string), ",")
 
     uIndex := my_slice.GetIndex(username, players)
 
-    leadSuit := gameInformation["lead_suit"].(string)
+    gameState := h.initializeGameState(gameInformation)
 
-    if gameInformation["turn"].(string) != strconv.Itoa(uIndex) {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("It's not your turn."),
-        })
+    leadSuit := h.determineLeadSuit(requestBody.Card, gameState["leadSuit"].(string))
+
+    if err := validator.PlaceCardValidator(h.GameService, h.CardsService, validator.PlaceCardValidatorData{
+        GameInformation: gameInformation,
+        Username:        username,
+        GameID:          gameID,
+        UIndex:          uIndex,
+        LeadSuit:        leadSuit,
+    }); err != nil {
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
     }
 
-    isSelectedCardForUser := false
+    centerCards := h.CardsService.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
 
-    doesPlayerHaveLeadSuitCard := false
-
-    for _, cards := range hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex) {
-        for _, card := range cards {
-            if card == requestBody.Card {
-                isSelectedCardForUser = true
-            }
-            if hokm.GetCardSuit(card) == leadSuit {
-                doesPlayerHaveLeadSuitCard = true
-            }
-        }
-    }
-
-    if leadSuit != "" && doesPlayerHaveLeadSuitCard && hokm.GetCardSuit(requestBody.Card) != leadSuit {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("You're not allowed to select this card."),
-        })
-    }
-
-    if !isSelectedCardForUser {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("You're not allowed to select this card."),
-        })
-    }
-
-    if gameInformation["trump"].(string) == "" {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("It's not your turn."),
-        })
-    }
-
-    if gameInformation["lead_suit"].(string) == "" {
-        leadSuit = hokm.GetCardSuit(requestBody.Card)
-    }
-
-    centerCards := hokm.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
-
-    cardsWinner := hokm.FindCardsWinner(
-        centerCards, gameInformation["trump"].(string), gameInformation["lead_suit"].(string),
-    )
-
-    gameWinner := ""
-    roundWinner := ""
-    wasKingChanged := false
-    isItNewRound := "false"
-    king := gameInformation["king"].(string)
-    points := gameInformation["points"].(string)
-
-    turn := hokm.GetNewTurn(gameInformation["turn"].(string))
-
-    cards := hokm.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
+    cardsWinner := h.PointsService.FindCardsWinner(centerCards, gameState["trump"].(string), leadSuit)
 
     if cardsWinner != "" {
-        points, roundWinner, gameWinner = hokm.UpdatePoints(points, cardsWinner)
-        if roundWinner == "" {
-            turn = cardsWinner
-        } else {
-            turn = ""
-            cards = hokm.DistributeCards()
-            isItNewRound = "true"
+        h.updateWinnersAndPoints(&gameState, cardsWinner)
+        if gameState["roundWinner"].(string) != "" {
+            h.startNewRound(&gameState)
         }
-        king = hokm.GiveKing(roundWinner, king)
-        wasKingChanged = king == gameInformation["king"].(string)
-
-        leadSuit = ""
-        centerCards = ",,,"
     }
 
-    lastMoveTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
-
-    trump := gameInformation["trump"].(string)
-
-    if roundWinner != "" && wasKingChanged {
-        trump = ""
-    }
+    gameState["lastMoveTimestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
+    gameState["cards"] = h.CardsService.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
+    gameState["turn"] = h.PlayersService.GetNewTurn(gameInformation["turn"].(string))
 
     params := redis.PlaceCardParams{
-        GameId:            gameId,
+        GameId:            gameID,
         Card:              requestBody.Card,
         CenterCards:       centerCards,
         LeadSuit:          leadSuit,
         CardsWinner:       cardsWinner,
-        Points:            points,
-        Turn:              turn,
-        King:              king,
-        WasKingChanged:    my_bool.ToString(wasKingChanged),
-        LastMoveTimestamp: lastMoveTimestamp,
-        Trump:             trump,
-        IsItNewRound:      isItNewRound,
-        Cards:             cards,
+        Points:            gameState["points"].(string),
+        Turn:              gameState["turn"].(string),
+        King:              gameState["king"].(string),
+        WasKingChanged:    my_bool.ToString(gameState["wasKingChanged"].(bool)),
+        LastMoveTimestamp: gameState["lastMoveTimestamp"].(string),
+        Trump:             gameState["trump"].(string),
+        IsItNewRound:      my_bool.ToString(gameState["isItNewRound"].(bool)),
+        Cards:             gameState["cards"].([]string),
         PlayerIndex:       uIndex,
     }
 
-    // Call PlaceCard with the params struct
-    err := redis.PlaceCard(
-        c.Request().Context(),
-        h.redis,
-        params,
-    )
-
-    if err != nil {
+    if err = redis.PlaceCard(c.Request().Context(), h.redis, params); err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),
         })
     }
 
-    response := map[string]interface{}{
-        "players":           hokm.GetPlayersWithDirections(players, uIndex),
-        "points":            hokm.GetPoints(points, uIndex),
-        "centerCards":       hokm.GetCenterCards(centerCards, uIndex),
-        "turn":              hokm.GetTurn(turn, uIndex),
-        "king":              hokm.GetKing(king, uIndex),
-        "timeRemained":      hokm.GetTimeRemained(lastMoveTimestamp),
-        "playerCards":       hokm.GetPlayerCards(gameInformation["cards"].(string), uIndex),
-        "wasKingChanged":    wasKingChanged,
-        "trump":             gameInformation["trump"],
-        "whoHasWonTheCards": "",
-        "whoHasWonTheRound": "",
-        "whoHasWonTheGame":  "",
+    return c.JSON(http.StatusOK, transformer.PlaceCardTransformer(h, transformer.PlaceCardTransformerData{
+        GameInformation:   gameInformation,
+        Players:           players,
+        UIndex:            uIndex,
+        Points:            gameState["points"].(string),
+        CenterCards:       centerCards,
+        Turn:              gameState["turn"].(string),
+        King:              gameState["king"].(string),
+        LastMoveTimestamp: gameState["lastMoveTimestamp"].(string),
+        WasKingChanged:    gameState["wasKingChanged"].(bool),
+        CardsWinner:       cardsWinner,
+        RoundWinner:       gameState["roundWinner"].(string),
+        GameWinner:        gameState["gameWinner"].(string),
+    }))
+}
+
+func (h *Handler) initializeGameState(gameInformation map[string]interface{}) map[string]interface{} {
+    return map[string]interface{}{
+        "trump":          gameInformation["trump"].(string),
+        "king":           gameInformation["king"].(string),
+        "points":         gameInformation["points"].(string),
+        "leadSuit":       gameInformation["lead_suit"].(string),
+        "gameWinner":     "",
+        "roundWinner":    "",
+        "wasKingChanged": false,
+        "isItNewRound":   false,
+    }
+}
+
+func (h *Handler) determineLeadSuit(card string, currentLeadSuit string) string {
+    if currentLeadSuit == "" {
+        return h.CardsService.GetCardSuit(card)
+    }
+    return currentLeadSuit
+}
+
+func (h *Handler) updateWinnersAndPoints(gameState *map[string]interface{}, cardsWinner string) {
+    points, roundWinner, gameWinner := h.PointsService.UpdatePoints((*gameState)["points"].(string), cardsWinner)
+    (*gameState)["points"] = points
+    (*gameState)["roundWinner"] = roundWinner
+    (*gameState)["gameWinner"] = gameWinner
+
+    if roundWinner == "" {
+        (*gameState)["turn"] = cardsWinner
+    } else {
+        (*gameState)["turn"] = ""
     }
 
-    if cardsWinner != "" {
-        cardsWinner, _ := strconv.Atoi(cardsWinner)
-        response["whoHasWonTheCards"] = hokm.GetDirection(cardsWinner, uIndex)
-    }
+    (*gameState)["king"] = h.PlayersService.GiveKing(roundWinner, (*gameState)["king"].(string))
+    (*gameState)["wasKingChanged"] = (*gameState)["king"] == (*gameState)["king"].(string)
+    (*gameState)["leadSuit"] = ""
+    (*gameState)["centerCards"] = ",,,"
+}
 
-    if roundWinner != "" {
-        roundWinner, _ := strconv.Atoi(roundWinner)
-        response["whoHasWonTheRound"] = hokm.GetDirection(roundWinner, uIndex)
+func (h *Handler) startNewRound(gameState *map[string]interface{}) {
+    (*gameState)["cards"] = h.CardsService.DistributeCards()
+    (*gameState)["isItNewRound"] = true
+    if (*gameState)["wasKingChanged"].(bool) {
+        (*gameState)["trump"] = ""
     }
-
-    if gameWinner != "" {
-        gameWinner, _ := strconv.Atoi(gameWinner)
-        response["whoHasWonTheGame"] = hokm.GetDirection(gameWinner, uIndex)
-    }
-
-    return c.JSON(http.StatusOK, response)
 }
 
 func (h *Handler) GetUpdate(c echo.Context) error {
     username := c.Get("username").(string)
+    gameID := c.Param("gameID")
 
-    var player int
-    var card string
-    gameId := c.Param("gameId")
-
-    if !sqlite.DoesPlayerBelongsToThisGame(h.sqlite, username, gameId) {
-        return c.JSON(http.StatusForbidden, map[string]interface{}{
-            "message": trans.Get("It's not your game."),
-        })
+    if err := validator.GetUpdateValidator(h.GameService, validator.GetUpdateValidatorData{
+        Username: username,
+        GameID:   gameID,
+    }); err != nil {
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
     }
 
-    gameInformation := redis.GetGameInformation(c.Request().Context(), h.redis, gameId)
+    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
+
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong. Please try again later.")})
+    }
 
     players := strings.Split(gameInformation["players"].(string), ",")
 
     uIndex := my_slice.GetIndex(username, players)
 
-    err := redis.Subscribe(c.Request().Context(), h.redis, "placing_card", func(msg rueidis.PubSubMessage) {
+    var player int
+    var card string
+
+    err = redis.Subscribe(c.Request().Context(), h.redis, "placing_card", func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, "|")
-        if messages[0] == gameId {
-            gameInformation = redis.GetGameInformation(c.Request().Context(), h.redis, messages[0])
+        if messages[0] == gameID {
+            gameInformation, _ = h.GameService.GameRepo.GetGameInformation(c.Request().Context(), messages[0])
             player, _ = strconv.Atoi(messages[1])
             card = messages[2]
             redis.Unsubscribe(c.Request().Context(), h.redis, "placing_card")
         }
     })
+
     if err != nil {
         if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
@@ -438,41 +377,10 @@ func (h *Handler) GetUpdate(c echo.Context) error {
         })
     }
 
-    response := map[string]interface{}{
-        "lastMove": map[string]string{
-            "from": hokm.GetDirection(player, uIndex),
-            "card": card,
-        },
-        "points":            hokm.GetPoints(gameInformation["points"].(string), uIndex),
-        "centerCards":       hokm.GetCenterCards(gameInformation["center_cards"].(string), uIndex),
-        "turn":              hokm.GetTurn(gameInformation["turn"].(string), uIndex),
-        "king":              hokm.GetKing(gameInformation["king"].(string), uIndex),
-        "timeRemained":      hokm.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-        "wasKingChanged":    gameInformation["was_king_changed"].(string),
-        "trump":             gameInformation["trump"],
-        "whoHasWonTheCards": "",
-        "whoHasWonTheRound": "",
-        "whoHasWonTheGame":  "",
-    }
-
-    cardsWinner, _ := gameInformation["who_has_won_the_cards"].(string)
-    roundWinner, _ := gameInformation["who_has_won_the_round"].(string)
-    gameWinner, _ := gameInformation["who_has_won_the_game"].(string)
-
-    if cardsWinner != "" {
-        cardsWinner, _ := strconv.Atoi(cardsWinner)
-        response["whoHasWonTheCards"] = hokm.GetDirection(cardsWinner, uIndex)
-    }
-
-    if roundWinner != "" {
-        roundWinner, _ := strconv.Atoi(roundWinner)
-        response["whoHasWonTheRound"] = hokm.GetDirection(roundWinner, uIndex)
-    }
-
-    if gameWinner != "" {
-        gameWinner, _ := strconv.Atoi(gameWinner)
-        response["whoHasWonTheGame"] = hokm.GetDirection(gameWinner, uIndex)
-    }
-
-    return c.JSON(http.StatusOK, response)
+    return c.JSON(http.StatusOK, transformer.GetUpdateTransformer(h, transformer.GetUpdateTransformerData{
+        GameInformation: gameInformation,
+        UIndex:          uIndex,
+        PlayerIndex:     player,
+        Card:            card,
+    }))
 }

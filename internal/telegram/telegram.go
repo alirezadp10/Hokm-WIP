@@ -3,7 +3,7 @@ package telegram
 import (
     "context"
     "fmt"
-    "github.com/alirezadp10/hokm/internal/utils/trans"
+    "github.com/alirezadp10/hokm/internal/util/trans"
     "gopkg.in/telebot.v4"
     "log"
     "os"

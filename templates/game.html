@@ -122,12 +122,12 @@
     let isYourTurn = false
     let time;
     let countdown;
-    let gameId = {{.gameId}}
+    let gameID = {{.gameID}}
 
-    fetchGameData(gameId);
+    fetchGameData(gameID);
 
-    async function fetchGameData(gameId) {
-        fetch(`/game/${gameId}`, {
+    async function fetchGameData(gameID) {
+        fetch(`/game/${gameID}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -138,13 +138,13 @@
             .then((data) => updateGameUI(data))
             .catch(async (error) => {
                 await sleep(1000)
-                // await fetchGameData(gameId)
+                // await fetchGameData(gameID)
                 console.error('Error:', error)
             });
     }
 
     async function refresh() {
-        fetch(`/game/${gameId}/refresh`, {
+        fetch(`/game/${gameID}/refresh`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -161,7 +161,7 @@
     }
 
     async function trumpDetermine(type) {
-        fetch(`/game/${gameId}/choose-trump`, {
+        fetch(`/game/${gameID}/choose-trump`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -187,7 +187,7 @@
 
         isYourTurn = false
 
-        fetch(`/game/${gameId}/place`, {
+        fetch(`/game/${gameID}/place`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -217,7 +217,7 @@
     }
 
     async function getYourCards(king) {
-        fetch(`/game/${gameId}/cards`, {
+        fetch(`/game/${gameID}/cards`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

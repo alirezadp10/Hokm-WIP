@@ -1,13 +1,29 @@
-package cards_service
+package service
 
 import (
     "encoding/json"
     "fmt"
-    "github.com/alirezadp10/hokm/internal/service/players_service"
-    "github.com/alirezadp10/hokm/internal/utils/my_slice"
+    "github.com/alirezadp10/hokm/internal/repository"
+    "github.com/alirezadp10/hokm/internal/util/my_slice"
+    "github.com/redis/rueidis"
+    "gorm.io/gorm"
     "math/rand"
     "strings"
 )
+
+type CardsService struct {
+    sqlite    *gorm.DB
+    redis     rueidis.Client
+    CardsRepo repository.CardsRepository
+}
+
+func NewCardsService(repo repository.CardsRepository, sqlite *gorm.DB, redis rueidis.Client) *CardsService {
+    return &CardsService{
+        CardsRepo: repo,
+        sqlite:    sqlite,
+        redis:     redis,
+    }
+}
 
 var Cards = []string{
     "01C", "02C", "03C", "04C", "05C", "06C", "07C", "08C", "09C", "10C", "JC", "QC", "KC", // Clubs
@@ -16,7 +32,7 @@ var Cards = []string{
     "01S", "02S", "03S", "04S", "05S", "06S", "07S", "08S", "09S", "10S", "JS", "QS", "KS", // Spades
 }
 
-func chunkCards(gameCards map[int][]string, uIndex int) [][]string {
+func (s *CardsService) chunkCards(gameCards map[int][]string, uIndex int) [][]string {
     var result [][]string
     var chunk []string
     for i, card := range gameCards[uIndex] {
@@ -30,23 +46,14 @@ func chunkCards(gameCards map[int][]string, uIndex int) [][]string {
     return result
 }
 
-func GetCardSuit(card string) string {
+func (s *CardsService) GetCardSuit(card string) string {
     if len(card) == 0 {
         return ""
     }
     return string(card[len(card)-1])
 }
 
-func GetCenterCards(centerCards string, uIndex int) map[string]interface{} {
-    result := make(map[string]interface{})
-    for key, val := range strings.Split(centerCards, ",") {
-        result[players_service.GetDirection(key, uIndex)] = val
-    }
-    return result
-}
-
-// DistributeCards shuffles and deals cards to 4 players
-func DistributeCards() []string {
+func (s *CardsService) DistributeCards() []string {
     localCards := make([]string, len(Cards))
     copy(localCards, Cards)
     rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })
@@ -65,24 +72,23 @@ func DistributeCards() []string {
     return result
 }
 
-// GetPlayerCards parses and chunks the cards for a specific player
-func GetPlayerCards(cards string, uIndex int) [][]string {
+func (s *CardsService) GetPlayerCards(cards string, uIndex int) [][]string {
     gameCards := make(map[int][]string)
     err := json.Unmarshal([]byte(cards), &gameCards)
     if err != nil {
         fmt.Println("Error unmarshalling:", err)
     }
 
-    return chunkCards(gameCards, uIndex)
+    return s.chunkCards(gameCards, uIndex)
 }
 
-func UpdateCenterCards(cards string, newCard string, uIndex int) string {
+func (s *CardsService) UpdateCenterCards(cards string, newCard string, uIndex int) string {
     centerCardsList := strings.Split(cards, ",")
     centerCardsList[uIndex] = newCard
     return strings.Join(centerCardsList, ",")
 }
 
-func UpdateUserCards(cards string, selectedCard string, uIndex int) []string {
+func (s *CardsService) UpdateUserCards(cards string, selectedCard string, uIndex int) []string {
     userCards := make(map[int][]string)
     err := json.Unmarshal([]byte(cards), &userCards)
     if err != nil {
@@ -94,4 +100,8 @@ func UpdateUserCards(cards string, selectedCard string, uIndex int) []string {
         result[i] = `["` + strings.Join(userCards[i], `","`) + `"]` // Format hands as JSON strings
     }
     return result
+}
+
+func (s *CardsService) GetKingCards(cards string) []string {
+    return strings.Split(cards, ",")
 }

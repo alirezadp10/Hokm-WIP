@@ -1,18 +1,34 @@
-package points_service
+package service
 
 import (
     "encoding/json"
     "fmt"
-    "github.com/alirezadp10/hokm/internal/service/cards_service"
+    "github.com/alirezadp10/hokm/internal/repository"
+    "github.com/redis/rueidis"
+    "gorm.io/gorm"
     "strconv"
     "strings"
 )
+
+type PointsService struct {
+    sqlite     *gorm.DB
+    redis      rueidis.Client
+    PointsRepo repository.PointsRepository
+}
+
+func NewPointsService(repo repository.PointsRepository, sqlite *gorm.DB, redis rueidis.Client) *PointsService {
+    return &PointsService{
+        PointsRepo: repo,
+        sqlite:     sqlite,
+        redis:      redis,
+    }
+}
 
 var rank = map[string]int{
     "02": 2, "03": 3, "04": 4, "05": 5, "06": 6, "07": 7, "08": 8, "09": 9, "10": 10, "J": 11, "Q": 12, "K": 13, "01": 14,
 }
 
-func GetPoints(pointsString string, uIndex int) map[string]map[string]string {
+func (s *PointsService) GetPoints(pointsString string, uIndex int) map[string]map[string]string {
     points := make(map[string]string)
     err := json.Unmarshal([]byte(pointsString), &points)
     if err != nil {
@@ -38,7 +54,7 @@ func GetPoints(pointsString string, uIndex int) map[string]map[string]string {
     }
 }
 
-func FindCardsWinner(centerCards, trump, leadSuit string) string {
+func (s *PointsService) FindCardsWinner(centerCards, trump, leadSuit string) string {
     for _, card := range strings.Split(centerCards, ",") {
         if card == "" {
             return ""
@@ -49,8 +65,8 @@ func FindCardsWinner(centerCards, trump, leadSuit string) string {
     winner := 0
 
     for i, card := range strings.Split(centerCards, ",") {
-        cardSuit := cards_service.GetCardSuit(card) // Extract suit of the card
-        cardRank := rank[card[:len(card)-1]]        // Get the rank of the card (number or face)
+        cardSuit := GetCardSuit(card)        // Extract suit of the card
+        cardRank := rank[card[:len(card)-1]] // Get the rank of the card (number or face)
 
         // Check if the card is a trump
         if cardSuit == trump {
@@ -69,7 +85,7 @@ func FindCardsWinner(centerCards, trump, leadSuit string) string {
     return strconv.Itoa(winner)
 }
 
-func UpdatePoints(pointsString, cardsWinnerString string) (string, string, string) {
+func (s *PointsService) UpdatePoints(pointsString, cardsWinnerString string) (string, string, string) {
     points := make(map[string]string)
     err := json.Unmarshal([]byte(pointsString), &points)
     if err != nil {

@@ -3,7 +3,6 @@ package redis
 import (
     "context"
     _ "embed"
-    "encoding/json"
     "fmt"
     "github.com/redis/rueidis"
     "log"
@@ -16,30 +15,10 @@ var matchmakingScript string
 //go:embed place-card.lua
 var placeCardScript string
 
-var gameFields = []string{
-    "players",
-    "points",
-    "center_cards",
-    "current_turn",
-    "players_cards",
-    "king",
-    "trump",
-    "turn",
-    "last_move_timestamp",
-    "cards",
-    "king_cards",
-    "lead_suit",
-    "has_king_cards_finished",
-    "who_has_won_the_cards",
-    "who_has_won_the_round",
-    "who_has_won_the_game",
-    "was_king_changed",
-}
-
-func Matchmaking(ctx context.Context, client rueidis.Client, cards []string, username, gameId, lastMoveTimestamps, king, kingCards string) {
+func Matchmaking(ctx context.Context, client rueidis.Client, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string) {
     command := client.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
         username,
-        gameId,
+        gameID,
         cards[0],
         cards[1],
         cards[2],
@@ -54,34 +33,13 @@ func Matchmaking(ctx context.Context, client rueidis.Client, cards []string, use
     }
 }
 
-func GetGameInformation(ctx context.Context, client rueidis.Client, gameId string) map[string]interface{} {
-    result := make(map[string]interface{})
-
-    command := client.B().Hmget().Key("game:" + gameId).Field(gameFields...).Build()
-    information, err := client.Do(ctx, command).ToArray()
-    if err != nil {
-        log.Fatalf("could not resolve game information: %v", err)
-    }
-
-    for key, data := range information {
-        var value map[string]interface{}
-        err = json.Unmarshal([]byte(data.String()), &value)
-        if err != nil {
-            log.Fatalf("could not resolve game information: %v", err)
-        }
-        result[gameFields[key]] = value["Value"]
-    }
-
-    return result
-}
-
-func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump, uIndex, lastMoveTimestamp string) error {
+func SetTrump(ctx context.Context, client rueidis.Client, gameID, trump, uIndex, lastMoveTimestamp string) error {
     cmds := make(rueidis.Commands, 0, 5)
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("trump", trump).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("has_king_cards_finished", "true").Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("turn", uIndex).Build())
-    cmds = append(cmds, client.B().Hset().Key("game:"+gameId).FieldValue().FieldValue("last_move_timestamp", lastMoveTimestamp).Build())
-    cmds = append(cmds, client.B().Publish().Channel("choosing_trump").Message(gameId+"|"+trump).Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("trump", trump).Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("has_king_cards_finished", "true").Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("turn", uIndex).Build())
+    cmds = append(cmds, client.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("last_move_timestamp", lastMoveTimestamp).Build())
+    cmds = append(cmds, client.B().Publish().Channel("choosing_trump").Message(gameID+"|"+trump).Build())
 
     for _, resp := range client.DoMulti(ctx, cmds...) {
         if err := resp.Error(); err != nil {
@@ -93,7 +51,6 @@ func SetTrump(ctx context.Context, client rueidis.Client, gameId, trump, uIndex,
     return nil
 }
 
-// Define a struct for the parameters to reduce argument clutter
 type PlaceCardParams struct {
     GameId            string
     Card              string

@@ -48,8 +48,8 @@
         })
             .then(response => response.json())
             .then(data => {
-                if (data.gameId) {
-                    document.location.href = '/game?user_id=' + encodeURIComponent({{.userReferenceKey}}) + '&game_id=' + data.gameId
+                if (data.gameID) {
+                    document.location.href = '/game?user_id=' + encodeURIComponent({{.userReferenceKey}}) + '&game_id=' + data.gameID
                 } else {
                     showError(button, "شروع بازی", "دوباره تلاش کنید");
                 }
