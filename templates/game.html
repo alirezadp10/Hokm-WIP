@@ -96,6 +96,13 @@
         "S": 1, "H": 2, "D": 3, "C": 4,
     };
 
+    let isYourTurn = false
+    let time;
+    let countdown;
+    let gameID = {{.gameID}}
+
+    fetchGameData(gameID);
+
     async function sortCards() {
         const cardsContainer = document.getElementById("hand-cards");
         const cards = Array.from(cardsContainer.getElementsByClassName("card"));
@@ -118,13 +125,6 @@
             cardsContainer.appendChild(card);
         });
     }
-
-    let isYourTurn = false
-    let time;
-    let countdown;
-    let gameID = {{.gameID}}
-
-    fetchGameData(gameID);
 
     async function fetchGameData(gameID) {
         fetch(`/game/${gameID}`, {
