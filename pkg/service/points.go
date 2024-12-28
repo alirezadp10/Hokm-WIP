@@ -4,15 +4,11 @@ import (
     "encoding/json"
     "fmt"
     "github.com/alirezadp10/hokm/pkg/repository"
-    "github.com/redis/rueidis"
-    "gorm.io/gorm"
     "strconv"
     "strings"
 )
 
 type PointsService struct {
-    sqlite     *gorm.DB
-    redis      rueidis.Client
     PointsRepo repository.PointsRepository
 }
 
