@@ -9,12 +9,14 @@ import (
 )
 
 type PointsService struct {
-    PointsRepo repository.PointsRepository
+    PointsRepo   repository.PointsRepository
+    CardsService CardsService
 }
 
-func NewPointsService(repo *repository.PointsRepository) *PointsService {
+func NewPointsService(repo *repository.PointsRepository, cardService CardsService) *PointsService {
     return &PointsService{
-        PointsRepo: *repo,
+        PointsRepo:   *repo,
+        CardsService: cardService,
     }
 }
 
@@ -59,8 +61,8 @@ func (s *PointsService) FindCardsWinner(centerCards, trump, leadSuit string) str
     winner := 0
 
     for i, card := range strings.Split(centerCards, ",") {
-        cardSuit := GetCardSuit(card)        // Extract suit of the card
-        cardRank := rank[card[:len(card)-1]] // Get the rank of the card (number or face)
+        cardSuit := s.CardsService.GetCardSuit(card) // Extract suit of the card
+        cardRank := rank[card[:len(card)-1]]         // Get the rank of the card (number or face)
 
         // Check if the card is a trump
         if cardSuit == trump {

@@ -26,7 +26,7 @@ func main() {
     cardsService := service.NewCardsService(cardsRepository)
 
     pointsRepository := repository.NewPointsRepository(sqliteClient, redisClient)
-    pointsService := service.NewPointsService(pointsRepository)
+    pointsService := service.NewPointsService(pointsRepository, *cardsService)
 
     playersRepository := repository.NewPlayersRepository(sqliteClient, redisClient)
     playersService := service.NewPlayersService(playersRepository)
