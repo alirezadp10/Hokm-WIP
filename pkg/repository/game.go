@@ -13,6 +13,17 @@ import (
 //go:embed lua/matchmaking.lua
 var matchmakingScript string
 
+type GameRepositoryContract interface {
+    HasGameFinished(gameID string) (bool, error)
+    DoesPlayerBelongToGame(username, gameID string) (bool, error)
+    GetGameInformation(ctx context.Context, gameID string) (map[string]interface{}, error)
+    DoesPlayerHaveAnActiveGame(username string) (*string, bool)
+    Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string)
+    RemovePlayerFromWaitingList(ctx context.Context, key, username string)
+}
+
+var _ GameRepositoryContract = &GameRepository{}
+
 type GameRepository struct {
     Sqlite *gorm.DB
     Redis  rueidis.Client
@@ -110,8 +121,8 @@ func (r *GameRepository) DoesPlayerHaveAnActiveGame(username string) (*string, b
     return nil, false
 }
 
-func (r *GameRepository) Matchmaking(ctx context.Context, client rueidis.Client, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string) {
-    command := client.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
+func (r *GameRepository) Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string) {
+    command := r.Redis.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
         username,
         gameID,
         cards[0],
@@ -122,7 +133,7 @@ func (r *GameRepository) Matchmaking(ctx context.Context, client rueidis.Client,
         king,
         kingCards,
     ).Build()
-    _, err := client.Do(ctx, command).ToArray()
+    _, err := r.Redis.Do(ctx, command).ToArray()
     if err != nil {
         log.Fatalf("could not execute Lua script: %v", err)
     }

@@ -10,12 +10,12 @@ import (
 )
 
 type PlayersService struct {
-    PlayersRepo repository.PlayersRepository
+    PlayersRepo repository.PlayersRepositoryContract
 }
 
-func NewPlayersService(repo *repository.PlayersRepository) *PlayersService {
+func NewPlayersService(repo repository.PlayersRepositoryContract) *PlayersService {
     return &PlayersService{
-        PlayersRepo: *repo,
+        PlayersRepo: repo,
     }
 }
 

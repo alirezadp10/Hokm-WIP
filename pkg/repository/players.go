@@ -10,6 +10,14 @@ import (
     "time"
 )
 
+type PlayersRepositoryContract interface {
+    CheckPlayerExistence(username string) bool
+    SavePlayer(user request.User, chatId int64) (*model.Player, error)
+    AddPlayerToGame(username, gameID string) (*model.Game, error)
+}
+
+var _ PlayersRepositoryContract = &PlayersRepository{}
+
 type PlayersRepository struct {
     Sqlite *gorm.DB
     Redis  rueidis.Client

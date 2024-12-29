@@ -13,6 +13,13 @@ import (
 //go:embed lua/place-card.lua
 var placeCardScript string
 
+type CardsRepositoryContract interface {
+    SetTrump(ctx context.Context, gameID, trump, uIndex, lastMoveTimestamp string) error
+    PlaceCard(ctx context.Context, params PlaceCardParams) error
+}
+
+var _ CardsRepositoryContract = &CardsRepository{}
+
 type CardsRepository struct {
     Sqlite *gorm.DB
     Redis  rueidis.Client
