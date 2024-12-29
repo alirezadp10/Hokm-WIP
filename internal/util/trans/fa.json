@@ -8,7 +8,8 @@
   "You're not king in this round.": "شما در این راند حاکم نیستید.",
   "You're not allowed to choose a trump at the moment.": "شما در این راند حق انتخاب حکم را ندارید.",
   "Invalid trump.": "حکم نامعتبر.",
-  "Invalid JSON.": "ورودی نا معتبر است.",
+  "Invalid JSON.": "ورودی نامعتبر است.",
+  "Invalid Card.": "کارت نامعتبر است.",
   "It's not your turn.": "نوبت شما نیست.",
   "You're not allowed to select this card.": "شما مجاز به انتخاب این کارت نیستید."
 }
