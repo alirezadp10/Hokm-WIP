@@ -80,7 +80,7 @@ func (h *HokmHandler) CreateGame(c echo.Context) error {
             })
         }
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-            "message": trans.Get("Something went wrong. please try again later."),
+            "message": trans.Get("Something went wrong, Please try again later."),
             "gameID":  nil,
         })
     }
@@ -105,7 +105,7 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
     gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     if err != nil {
-        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong. Please try again later.")})
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
     }
 
     players := strings.Split(gameInformation["players"].(string), ",")
@@ -134,7 +134,7 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
     gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     if err != nil {
-        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong. Please try again later.")})
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
     }
 
     players := strings.Split(gameInformation["players"].(string), ",")
@@ -183,7 +183,7 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
     gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     if err != nil {
-        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong. Please try again later.")})
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
     }
 
     trump := gameInformation["trump"].(string)
@@ -370,7 +370,7 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
     gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     if err != nil {
-        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong. Please try again later.")})
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
     }
 
     players := strings.Split(gameInformation["players"].(string), ",")

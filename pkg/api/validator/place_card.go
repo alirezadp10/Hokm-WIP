@@ -1,10 +1,12 @@
 package validator
 
 import (
+    "fmt"
     "github.com/alirezadp10/hokm/internal/util/errors"
     "github.com/alirezadp10/hokm/internal/util/my_slice"
     "github.com/alirezadp10/hokm/internal/util/trans"
     "github.com/alirezadp10/hokm/pkg/service"
+    "github.com/labstack/gommon/log"
     "net/http"
     "strconv"
 )
@@ -41,12 +43,16 @@ func PlaceCardValidator(gameService service.GameService, cardsService service.Ca
         }
     }
 
+    fmt.Println(data.Username)
+    fmt.Println(data.GameID)
+
     ok, err := gameService.GameRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
 
     if err != nil {
+        log.Fatal(err)
         return &errors.ValidationError{
             StatusCode: http.StatusInternalServerError,
-            Message:    trans.Get("Something went wrong. Please try again later."),
+            Message:    trans.Get("Something went wrong, Please try again later."),
         }
     }
 

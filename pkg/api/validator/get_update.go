@@ -18,7 +18,7 @@ func GetUpdateValidator(gameService service.GameService, data GetUpdateValidator
     if err != nil {
         return &errors.ValidationError{
             StatusCode: http.StatusInternalServerError,
-            Message:    trans.Get("Something went wrong. Please try again later."),
+            Message:    trans.Get("Something went wrong, Please try again later."),
         }
     }
 
