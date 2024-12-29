@@ -252,6 +252,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
         GameID:          gameID,
         UIndex:          uIndex,
         LeadSuit:        leadSuit,
+        Card:            requestBody.Card,
     }); err != nil {
         return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
