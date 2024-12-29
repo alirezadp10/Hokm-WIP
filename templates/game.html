@@ -493,6 +493,10 @@
         countdown = setInterval(updateTimer, 1000);
         await updateTime(data.timeRemained + 25)
         await updateTurn("down")
+        await ["up","down","right","left"].forEach(function (direction) {
+            document.getElementById(`${direction}-player`).innerHTML = document.getElementById(`${direction}-player`).innerHTML.replace('🟢 ', '');
+        })
+        document.getElementById(`${data.turn}-player`).innerHTML = "🟢 " + document.getElementById(`${data.turn}-player`).innerHTML;
     }
 
     function addRoundPoint(direction, point) {
@@ -521,6 +525,10 @@
         document.getElementById("deck").remove()
         await continueDistributing(data, getNextIndex(king))
         await refresh()
+        await ["up","down","right","left"].forEach(function (direction) {
+            document.getElementById(`${direction}-player`).innerHTML = document.getElementById(`${direction}-player`).innerHTML.replace('🟢 ', '');
+        })
+        document.getElementById(`${data.turn}-player`).innerHTML = "🟢 " + document.getElementById(`${data.turn}-player`).innerHTML;
     }
 
     async function selectCardActions(data, card) {

@@ -42,7 +42,7 @@ if count >= 4 then
 
     redis.call('HSET', 'game:' .. ARGV[2], 'trump', '')
 
-    redis.call('HSET', 'game:' .. ARGV[2], 'turn', '')
+    redis.call('HSET', 'game:' .. ARGV[2], 'turn', ARGV[8])
 
     redis.call('HSET', 'game:' .. ARGV[2], 'last_move_timestamp', ARGV[7])
 

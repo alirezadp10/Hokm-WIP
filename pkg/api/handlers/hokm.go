@@ -165,6 +165,7 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
         "trump":        requestBody.Trump,
         "cards":        h.CardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex)[1:],
         "timeRemained": h.PlayersService.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
+        "turn":         h.PlayersService.GetTurn(gameInformation["turn"].(string), uIndex),
     })
 }
 
@@ -218,6 +219,7 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "cards": h.CardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex),
+        "turn":  h.PlayersService.GetTurn(gameInformation["turn"].(string), uIndex),
         "trump": trump,
     })
 }
