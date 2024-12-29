@@ -270,7 +270,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 
     gameState["lastMoveTimestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
     gameState["cards"] = h.CardsService.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
-    gameState["turn"] = h.PlayersService.GetNewTurn(gameInformation["turn"].(string))
+    gameState["turn"] = h.PlayersService.GetNewTurn(gameInformation["turn"].(string), gameState["gameWinner"].(string))
 
     params := repository.PlaceCardParams{
         GameId:            gameID,
