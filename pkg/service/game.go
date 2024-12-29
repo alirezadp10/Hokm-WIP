@@ -17,7 +17,7 @@ func NewGameService(repo repository.GameRepositoryContract) *GameService {
     }
 }
 
-func (s *GameService) Matchmaking(ctx context.Context, userId, gameID string, distributedCards []string, king, kingCards string) {
+func (s *GameService) Matchmaking(ctx context.Context, userId, gameID string, distributedCards []string, kingCards, king string) {
     time.Sleep(1 * time.Second)
     lastMoveTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
     s.GameRepo.Matchmaking(ctx, distributedCards, userId, gameID, lastMoveTimestamp, king, kingCards)
