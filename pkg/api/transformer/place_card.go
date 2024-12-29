@@ -1,7 +1,7 @@
 package transformer
 
 import (
-    "github.com/alirezadp10/hokm/pkg/api/handlers"
+    "github.com/alirezadp10/hokm/pkg/service"
     "strconv"
 )
 
@@ -20,15 +20,15 @@ type PlaceCardTransformerData struct {
     GameWinner        string
 }
 
-func PlaceCardTransformer(h *handlers.HokmHandler, data PlaceCardTransformerData) map[string]interface{} {
+func PlaceCardTransformer(playersService service.PlayersService, pointsService service.PointsService, cardsService service.CardsService, data PlaceCardTransformerData) map[string]interface{} {
     result := map[string]interface{}{
-        "players":           h.PlayersService.GetPlayersWithDirections(data.Players, data.UIndex),
-        "points":            h.PointsService.GetPoints(data.Points, data.UIndex),
-        "centerCards":       h.PlayersService.GetPlayersCenterCards(data.CenterCards, data.UIndex),
-        "turn":              h.PlayersService.GetTurn(data.Turn, data.UIndex),
-        "king":              h.PlayersService.GetKing(data.King, data.UIndex),
-        "timeRemained":      h.PlayersService.GetTimeRemained(data.LastMoveTimestamp),
-        "playerCards":       h.CardsService.GetPlayerCards(data.GameInformation["cards"].(string), data.UIndex),
+        "players":           playersService.GetPlayersWithDirections(data.Players, data.UIndex),
+        "points":            pointsService.GetPoints(data.Points, data.UIndex),
+        "centerCards":       playersService.GetPlayersCenterCards(data.CenterCards, data.UIndex),
+        "turn":              playersService.GetTurn(data.Turn, data.UIndex),
+        "king":              playersService.GetKing(data.King, data.UIndex),
+        "timeRemained":      playersService.GetTimeRemained(data.LastMoveTimestamp),
+        "playerCards":       cardsService.GetPlayerCards(data.GameInformation["cards"].(string), data.UIndex),
         "wasKingChanged":    data.WasKingChanged,
         "trump":             data.GameInformation["trump"],
         "whoHasWonTheCards": "",
@@ -38,17 +38,17 @@ func PlaceCardTransformer(h *handlers.HokmHandler, data PlaceCardTransformerData
 
     if data.CardsWinner != "" {
         cardsWinner, _ := strconv.Atoi(data.CardsWinner)
-        result["whoHasWonTheCards"] = h.PlayersService.GetDirection(cardsWinner, data.UIndex)
+        result["whoHasWonTheCards"] = playersService.GetDirection(cardsWinner, data.UIndex)
     }
 
     if data.RoundWinner != "" {
         roundWinner, _ := strconv.Atoi(data.RoundWinner)
-        result["whoHasWonTheRound"] = h.PlayersService.GetDirection(roundWinner, data.UIndex)
+        result["whoHasWonTheRound"] = playersService.GetDirection(roundWinner, data.UIndex)
     }
 
     if data.GameWinner != "" {
         gameWinner, _ := strconv.Atoi(data.GameWinner)
-        result["whoHasWonTheGame"] = h.PlayersService.GetDirection(gameWinner, data.UIndex)
+        result["whoHasWonTheGame"] = playersService.GetDirection(gameWinner, data.UIndex)
     }
 
     return result

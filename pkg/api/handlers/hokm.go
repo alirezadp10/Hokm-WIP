@@ -112,7 +112,7 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
-    return c.JSON(http.StatusOK, transformer.GameInformationTransformer(h, transformer.GameInformationTransformerData{
+    return c.JSON(http.StatusOK, transformer.GameInformationTransformer(h.PlayersService, h.PointsService, h.CardsService, transformer.GameInformationTransformerData{
         GameInformation: gameInformation,
         Players:         players,
         UIndex:          uIndex,
@@ -292,7 +292,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
         })
     }
 
-    return c.JSON(http.StatusOK, transformer.PlaceCardTransformer(h, transformer.PlaceCardTransformerData{
+    return c.JSON(http.StatusOK, transformer.PlaceCardTransformer(h.PlayersService, h.PointsService, h.CardsService, transformer.PlaceCardTransformerData{
         GameInformation:   gameInformation,
         Players:           players,
         UIndex:            uIndex,
@@ -399,7 +399,7 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
         })
     }
 
-    return c.JSON(http.StatusOK, transformer.GetUpdateTransformer(h, transformer.GetUpdateTransformerData{
+    return c.JSON(http.StatusOK, transformer.GetUpdateTransformer(h.PointsService, h.PlayersService, transformer.GetUpdateTransformerData{
         GameInformation: gameInformation,
         UIndex:          uIndex,
         PlayerIndex:     player,
