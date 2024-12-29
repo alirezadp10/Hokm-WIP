@@ -47,7 +47,7 @@ func (h *HokmHandler) CreateGame(c echo.Context) error {
     if err := validator.CreateGameValidator(h.GameService, validator.CreateGameValidatorData{
         Username: username,
     }); err != nil {
-        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
     gameID := uuid.New().String()
@@ -99,7 +99,7 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
         Username: username,
         GameID:   gameID,
     }); err != nil {
-        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
     gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
@@ -148,7 +148,7 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
         GameID:          gameID,
         Username:        username,
     }); err != nil {
-        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
     lastMoveTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
@@ -176,7 +176,7 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
         Username: username,
         GameID:   gameID,
     }); err != nil {
-        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
     gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
@@ -251,7 +251,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
         UIndex:          uIndex,
         LeadSuit:        leadSuit,
     }); err != nil {
-        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
     centerCards := h.CardsService.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
@@ -362,7 +362,7 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
         Username: username,
         GameID:   gameID,
     }); err != nil {
-        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message})
+        return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
     gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
