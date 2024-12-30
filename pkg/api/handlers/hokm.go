@@ -41,12 +41,6 @@ func NewHokmHandler(gameService *service.GameService, cardsService *service.Card
     }
 }
 
-func (h *HokmHandler) Foo(c echo.Context) error {
-    return c.JSON(200, []int{
-        1234,
-    })
-}
-
 func (h *HokmHandler) CreateGame(c echo.Context) error {
     username := c.Get("username").(string)
 

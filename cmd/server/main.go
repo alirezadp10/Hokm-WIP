@@ -19,6 +19,10 @@ func main() {
     sqliteClient := database.GetNewSqliteConnection()
     redisClient := database.GetNewRedisConnection()
 
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    go service.StartTelegram(ctx)
+
     gameRepository := repository.NewGameRepository(sqliteClient, redisClient)
     gameService := service.NewGameService(gameRepository)
 
@@ -32,10 +36,6 @@ func main() {
     playersService := service.NewPlayersService(playersRepository)
 
     redisService := service.NewRedisService(redisClient, context.Background())
-
-    ctx, cancel := context.WithCancel(context.Background())
-    defer cancel()
-    go service.StartTelegram(ctx)
 
     hokmHandler := handlers.NewHokmHandler(gameService, cardsService, pointsService, playersService, redisService)
 
