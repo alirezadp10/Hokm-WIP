@@ -300,10 +300,6 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
         PlayerIndex:       uIndex,
     }
 
-    return c.JSON(200, map[string]interface{}{
-        "players": leadSuit,
-    })
-
     if err = h.cardsService.CardsRepo.PlaceCard(c.Request().Context(), params); err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),

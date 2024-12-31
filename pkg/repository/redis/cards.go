@@ -53,6 +53,7 @@ func (r *CardsRepository) PlaceCard(ctx context.Context, params repository.Place
         params.Turn,
         params.King,
         params.WasKingChanged,
+        //TODO must be fixed
         params.Cards[0],
         params.Cards[1],
         params.Cards[2],
