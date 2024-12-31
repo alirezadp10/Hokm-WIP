@@ -44,7 +44,6 @@ func (r *CardsRepository) SetTrump(ctx context.Context, gameID, trump, uIndex, l
 }
 
 func (r *CardsRepository) PlaceCard(ctx context.Context, params repository.PlaceCardParams) error {
-    // Prepare the arguments for the Lua script, ensuring they are of type []string
     args := []string{
         params.CenterCards,
         params.LeadSuit,
