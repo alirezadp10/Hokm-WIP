@@ -76,7 +76,7 @@ func PlaceCardValidator(playersService service.PlayersService, cardsService serv
     if !isSelectedCardForUser {
         return &errors.ValidationError{
             StatusCode: http.StatusForbidden,
-            Message:    trans.Get("It's not your card"),
+            Message:    trans.Get("It's not your card."),
         }
     }
 

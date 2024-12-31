@@ -29,13 +29,13 @@ func TestPlaceCard(t *testing.T) {
         "card": "02C",
     })
 
-    c.Set("username", "johnDoe")
+    c.Set("username", "b")
 
     mockGameRepo := mocks.NewMockGameRepositoryContract(ctrl)
     mockGameRepo.EXPECT().GetGameInformation(gomock.Any(), "12345").Return(sampleGameData(), nil)
 
     mockPlayerRepo := mocks.NewMockPlayersRepositoryContract(ctrl)
-    mockPlayerRepo.EXPECT().DoesPlayerBelongToGame("johnDoe", "12345").Return(true, nil)
+    mockPlayerRepo.EXPECT().DoesPlayerBelongToGame("b", "12345").Return(true, nil)
 
     //var s *gorm.DB
     //var r *rueidis.Client
@@ -67,11 +67,11 @@ func sampleGameData() map[string]interface{} {
         "cards":                   "{\"0\":[\"JH\",\"01C\",\"02H\",\"02C\",\"02S\",\"07H\",\"02D\",\"06H\",\"06D\",\"09H\",\"QS\"],\"2\":[\"KD\",\"KS\",\"JD\",\"10C\",\"03D\",\"10D\",\"03S\",\"09S\",\"10H\",\"05S\",\"10S\",\"JC\"],\"3\":[\"08S\",\"09D\",\"06S\",\"08H\",\"01H\",\"07S\",\"08C\",\"04H\",\"KH\",\"07D\",\"04S\",\"QD\"],\"1\":[\"05D\",\"QC\",\"05H\",\"KC\",\"JS\",\"01D\",\"08D\",\"01S\",\"QH\",\"03H\",\"04D\"]}",
         "has_king_cards_finished": "true",
         "king":                    "0",
-        "players":                 "amir,samaneh,sara,a11r374",
+        "players":                 "a,b,c,d",
         "who_has_won_the_game":    "",
         "lead_suit":               "C",
         "is_it_new_round":         "false",
-        "turn":                    "2",
+        "turn":                    "1",
         "who_has_won_the_round":   "",
         "king_cards":              "01C",
         "points":                  "{\"round\":\"2,1\",\"total\":\"0,0\"}",

@@ -10,8 +10,9 @@
   "Invalid trump.": "حکم نامعتبر.",
   "Invalid JSON.": "ورودی نامعتبر است.",
   "Invalid Card.": "کارت نامعتبر است.",
+  "It's not your card.": "کارت شما نیست.",
   "It's not your turn.": "نوبت شما نیست.",
   "You're not allowed to select this card.": "شما مجاز به انتخاب این کارت نیستید.",
-  "user-reference-key is required." : "user-reference-key الزامی است.",
+  "user-reference-key is required.": "user-reference-key الزامی است.",
   "invalid user-reference-key.": "user-reference-key معتبر نمی\u200Cباشد"
 }
