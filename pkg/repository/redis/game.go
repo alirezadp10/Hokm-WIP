@@ -1,65 +1,27 @@
-package repository
+package redisRepo
 
 import (
     "context"
     _ "embed"
     "encoding/json"
-    "github.com/alirezadp10/hokm/pkg/model"
+    "github.com/alirezadp10/hokm/pkg/repository"
     "github.com/redis/rueidis"
-    "gorm.io/gorm"
     "log"
 )
 
 //go:embed lua/matchmaking.lua
 var matchmakingScript string
 
-type GameRepositoryContract interface {
-    HasGameFinished(gameID string) (bool, error)
-    DoesPlayerBelongToGame(username, gameID string) (bool, error)
-    GetGameInformation(ctx context.Context, gameID string) (map[string]interface{}, error)
-    DoesPlayerHaveAnActiveGame(username string) (*string, bool)
-    Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string)
-    RemovePlayerFromWaitingList(ctx context.Context, key, username string)
-    GetGameInf(ctx context.Context, channel string, message func(rueidis.PubSubMessage)) error
-}
-
-var _ GameRepositoryContract = &GameRepository{}
+var _ repository.GameRepositoryContract = &GameRepository{}
 
 type GameRepository struct {
-    sqlite gorm.DB
-    redis  rueidis.Client
+    redis rueidis.Client
 }
 
-func NewGameRepository(sqliteClient *gorm.DB, redisClient *rueidis.Client) *GameRepository {
+func NewGameRepository(redisClient *rueidis.Client) *GameRepository {
     return &GameRepository{
-        sqlite: *sqliteClient,
-        redis:  *redisClient,
+        redis: *redisClient,
     }
-}
-
-func (r *GameRepository) HasGameFinished(gameID string) (bool, error) {
-    var game model.Game
-
-    r.sqlite.Table("games").Where("game_id = ?", gameID).First(&game)
-
-    return game.FinishedAt != nil, nil
-}
-
-func (r *GameRepository) DoesPlayerBelongToGame(username, gameID string) (bool, error) {
-    var count int64
-
-    err := r.sqlite.Table("players").
-        Joins("inner join games on games.player_id = players.id").
-        Where("players.username = ?", username).
-        Where("games.game_id = ?", gameID).
-        Count(&count).Error
-
-    if err != nil {
-        log.Fatal(err)
-        return false, err
-    }
-
-    return count > 0, nil
 }
 
 func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) (map[string]interface{}, error) {
@@ -105,23 +67,6 @@ func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) 
     return result, nil
 }
 
-func (r *GameRepository) DoesPlayerHaveAnActiveGame(username string) (*string, bool) {
-    var result struct{ GameId string }
-
-    r.sqlite.Table("players").
-        Select("games.game_id").
-        Joins("inner join games on games.player_id = players.id").
-        Where("players.username = ?", username).
-        Where("games.finished_at is null").
-        Scan(&result)
-
-    if result.GameId != "" {
-        return &result.GameId, true
-    }
-
-    return nil, false
-}
-
 func (r *GameRepository) Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string) {
     command := r.redis.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
         username,
@@ -157,4 +102,19 @@ func (r *GameRepository) GetGameInf(ctx context.Context, channel string, message
     }
 
     return nil
+}
+
+func (r *GameRepository) HasGameFinished(gameID string) (bool, error) {
+    //TODO implement me
+    panic("implement me")
+}
+
+func (r *GameRepository) DoesPlayerBelongToGame(username, gameID string) (bool, error) {
+    //TODO implement me
+    panic("implement me")
+}
+
+func (r *GameRepository) DoesPlayerHaveAnActiveGame(username string) (*string, bool) {
+    //TODO implement me
+    panic("implement me")
 }

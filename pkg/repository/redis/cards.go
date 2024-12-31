@@ -1,11 +1,11 @@
-package repository
+package redisRepo
 
 import (
     "context"
     _ "embed"
     "fmt"
+    "github.com/alirezadp10/hokm/pkg/repository"
     "github.com/redis/rueidis"
-    "gorm.io/gorm"
     "log"
     "strconv"
 )
@@ -13,22 +13,15 @@ import (
 //go:embed lua/place-card.lua
 var placeCardScript string
 
-type CardsRepositoryContract interface {
-    SetTrump(ctx context.Context, gameID, trump, uIndex, lastMoveTimestamp string) error
-    PlaceCard(ctx context.Context, params PlaceCardParams) error
-}
-
-var _ CardsRepositoryContract = &CardsRepository{}
+var _ repository.CardsRepositoryContract = &CardsRepository{}
 
 type CardsRepository struct {
-    sqlite gorm.DB
-    redis  rueidis.Client
+    redis rueidis.Client
 }
 
-func NewCardsRepository(sqliteClient *gorm.DB, redisClient *rueidis.Client) *CardsRepository {
+func NewCardsRepository(redisClient *rueidis.Client) *CardsRepository {
     return &CardsRepository{
-        sqlite: *sqliteClient,
-        redis:  *redisClient,
+        redis: *redisClient,
     }
 }
 
@@ -50,24 +43,7 @@ func (r *CardsRepository) SetTrump(ctx context.Context, gameID, trump, uIndex, l
     return nil
 }
 
-type PlaceCardParams struct {
-    GameId            string
-    Card              string
-    CenterCards       string
-    LeadSuit          string
-    CardsWinner       string
-    Points            string
-    Turn              string
-    King              string
-    WasKingChanged    string
-    LastMoveTimestamp string
-    Trump             string
-    IsItNewRound      string
-    Cards             []string
-    PlayerIndex       int
-}
-
-func (r *CardsRepository) PlaceCard(ctx context.Context, params PlaceCardParams) error {
+func (r *CardsRepository) PlaceCard(ctx context.Context, params repository.PlaceCardParams) error {
     // Prepare the arguments for the Lua script, ensuring they are of type []string
     args := []string{
         params.CenterCards,

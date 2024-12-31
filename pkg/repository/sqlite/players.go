@@ -1,32 +1,24 @@
-package repository
+package sqliteRepo
 
 import (
     "github.com/alirezadp10/hokm/pkg/api/request"
     "github.com/alirezadp10/hokm/pkg/model"
-    "github.com/redis/rueidis"
+    "github.com/alirezadp10/hokm/pkg/repository"
     "gorm.io/gorm"
     "gorm.io/gorm/clause"
     "log"
     "time"
 )
 
-type PlayersRepositoryContract interface {
-    CheckPlayerExistence(username string) bool
-    SavePlayer(user request.User, chatId int64) (*model.Player, error)
-    AddPlayerToGame(username, gameID string) (*model.Game, error)
-}
-
-var _ PlayersRepositoryContract = &PlayersRepository{}
+var _ repository.PlayersRepositoryContract = &PlayersRepository{}
 
 type PlayersRepository struct {
     sqlite gorm.DB
-    redis  rueidis.Client
 }
 
-func NewPlayersRepository(sqliteClient *gorm.DB, redisClient *rueidis.Client) *PlayersRepository {
+func NewPlayersRepository(sqliteClient *gorm.DB) *PlayersRepository {
     return &PlayersRepository{
         sqlite: *sqliteClient,
-        redis:  *redisClient,
     }
 }
 
