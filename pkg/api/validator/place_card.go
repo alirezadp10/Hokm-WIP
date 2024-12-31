@@ -1,7 +1,6 @@
 package validator
 
 import (
-    "fmt"
     "github.com/alirezadp10/hokm/internal/util/errors"
     "github.com/alirezadp10/hokm/internal/util/my_slice"
     "github.com/alirezadp10/hokm/internal/util/trans"
@@ -42,9 +41,6 @@ func PlaceCardValidator(playersService service.PlayersService, cardsService serv
             Message:    trans.Get("Invalid Card."),
         }
     }
-
-    fmt.Println(data.Username)
-    fmt.Println(data.GameID)
 
     ok, err := playersService.PlayersRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
 

@@ -28,23 +28,24 @@ func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) 
     result := make(map[string]interface{})
 
     gameFields := []string{
-        "players",
-        "points",
+        "who_has_won_the_cards",
+        "last_move_timestamp",
+        "was_king_changed",
         "center_cards",
+        "trump",
+        "cards",
+        "has_king_cards_finished",
+        "king",
+        "players",
+        "who_has_won_the_game",
+        "lead_suit",
+        "is_it_new_round",
+        "turn",
+        "who_has_won_the_round",
+        "king_cards",
+        "points",
         "current_turn",
         "players_cards",
-        "king",
-        "trump",
-        "turn",
-        "last_move_timestamp",
-        "cards",
-        "king_cards",
-        "lead_suit",
-        "has_king_cards_finished",
-        "who_has_won_the_cards",
-        "who_has_won_the_round",
-        "who_has_won_the_game",
-        "was_king_changed",
     }
 
     command := r.redis.B().Hmget().Key("game:" + gameID).Field(gameFields...).Build()
