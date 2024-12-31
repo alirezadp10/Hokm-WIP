@@ -3,6 +3,8 @@ package service
 import (
     "fmt"
     "github.com/alirezadp10/hokm/pkg/repository"
+    "github.com/redis/rueidis"
+    "gorm.io/gorm"
     "math/rand"
     "strconv"
     "strings"
@@ -10,11 +12,15 @@ import (
 )
 
 type PlayersService struct {
+    sqlite      gorm.DB
+    redis       rueidis.Client
     PlayersRepo repository.PlayersRepositoryContract
 }
 
-func NewPlayersService(repo repository.PlayersRepositoryContract) *PlayersService {
+func NewPlayersService(sqliteClient *gorm.DB, redisClient *rueidis.Client, repo repository.PlayersRepositoryContract) *PlayersService {
     return &PlayersService{
+        sqlite:      *sqliteClient,
+        redis:       *redisClient,
         PlayersRepo: repo,
     }
 }

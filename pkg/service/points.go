@@ -4,17 +4,23 @@ import (
     "encoding/json"
     "fmt"
     "github.com/alirezadp10/hokm/pkg/repository"
+    "github.com/redis/rueidis"
+    "gorm.io/gorm"
     "strconv"
     "strings"
 )
 
 type PointsService struct {
+    sqlite       gorm.DB
+    redis        rueidis.Client
     PointsRepo   repository.PointsRepository
     CardsService CardsService
 }
 
-func NewPointsService(repo *repository.PointsRepository, cardService CardsService) *PointsService {
+func NewPointsService(sqliteClient *gorm.DB, redisClient *rueidis.Client, repo *repository.PointsRepository, cardService CardsService) *PointsService {
     return &PointsService{
+        sqlite:       *sqliteClient,
+        redis:        *redisClient,
         PointsRepo:   *repo,
         CardsService: cardService,
     }

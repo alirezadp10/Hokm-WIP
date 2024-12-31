@@ -6,13 +6,13 @@ import (
 )
 
 type PointsRepository struct {
-    Sqlite *gorm.DB
-    Redis  rueidis.Client
+    sqlite *gorm.DB
+    redis  *rueidis.Client
 }
 
-func NewPointsRepository(sqliteClient *gorm.DB, redisClient rueidis.Client) *PointsRepository {
+func NewPointsRepository(sqliteClient *gorm.DB, redisClient *rueidis.Client) *PointsRepository {
     return &PointsRepository{
-        Sqlite: sqliteClient,
-        Redis:  redisClient,
+        sqlite: sqliteClient,
+        redis:  redisClient,
     }
 }

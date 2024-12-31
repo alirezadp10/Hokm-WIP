@@ -21,26 +21,26 @@ type CardsRepositoryContract interface {
 var _ CardsRepositoryContract = &CardsRepository{}
 
 type CardsRepository struct {
-    Sqlite *gorm.DB
-    Redis  rueidis.Client
+    sqlite gorm.DB
+    redis  rueidis.Client
 }
 
-func NewCardsRepository(sqliteClient *gorm.DB, redisClient rueidis.Client) *CardsRepository {
+func NewCardsRepository(sqliteClient *gorm.DB, redisClient *rueidis.Client) *CardsRepository {
     return &CardsRepository{
-        Sqlite: sqliteClient,
-        Redis:  redisClient,
+        sqlite: *sqliteClient,
+        redis:  *redisClient,
     }
 }
 
 func (r *CardsRepository) SetTrump(ctx context.Context, gameID, trump, uIndex, lastMoveTimestamp string) error {
     cmds := make(rueidis.Commands, 0, 5)
-    cmds = append(cmds, r.Redis.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("trump", trump).Build())
-    cmds = append(cmds, r.Redis.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("has_king_cards_finished", "true").Build())
-    cmds = append(cmds, r.Redis.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("turn", uIndex).Build())
-    cmds = append(cmds, r.Redis.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("last_move_timestamp", lastMoveTimestamp).Build())
-    cmds = append(cmds, r.Redis.B().Publish().Channel("choosing_trump").Message(gameID+"|"+trump).Build())
+    cmds = append(cmds, r.redis.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("trump", trump).Build())
+    cmds = append(cmds, r.redis.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("has_king_cards_finished", "true").Build())
+    cmds = append(cmds, r.redis.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("turn", uIndex).Build())
+    cmds = append(cmds, r.redis.B().Hset().Key("game:"+gameID).FieldValue().FieldValue("last_move_timestamp", lastMoveTimestamp).Build())
+    cmds = append(cmds, r.redis.B().Publish().Channel("choosing_trump").Message(gameID+"|"+trump).Build())
 
-    for _, resp := range r.Redis.DoMulti(ctx, cmds...) {
+    for _, resp := range r.redis.DoMulti(ctx, cmds...) {
         if err := resp.Error(); err != nil {
             log.Fatalf("could not execute Lua script: %v", err)
             return err
@@ -89,12 +89,12 @@ func (r *CardsRepository) PlaceCard(ctx context.Context, params PlaceCardParams)
     }
 
     // Create and execute the Lua script
-    cmd := r.Redis.B().Eval().Script(placeCardScript).
+    cmd := r.redis.B().Eval().Script(placeCardScript).
         Numkeys(1).
         Key(params.GameId).
         Arg(args...).Build()
 
-    if err := r.Redis.Do(ctx, cmd).Error(); err != nil {
+    if err := r.redis.Do(ctx, cmd).Error(); err != nil {
         // Handle error gracefully instead of logging fatal
         return fmt.Errorf("could not execute Lua script: %w", err)
     }

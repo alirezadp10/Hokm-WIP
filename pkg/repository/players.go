@@ -19,21 +19,21 @@ type PlayersRepositoryContract interface {
 var _ PlayersRepositoryContract = &PlayersRepository{}
 
 type PlayersRepository struct {
-    Sqlite *gorm.DB
-    Redis  rueidis.Client
+    sqlite gorm.DB
+    redis  rueidis.Client
 }
 
-func NewPlayersRepository(sqliteClient *gorm.DB, redisClient rueidis.Client) *PlayersRepository {
+func NewPlayersRepository(sqliteClient *gorm.DB, redisClient *rueidis.Client) *PlayersRepository {
     return &PlayersRepository{
-        Sqlite: sqliteClient,
-        Redis:  redisClient,
+        sqlite: *sqliteClient,
+        redis:  *redisClient,
     }
 }
 
 func (r *PlayersRepository) CheckPlayerExistence(username string) bool {
     var count int64
 
-    err := r.Sqlite.Table("players").Where("username = ?", username).Count(&count).Error
+    err := r.sqlite.Table("players").Where("username = ?", username).Count(&count).Error
 
     if err != nil {
         log.Fatal(err)
@@ -54,7 +54,7 @@ func (r *PlayersRepository) SavePlayer(user request.User, chatId int64) (*model.
         JoinedAt:  time.Now(),
     }
 
-    err := r.Sqlite.Clauses(clause.OnConflict{
+    err := r.sqlite.Clauses(clause.OnConflict{
         Columns:   []clause.Column{{Name: "id"}},
         DoNothing: true,
     }).Create(&newPlayer).Error
@@ -64,11 +64,11 @@ func (r *PlayersRepository) SavePlayer(user request.User, chatId int64) (*model.
 
 func (r *PlayersRepository) AddPlayerToGame(username, gameID string) (*model.Game, error) {
     var player model.Player
-    r.Sqlite.First(&player, "username = ?", username)
+    r.sqlite.First(&player, "username = ?", username)
 
     newGame := model.Game{GameId: gameID, PlayerId: player.Id, CreatedAt: time.Now()}
 
-    err := r.Sqlite.Create(&newGame).Error
+    err := r.sqlite.Create(&newGame).Error
 
     return &newGame, err
 }

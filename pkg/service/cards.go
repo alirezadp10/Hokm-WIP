@@ -6,16 +6,22 @@ import (
     "fmt"
     "github.com/alirezadp10/hokm/internal/util/my_slice"
     "github.com/alirezadp10/hokm/pkg/repository"
+    "github.com/redis/rueidis"
+    "gorm.io/gorm"
     "math/rand"
     "strings"
 )
 
 type CardsService struct {
+    sqlite    gorm.DB
+    redis     rueidis.Client
     CardsRepo repository.CardsRepositoryContract
 }
 
-func NewCardsService(repo repository.CardsRepositoryContract) *CardsService {
+func NewCardsService(sqliteClient *gorm.DB, redisClient *rueidis.Client, repo repository.CardsRepositoryContract) *CardsService {
     return &CardsService{
+        sqlite:    *sqliteClient,
+        redis:     *redisClient,
         CardsRepo: repo,
     }
 }

@@ -17,6 +17,8 @@ import (
     "github.com/google/uuid"
     "github.com/labstack/echo/v4"
     "github.com/redis/rueidis"
+    "gorm.io/gorm"
+    "log"
     "net/http"
     "strconv"
     "strings"
@@ -24,54 +26,61 @@ import (
 )
 
 type HokmHandler struct {
-    GameService    service.GameService
-    CardsService   service.CardsService
-    PlayersService service.PlayersService
-    PointsService  service.PointsService
-    RedisService   service.RedisService
+    sqlite         gorm.DB
+    redis          rueidis.Client
+    gameService    service.GameService
+    cardsService   service.CardsService
+    playersService service.PlayersService
+    pointsService  service.PointsService
 }
 
-func NewHokmHandler(gameService *service.GameService, cardsService *service.CardsService, pointsService *service.PointsService, playersService *service.PlayersService, redisService *service.RedisService) *HokmHandler {
+func NewHokmHandler(sqliteClient *gorm.DB, redisClient *rueidis.Client, gameService *service.GameService, cardsService *service.CardsService, pointsService *service.PointsService, playersService *service.PlayersService) *HokmHandler {
     return &HokmHandler{
-        GameService:    *gameService,
-        CardsService:   *cardsService,
-        PointsService:  *pointsService,
-        PlayersService: *playersService,
-        RedisService:   *redisService,
+        sqlite:         *sqliteClient,
+        redis:          *redisClient,
+        gameService:    *gameService,
+        cardsService:   *cardsService,
+        pointsService:  *pointsService,
+        playersService: *playersService,
     }
 }
 
 func (h *HokmHandler) CreateGame(c echo.Context) error {
     username := c.Get("username").(string)
 
-    if err := validator.CreateGameValidator(h.GameService, validator.CreateGameValidatorData{
+    if err := validator.CreateGameValidator(h.gameService, validator.CreateGameValidatorData{
         Username: username,
     }); err != nil {
         return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
     gameID := uuid.New().String()
-    distributedCards := h.CardsService.DistributeCards()
-    kingCards, king := h.PlayersService.ChooseFirstKing()
+    distributedCards := h.cardsService.DistributeCards()
+    kingCards, king := h.playersService.ChooseFirstKing()
 
-    go h.GameService.Matchmaking(c.Request().Context(), username, gameID, distributedCards, kingCards, king)
+    go h.gameService.Matchmaking(c.Request().Context(), username, gameID, distributedCards, kingCards, king)
 
-    err := h.RedisService.Subscribe(c.Request().Context(), "game_creation", func(msg rueidis.PubSubMessage) {
+    err := h.redis.Receive(c.Request().Context(), h.redis.B().Subscribe().Channel("game_creation").Build(), func(msg rueidis.PubSubMessage) {
         message := strings.Split(msg.Message, "|")
         players := strings.Split(message[0], ",")
         if my_slice.Has(players, username) {
             gameID = message[1]
-            _, err := h.PlayersService.PlayersRepo.AddPlayerToGame(username, gameID)
+            _, err := h.playersService.PlayersRepo.AddPlayerToGame(username, gameID)
             if err != nil {
                 fmt.Println(err)
             }
-            h.RedisService.Unsubscribe(c.Request().Context(), "game_creation")
+            unsubscribeErr := h.redis.Do(c.Request().Context(), h.redis.B().Unsubscribe().Channel("game_creation").Build()).Error()
+            if unsubscribeErr != nil {
+                log.Println("Error while unsubscribing:", unsubscribeErr)
+            }
         }
     })
 
     if err != nil {
+        log.Printf("Error in subscribing to %v channel: %v", "game_creation", err)
+
         if errors.Is(err, context.Canceled) {
-            h.GameService.RemovePlayerFromWaitingList(username)
+            h.gameService.RemovePlayerFromWaitingList(username)
         }
         if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
             return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
@@ -95,14 +104,14 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
     username := c.Get("username").(string)
     gameID := c.Param("gameID")
 
-    if err := validator.GetGameInformationValidator(h.GameService, validator.GetGameInformationValidatorData{
+    if err := validator.GetGameInformationValidator(h.gameService, validator.GetGameInformationValidatorData{
         Username: username,
         GameID:   gameID,
     }); err != nil {
         return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
-    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
+    gameInformation, err := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
@@ -112,7 +121,7 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
-    return c.JSON(http.StatusOK, transformer.GameInformationTransformer(h.PlayersService, h.PointsService, h.CardsService, transformer.GameInformationTransformerData{
+    return c.JSON(http.StatusOK, transformer.GameInformationTransformer(h.playersService, h.pointsService, h.cardsService, transformer.GameInformationTransformerData{
         GameInformation: gameInformation,
         Players:         players,
         UIndex:          uIndex,
@@ -131,7 +140,7 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": trans.Get("Invalid JSON.")})
     }
 
-    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
+    gameInformation, err := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
@@ -141,7 +150,7 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
-    if err := validator.ChooseTrumpValidator(h.GameService, validator.ChooseTrumpValidatorData{
+    if err := validator.ChooseTrumpValidator(h.gameService, validator.ChooseTrumpValidatorData{
         GameInformation: gameInformation,
         UIndex:          uIndex,
         Trump:           requestBody.Trump,
@@ -153,7 +162,7 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
 
     lastMoveTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
-    err = h.CardsService.SetTrump(c.Request().Context(), gameID, requestBody.Trump, strconv.Itoa(uIndex), lastMoveTimestamp)
+    err = h.cardsService.SetTrump(c.Request().Context(), gameID, requestBody.Trump, strconv.Itoa(uIndex), lastMoveTimestamp)
 
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
@@ -163,9 +172,9 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
 
     return c.JSON(http.StatusOK, map[string]interface{}{
         "trump":        requestBody.Trump,
-        "cards":        h.CardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex)[1:],
-        "timeRemained": h.PlayersService.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-        "turn":         h.PlayersService.GetTurn(gameInformation["turn"].(string), uIndex),
+        "cards":        h.cardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex)[1:],
+        "timeRemained": h.playersService.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
+        "turn":         h.playersService.GetTurn(gameInformation["turn"].(string), uIndex),
     })
 }
 
@@ -173,14 +182,14 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
     username := c.Get("username").(string)
     gameID := c.Param("gameID")
 
-    if err := validator.GetCardsValidator(h.GameService, validator.GetCardsValidatorData{
+    if err := validator.GetCardsValidator(h.gameService, validator.GetCardsValidatorData{
         Username: username,
         GameID:   gameID,
     }); err != nil {
         return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
-    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
+    gameInformation, err := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
@@ -189,7 +198,7 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
     trump := gameInformation["trump"].(string)
 
     if gameInformation["trump"].(string) == "" {
-        err := h.RedisService.Subscribe(c.Request().Context(), "choosing_trump", func(msg rueidis.PubSubMessage) {
+        err := h.redis.Receive(c.Request().Context(), h.redis.B().Subscribe().Channel("choosing_trump").Build(), func(msg rueidis.PubSubMessage) {
             messages := strings.Split(msg.Message, ",")
             messageId := my_slice.HasLike(messages, func(s string) bool {
                 return strings.Contains(s, gameID+"|")
@@ -197,11 +206,15 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
             if messageId != -1 {
                 data := strings.Split(messages[messageId], "|")
                 trump = data[1]
-                h.RedisService.Unsubscribe(c.Request().Context(), "choosing_trump")
+                unsubscribeErr := h.redis.Do(c.Request().Context(), h.redis.B().Unsubscribe().Channel("choosing_trump").Build()).Error()
+                if unsubscribeErr != nil {
+                    log.Println("Error while unsubscribing:", unsubscribeErr)
+                }
             }
         })
 
         if err != nil {
+            log.Printf("Error in subscribing to %v channel: %v", "choosing_trump", err)
             if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
                 return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
                     "message": trans.Get("Something went wrong, Please try again later."),
@@ -218,8 +231,8 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
     uIndex := my_slice.GetIndex(username, players)
 
     return c.JSON(http.StatusOK, map[string]interface{}{
-        "cards": h.CardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex),
-        "turn":  h.PlayersService.GetTurn(gameInformation["turn"].(string), uIndex),
+        "cards": h.cardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex),
+        "turn":  h.playersService.GetTurn(gameInformation["turn"].(string), uIndex),
         "trump": trump,
     })
 }
@@ -236,7 +249,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, map[string]string{"message": trans.Get("Invalid JSON.")})
     }
 
-    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
+    gameInformation, err := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     players := strings.Split(gameInformation["players"].(string), ",")
 
@@ -246,7 +259,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 
     leadSuit := h.determineLeadSuit(requestBody.Card, gameState["leadSuit"].(string))
 
-    if err := validator.PlaceCardValidator(h.GameService, h.CardsService, validator.PlaceCardValidatorData{
+    if err := validator.PlaceCardValidator(h.gameService, h.cardsService, validator.PlaceCardValidatorData{
         GameInformation: gameInformation,
         Username:        username,
         GameID:          gameID,
@@ -257,9 +270,9 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
         return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
-    centerCards := h.CardsService.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
+    centerCards := h.cardsService.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
 
-    cardsWinner := h.PointsService.FindCardsWinner(centerCards, gameState["trump"].(string), leadSuit)
+    cardsWinner := h.pointsService.FindCardsWinner(centerCards, gameState["trump"].(string), leadSuit)
 
     if cardsWinner != "" {
         h.updateWinnersAndPoints(&gameState, cardsWinner)
@@ -269,8 +282,8 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
     }
 
     gameState["lastMoveTimestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
-    gameState["cards"] = h.CardsService.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
-    gameState["turn"] = h.PlayersService.GetNewTurn(gameInformation["turn"].(string), gameState["gameWinner"].(string))
+    gameState["cards"] = h.cardsService.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
+    gameState["turn"] = h.playersService.GetNewTurn(gameInformation["turn"].(string), gameState["gameWinner"].(string))
 
     params := repository.PlaceCardParams{
         GameId:            gameID,
@@ -289,13 +302,13 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
         PlayerIndex:       uIndex,
     }
 
-    if err = h.CardsService.CardsRepo.PlaceCard(c.Request().Context(), params); err != nil {
+    if err = h.cardsService.CardsRepo.PlaceCard(c.Request().Context(), params); err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{
             "message": trans.Get("Something went wrong, Please try again later."),
         })
     }
 
-    return c.JSON(http.StatusOK, transformer.PlaceCardTransformer(h.PlayersService, h.PointsService, h.CardsService, transformer.PlaceCardTransformerData{
+    return c.JSON(http.StatusOK, transformer.PlaceCardTransformer(h.playersService, h.pointsService, h.cardsService, transformer.PlaceCardTransformerData{
         GameInformation:   gameInformation,
         Players:           players,
         UIndex:            uIndex,
@@ -326,13 +339,13 @@ func (h *HokmHandler) initializeGameState(gameInformation map[string]interface{}
 
 func (h *HokmHandler) determineLeadSuit(card string, currentLeadSuit string) string {
     if currentLeadSuit == "" {
-        return h.CardsService.GetCardSuit(card)
+        return h.cardsService.GetCardSuit(card)
     }
     return currentLeadSuit
 }
 
 func (h *HokmHandler) updateWinnersAndPoints(gameState *map[string]interface{}, cardsWinner string) {
-    points, roundWinner, gameWinner := h.PointsService.UpdatePoints((*gameState)["points"].(string), cardsWinner)
+    points, roundWinner, gameWinner := h.pointsService.UpdatePoints((*gameState)["points"].(string), cardsWinner)
     (*gameState)["points"] = points
     (*gameState)["roundWinner"] = roundWinner
     (*gameState)["gameWinner"] = gameWinner
@@ -343,14 +356,14 @@ func (h *HokmHandler) updateWinnersAndPoints(gameState *map[string]interface{}, 
         (*gameState)["turn"] = ""
     }
 
-    (*gameState)["king"] = h.PlayersService.GiveKing(roundWinner, (*gameState)["king"].(string))
+    (*gameState)["king"] = h.playersService.GiveKing(roundWinner, (*gameState)["king"].(string))
     (*gameState)["wasKingChanged"] = (*gameState)["king"] == (*gameState)["king"].(string)
     (*gameState)["leadSuit"] = ""
     (*gameState)["centerCards"] = ",,,"
 }
 
 func (h *HokmHandler) startNewRound(gameState *map[string]interface{}) {
-    (*gameState)["cards"] = h.CardsService.DistributeCards()
+    (*gameState)["cards"] = h.cardsService.DistributeCards()
     (*gameState)["isItNewRound"] = true
     if (*gameState)["wasKingChanged"].(bool) {
         (*gameState)["trump"] = ""
@@ -361,14 +374,14 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
     username := c.Get("username").(string)
     gameID := c.Param("gameID")
 
-    if err := validator.GetUpdateValidator(h.GameService, validator.GetUpdateValidatorData{
+    if err := validator.GetUpdateValidator(h.gameService, validator.GetUpdateValidatorData{
         Username: username,
         GameID:   gameID,
     }); err != nil {
         return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
     }
 
-    gameInformation, err := h.GameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
+    gameInformation, err := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
@@ -381,13 +394,16 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
     var player int
     var card string
 
-    err = h.RedisService.Subscribe(c.Request().Context(), "placing_card", func(msg rueidis.PubSubMessage) {
+    err = h.redis.Receive(c.Request().Context(), h.redis.B().Subscribe().Channel("placing_card").Build(), func(msg rueidis.PubSubMessage) {
         messages := strings.Split(msg.Message, "|")
         if messages[0] == gameID {
-            gameInformation, _ = h.GameService.GameRepo.GetGameInformation(c.Request().Context(), messages[0])
+            gameInformation, _ = h.gameService.GameRepo.GetGameInformation(c.Request().Context(), messages[0])
             player, _ = strconv.Atoi(messages[1])
             card = messages[2]
-            h.RedisService.Unsubscribe(c.Request().Context(), "placing_card")
+            unsubscribeErr := h.redis.Do(c.Request().Context(), h.redis.B().Unsubscribe().Channel("placing_card").Build()).Error()
+            if unsubscribeErr != nil {
+                log.Println("Error while unsubscribing:", unsubscribeErr)
+            }
         }
     })
 
@@ -402,7 +418,7 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
         })
     }
 
-    return c.JSON(http.StatusOK, transformer.GetUpdateTransformer(h.PointsService, h.PlayersService, transformer.GetUpdateTransformerData{
+    return c.JSON(http.StatusOK, transformer.GetUpdateTransformer(h.pointsService, h.playersService, transformer.GetUpdateTransformerData{
         GameInformation: gameInformation,
         UIndex:          uIndex,
         PlayerIndex:     player,
@@ -432,7 +448,7 @@ func (h *HokmHandler) GetMenuPage(c echo.Context) error {
 
     chatInstance, _ := strconv.ParseInt(c.QueryParam("chat_instance"), 10, 64)
 
-    _, _ = h.PlayersService.PlayersRepo.SavePlayer(user, chatInstance)
+    _, _ = h.playersService.PlayersRepo.SavePlayer(user, chatInstance)
 
     return c.Render(200, "menu.html", map[string]interface{}{
         "userReferenceKey": encryptedUsername,

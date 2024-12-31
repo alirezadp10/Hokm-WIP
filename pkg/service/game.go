@@ -3,16 +3,22 @@ package service
 import (
     "context"
     "github.com/alirezadp10/hokm/pkg/repository"
+    "github.com/redis/rueidis"
+    "gorm.io/gorm"
     "strconv"
     "time"
 )
 
 type GameService struct {
+    sqlite   gorm.DB
+    redis    rueidis.Client
     GameRepo repository.GameRepositoryContract
 }
 
-func NewGameService(repo repository.GameRepositoryContract) *GameService {
+func NewGameService(sqliteClient *gorm.DB, redisClient *rueidis.Client, repo repository.GameRepositoryContract) *GameService {
     return &GameService{
+        sqlite:   *sqliteClient,
+        redis:    *redisClient,
         GameRepo: repo,
     }
 }
@@ -25,4 +31,8 @@ func (s *GameService) Matchmaking(ctx context.Context, userId, gameID string, di
 
 func (s *GameService) RemovePlayerFromWaitingList(username string) {
     s.GameRepo.RemovePlayerFromWaitingList(context.Background(), "matchmaking", username)
+}
+
+func (s *GameService) Subscribe(ctx context.Context, channel string, message func(rueidis.PubSubMessage)) error {
+    return s.GameRepo.GetGameInf(ctx, channel, message)
 }

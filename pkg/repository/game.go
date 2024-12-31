@@ -20,26 +20,27 @@ type GameRepositoryContract interface {
     DoesPlayerHaveAnActiveGame(username string) (*string, bool)
     Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string)
     RemovePlayerFromWaitingList(ctx context.Context, key, username string)
+    GetGameInf(ctx context.Context, channel string, message func(rueidis.PubSubMessage)) error
 }
 
 var _ GameRepositoryContract = &GameRepository{}
 
 type GameRepository struct {
-    Sqlite *gorm.DB
-    Redis  rueidis.Client
+    sqlite gorm.DB
+    redis  rueidis.Client
 }
 
-func NewGameRepository(sqliteClient *gorm.DB, redisClient rueidis.Client) *GameRepository {
+func NewGameRepository(sqliteClient *gorm.DB, redisClient *rueidis.Client) *GameRepository {
     return &GameRepository{
-        Sqlite: sqliteClient,
-        Redis:  redisClient,
+        sqlite: *sqliteClient,
+        redis:  *redisClient,
     }
 }
 
 func (r *GameRepository) HasGameFinished(gameID string) (bool, error) {
     var game model.Game
 
-    r.Sqlite.Table("games").Where("game_id = ?", gameID).First(&game)
+    r.sqlite.Table("games").Where("game_id = ?", gameID).First(&game)
 
     return game.FinishedAt != nil, nil
 }
@@ -47,7 +48,7 @@ func (r *GameRepository) HasGameFinished(gameID string) (bool, error) {
 func (r *GameRepository) DoesPlayerBelongToGame(username, gameID string) (bool, error) {
     var count int64
 
-    err := r.Sqlite.Table("players").
+    err := r.sqlite.Table("players").
         Joins("inner join games on games.player_id = players.id").
         Where("players.username = ?", username).
         Where("games.game_id = ?", gameID).
@@ -84,8 +85,8 @@ func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) 
         "was_king_changed",
     }
 
-    command := r.Redis.B().Hmget().Key("game:" + gameID).Field(gameFields...).Build()
-    information, err := r.Redis.Do(ctx, command).ToArray()
+    command := r.redis.B().Hmget().Key("game:" + gameID).Field(gameFields...).Build()
+    information, err := r.redis.Do(ctx, command).ToArray()
     if err != nil {
         log.Fatalf("could not resolve game information: %v", err)
         return nil, err
@@ -107,7 +108,7 @@ func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) 
 func (r *GameRepository) DoesPlayerHaveAnActiveGame(username string) (*string, bool) {
     var result struct{ GameId string }
 
-    r.Sqlite.Table("players").
+    r.sqlite.Table("players").
         Select("games.game_id").
         Joins("inner join games on games.player_id = players.id").
         Where("players.username = ?", username).
@@ -122,7 +123,7 @@ func (r *GameRepository) DoesPlayerHaveAnActiveGame(username string) (*string, b
 }
 
 func (r *GameRepository) Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string) {
-    command := r.Redis.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
+    command := r.redis.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
         username,
         gameID,
         cards[0],
@@ -133,16 +134,27 @@ func (r *GameRepository) Matchmaking(ctx context.Context, cards []string, userna
         king,
         kingCards,
     ).Build()
-    _, err := r.Redis.Do(ctx, command).ToArray()
+    _, err := r.redis.Do(ctx, command).ToArray()
     if err != nil {
         log.Fatalf("could not execute Lua script: %v", err)
     }
 }
 
 func (r *GameRepository) RemovePlayerFromWaitingList(ctx context.Context, key, username string) {
-    command := r.Redis.B().Lrem().Key(key).Count(0).Element(username).Build()
-    err := r.Redis.Do(ctx, command).Error()
+    command := r.redis.B().Lrem().Key(key).Count(0).Element(username).Build()
+    err := r.redis.Do(ctx, command).Error()
     if err != nil {
         log.Printf("Error in removing player list: %v", err)
     }
+}
+
+func (r *GameRepository) GetGameInf(ctx context.Context, channel string, message func(rueidis.PubSubMessage)) error {
+    err := r.redis.Receive(ctx, r.redis.B().Subscribe().Channel("game_creation").Build(), message)
+
+    if err != nil {
+        log.Printf("Error in subscribing to %v channel: %v", channel, err)
+        return err
+    }
+
+    return nil
 }

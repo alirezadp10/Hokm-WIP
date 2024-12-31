@@ -24,20 +24,18 @@ func main() {
     go service.StartTelegram(ctx)
 
     gameRepository := repository.NewGameRepository(sqliteClient, redisClient)
-    gameService := service.NewGameService(gameRepository)
+    gameService := service.NewGameService(sqliteClient, redisClient, gameRepository)
 
     cardsRepository := repository.NewCardsRepository(sqliteClient, redisClient)
-    cardsService := service.NewCardsService(cardsRepository)
+    cardsService := service.NewCardsService(sqliteClient, redisClient, cardsRepository)
 
     pointsRepository := repository.NewPointsRepository(sqliteClient, redisClient)
-    pointsService := service.NewPointsService(pointsRepository, *cardsService)
+    pointsService := service.NewPointsService(sqliteClient, redisClient, pointsRepository, *cardsService)
 
     playersRepository := repository.NewPlayersRepository(sqliteClient, redisClient)
-    playersService := service.NewPlayersService(playersRepository)
+    playersService := service.NewPlayersService(sqliteClient, redisClient, playersRepository)
 
-    redisService := service.NewRedisService(redisClient, context.Background())
-
-    hokmHandler := handlers.NewHokmHandler(gameService, cardsService, pointsService, playersService, redisService)
+    hokmHandler := handlers.NewHokmHandler(sqliteClient, redisClient, gameService, cardsService, pointsService, playersService)
 
     authMiddleware := middleware.NewAuthMiddleware(*playersRepository)
 
