@@ -46,7 +46,7 @@ func NewHokmHandler(sqliteClient *gorm.DB, redisClient *rueidis.Client, gameServ
 func (h *HokmHandler) CreateGame(c echo.Context) error {
     username := c.Get("username").(string)
 
-    if err := validator.CreateGameValidator(h.gameService, validator.CreateGameValidatorData{
+    if err := validator.CreateGameValidator(h.playersService, validator.CreateGameValidatorData{
         Username: username,
     }); err != nil {
         return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
@@ -102,7 +102,7 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
     username := c.Get("username").(string)
     gameID := c.Param("gameID")
 
-    if err := validator.GetGameInformationValidator(h.gameService, validator.GetGameInformationValidatorData{
+    if err := validator.GetGameInformationValidator(h.playersService, validator.GetGameInformationValidatorData{
         Username: username,
         GameID:   gameID,
     }); err != nil {
@@ -111,9 +111,9 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
 
     gameInformation, err := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
-    return c.JSON(200, map[string]interface{}{
-        "hi": "there",
-    })
+    //return c.JSON(200, map[string]interface{}{
+    //    "hi": "there",
+    //})
 
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
@@ -152,7 +152,7 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
-    if err := validator.ChooseTrumpValidator(h.gameService, validator.ChooseTrumpValidatorData{
+    if err := validator.ChooseTrumpValidator(h.playersService, validator.ChooseTrumpValidatorData{
         GameInformation: gameInformation,
         UIndex:          uIndex,
         Trump:           requestBody.Trump,
@@ -184,7 +184,7 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
     username := c.Get("username").(string)
     gameID := c.Param("gameID")
 
-    if err := validator.GetCardsValidator(h.gameService, validator.GetCardsValidatorData{
+    if err := validator.GetCardsValidator(h.playersService, validator.GetCardsValidatorData{
         Username: username,
         GameID:   gameID,
     }); err != nil {
@@ -261,7 +261,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 
     leadSuit := h.determineLeadSuit(requestBody.Card, gameState["leadSuit"].(string))
 
-    if err := validator.PlaceCardValidator(h.gameService, h.cardsService, validator.PlaceCardValidatorData{
+    if err := validator.PlaceCardValidator(h.playersService, h.cardsService, validator.PlaceCardValidatorData{
         GameInformation: gameInformation,
         Username:        username,
         GameID:          gameID,
@@ -376,7 +376,7 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
     username := c.Get("username").(string)
     gameID := c.Param("gameID")
 
-    if err := validator.GetUpdateValidator(h.gameService, validator.GetUpdateValidatorData{
+    if err := validator.GetUpdateValidator(h.playersService, validator.GetUpdateValidatorData{
         Username: username,
         GameID:   gameID,
     }); err != nil {
