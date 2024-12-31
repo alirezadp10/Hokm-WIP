@@ -65,10 +65,7 @@ func (r *CardsRepository) PlaceCard(ctx context.Context, params repository.Place
     }
 
     // Create and execute the Lua script
-    cmd := r.redis.B().Eval().Script(placeCardScript).
-        Numkeys(1).
-        Key(params.GameId).
-        Arg(args...).Build()
+    cmd := r.redis.B().Eval().Script(placeCardScript).Numkeys(1).Key(params.GameId).Arg(args...).Build()
 
     if err := r.redis.Do(ctx, cmd).Error(); err != nil {
         // Handle error gracefully instead of logging fatal

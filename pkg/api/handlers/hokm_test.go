@@ -56,7 +56,7 @@ func (g gameMockRepo) GetGameInformation(ctx context.Context, gameID string) (ma
     panic("implement me")
 }
 
-func (g gameMockRepo) DoesPlayerHaveAnActiveGame(username string) (*string, bool) {
+func (g gameMockRepo) DoesPlayerHaveAnyActiveGame(username string) (*string, bool) {
     //TODO implement me
     panic("implement me")
 }

@@ -103,18 +103,3 @@ func (r *GameRepository) GetGameInf(ctx context.Context, channel string, message
 
     return nil
 }
-
-func (r *GameRepository) HasGameFinished(gameID string) (bool, error) {
-    //TODO implement me
-    panic("implement me")
-}
-
-func (r *GameRepository) DoesPlayerBelongToGame(username, gameID string) (bool, error) {
-    //TODO implement me
-    panic("implement me")
-}
-
-func (r *GameRepository) DoesPlayerHaveAnActiveGame(username string) (*string, bool) {
-    //TODO implement me
-    panic("implement me")
-}

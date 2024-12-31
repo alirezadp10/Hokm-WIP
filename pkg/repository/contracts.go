@@ -30,10 +30,7 @@ type CardsRepositoryContract interface {
 }
 
 type GameRepositoryContract interface {
-    HasGameFinished(gameID string) (bool, error)
-    DoesPlayerBelongToGame(username, gameID string) (bool, error)
     GetGameInformation(ctx context.Context, gameID string) (map[string]interface{}, error)
-    DoesPlayerHaveAnActiveGame(username string) (*string, bool)
     Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string)
     RemovePlayerFromWaitingList(ctx context.Context, key, username string)
     GetGameInf(ctx context.Context, channel string, message func(rueidis.PubSubMessage)) error
@@ -43,4 +40,6 @@ type PlayersRepositoryContract interface {
     CheckPlayerExistence(username string) bool
     SavePlayer(user request.User, chatId int64) (*model.Player, error)
     AddPlayerToGame(username, gameID string) (*model.Game, error)
+    DoesPlayerBelongToGame(username, gameID string) (bool, error)
+    DoesPlayerHaveAnyActiveGame(username string) (*string, bool)
 }

@@ -64,3 +64,45 @@ func (r *PlayersRepository) AddPlayerToGame(username, gameID string) (*model.Gam
 
     return &newGame, err
 }
+
+func (r *PlayersRepository) DoesPlayerBelongToGame(username, gameID string) (bool, error) {
+    var count int64
+
+    err := r.sqlite.Table("players").
+        Joins("inner join games on games.player_id = players.id").
+        Where("players.username = ?", username).
+        Where("games.game_id = ?", gameID).
+        Count(&count).Error
+
+    if err != nil {
+        log.Fatal(err)
+        return false, err
+    }
+
+    return count > 0, nil
+}
+
+func (r *PlayersRepository) DoesPlayerHaveAnyActiveGame(username string) (*string, bool) {
+    var result struct{ GameId string }
+
+    r.sqlite.Table("players").
+        Select("games.game_id").
+        Joins("inner join games on games.player_id = players.id").
+        Where("players.username = ?", username).
+        Where("games.finished_at is null").
+        Scan(&result)
+
+    if result.GameId != "" {
+        return &result.GameId, true
+    }
+
+    return nil, false
+}
+
+func (r *PlayersRepository) HasGameFinished(gameID string) (bool, error) {
+    var game model.Game
+
+    r.sqlite.Table("games").Where("game_id = ?", gameID).First(&game)
+
+    return game.FinishedAt != nil, nil
+}

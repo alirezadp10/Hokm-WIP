@@ -12,7 +12,7 @@ type CreateGameValidatorData struct {
 }
 
 func CreateGameValidator(gameService service.GameService, data CreateGameValidatorData) *errors.ValidationError {
-    if gid, ok := gameService.GameRepo.DoesPlayerHaveAnActiveGame(data.Username); ok {
+    if gid, ok := gameService.GameRepo.DoesPlayerHaveAnyActiveGame(data.Username); ok {
         return &errors.ValidationError{
             Message:    trans.Get("You have already an active game."),
             StatusCode: http.StatusForbidden,
