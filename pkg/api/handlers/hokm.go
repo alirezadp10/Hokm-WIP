@@ -111,9 +111,9 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
 
     gameInformation, err := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
-    //return c.JSON(200, map[string]interface{}{
-    //    "hi": "there",
-    //})
+    return c.JSON(200, map[string]interface{}{
+        "hi": "there",
+    })
 
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
