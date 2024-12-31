@@ -20,7 +20,7 @@ type PlaceCardValidatorData struct {
     LeadSuit        string
 }
 
-func PlaceCardValidator(gameService service.GameService, cardsService service.CardsService, data PlaceCardValidatorData) *errors.ValidationError {
+func PlaceCardValidator(playersService service.PlayersService, cardsService service.CardsService, data PlaceCardValidatorData) *errors.ValidationError {
     isSelectedCardForUser := false
 
     doesPlayerHaveLeadSuitCard := false
@@ -46,7 +46,7 @@ func PlaceCardValidator(gameService service.GameService, cardsService service.Ca
     fmt.Println(data.Username)
     fmt.Println(data.GameID)
 
-    ok, err := gameService.GameRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
+    ok, err := playersService.PlayersRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
 
     if err != nil {
         log.Fatal(err)

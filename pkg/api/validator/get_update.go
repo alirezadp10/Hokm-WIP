@@ -12,8 +12,8 @@ type GetUpdateValidatorData struct {
     GameID   string
 }
 
-func GetUpdateValidator(gameService service.GameService, data GetUpdateValidatorData) *errors.ValidationError {
-    ok, err := gameService.GameRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
+func GetUpdateValidator(playersService service.PlayersService, data GetUpdateValidatorData) *errors.ValidationError {
+    ok, err := playersService.PlayersRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
 
     if err != nil {
         return &errors.ValidationError{

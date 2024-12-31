@@ -17,7 +17,7 @@ type ChooseTrumpValidatorData struct {
     Trump           string
 }
 
-func ChooseTrumpValidator(s service.GameService, data ChooseTrumpValidatorData) *errors.ValidationError {
+func ChooseTrumpValidator(s service.PlayersService, data ChooseTrumpValidatorData) *errors.ValidationError {
     if !my_slice.Has([]string{"H", "D", "C", "S"}, data.Trump) {
         return &errors.ValidationError{
             StatusCode: http.StatusBadRequest,
@@ -25,7 +25,7 @@ func ChooseTrumpValidator(s service.GameService, data ChooseTrumpValidatorData) 
         }
     }
 
-    ok, err := s.GameRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
+    ok, err := s.PlayersRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
 
     if err != nil {
         return &errors.ValidationError{

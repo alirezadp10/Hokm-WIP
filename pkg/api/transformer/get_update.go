@@ -12,13 +12,13 @@ type GetUpdateTransformerData struct {
     Card            string
 }
 
-func GetUpdateTransformer(pointsService service.PointsService, playersService service.PlayersService, data GetUpdateTransformerData) map[string]interface{} {
+func GetUpdateTransformer(cardsService service.CardsService, playersService service.PlayersService, data GetUpdateTransformerData) map[string]interface{} {
     result := map[string]interface{}{
         "lastMove": map[string]string{
             "from": playersService.GetDirection(data.PlayerIndex, data.UIndex),
             "card": data.Card,
         },
-        "points":            pointsService.GetPoints(data.GameInformation["points"].(string), data.UIndex),
+        "points":            cardsService.GetPoints(data.GameInformation["points"].(string), data.UIndex),
         "centerCards":       playersService.GetPlayersCenterCards(data.GameInformation["center_cards"].(string), data.UIndex),
         "turn":              playersService.GetTurn(data.GameInformation["turn"].(string), data.UIndex),
         "king":              playersService.GetKing(data.GameInformation["king"].(string), data.UIndex),

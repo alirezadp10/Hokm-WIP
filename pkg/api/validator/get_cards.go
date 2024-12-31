@@ -12,8 +12,8 @@ type GetCardsValidatorData struct {
     GameID   string
 }
 
-func GetCardsValidator(gameService service.GameService, data GetCardsValidatorData) *errors.ValidationError {
-    ok, err := gameService.GameRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
+func GetCardsValidator(playersService service.PlayersService, data GetCardsValidatorData) *errors.ValidationError {
+    ok, err := playersService.PlayersRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
 
     if err != nil {
         return &errors.ValidationError{

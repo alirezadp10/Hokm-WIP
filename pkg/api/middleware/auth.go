@@ -2,16 +2,16 @@ package middleware
 
 import (
     "github.com/alirezadp10/hokm/internal/util/crypto"
-    "github.com/alirezadp10/hokm/pkg/repository"
+    sqliteRepo "github.com/alirezadp10/hokm/pkg/repository/sqlite"
     "github.com/labstack/echo/v4"
     "net/http"
 )
 
 type AuthMiddleware struct {
-    playerRepo repository.PlayersRepository
+    playerRepo sqliteRepo.PlayersRepository
 }
 
-func NewAuthMiddleware(playerRepo repository.PlayersRepository) *AuthMiddleware {
+func NewAuthMiddleware(playerRepo sqliteRepo.PlayersRepository) *AuthMiddleware {
     return &AuthMiddleware{
         playerRepo: playerRepo,
     }

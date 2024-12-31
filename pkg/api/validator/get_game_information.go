@@ -12,8 +12,8 @@ type GetGameInformationValidatorData struct {
     GameID   string
 }
 
-func GetGameInformationValidator(gameService service.GameService, data GetGameInformationValidatorData) *errors.ValidationError {
-    ok, err := gameService.GameRepo.HasGameFinished(data.GameID)
+func GetGameInformationValidator(playersService service.PlayersService, data GetGameInformationValidatorData) *errors.ValidationError {
+    ok, err := playersService.PlayersRepo.HasGameFinished(data.GameID)
 
     if err != nil {
         return &errors.ValidationError{
@@ -29,7 +29,7 @@ func GetGameInformationValidator(gameService service.GameService, data GetGameIn
         }
     }
 
-    ok, err = gameService.GameRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
+    ok, err = playersService.PlayersRepo.DoesPlayerBelongToGame(data.Username, data.GameID)
 
     if err != nil {
         return &errors.ValidationError{

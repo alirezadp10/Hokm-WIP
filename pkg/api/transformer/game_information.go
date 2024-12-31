@@ -11,11 +11,11 @@ type GameInformationTransformerData struct {
     UIndex          int
 }
 
-func GameInformationTransformer(playersService service.PlayersService, pointsService service.PointsService, cardsService service.CardsService, data GameInformationTransformerData) map[string]interface{} {
+func GameInformationTransformer(playersService service.PlayersService, cardsService service.CardsService, data GameInformationTransformerData) map[string]interface{} {
     result := map[string]interface{}{
         "beginnerDirection":    playersService.GetDirection(my_slice.GetIndex(data.Players[0], data.Players), data.UIndex),
         "players":              playersService.GetPlayersWithDirections(data.Players, data.UIndex),
-        "points":               pointsService.GetPoints(data.GameInformation["points"].(string), data.UIndex),
+        "points":               cardsService.GetPoints(data.GameInformation["points"].(string), data.UIndex),
         "centerCards":          playersService.GetPlayersCenterCards(data.GameInformation["center_cards"].(string), data.UIndex),
         "turn":                 playersService.GetTurn(data.GameInformation["turn"].(string), data.UIndex),
         "king":                 playersService.GetKing(data.GameInformation["king"].(string), data.UIndex),

@@ -30,12 +30,10 @@ func main() {
     cardsRepository := redisRepo.NewCardsRepository(redisClient)
     cardsService := service.NewCardsService(sqliteClient, redisClient, cardsRepository)
 
-    pointsService := service.NewPointsService(sqliteClient, redisClient, *cardsService)
-
     playersRepository := sqliteRepo.NewPlayersRepository(sqliteClient)
     playersService := service.NewPlayersService(sqliteClient, redisClient, playersRepository)
 
-    hokmHandler := handlers.NewHokmHandler(sqliteClient, redisClient, gameService, cardsService, pointsService, playersService)
+    hokmHandler := handlers.NewHokmHandler(sqliteClient, redisClient, gameService, cardsService, playersService)
 
     authMiddleware := middleware.NewAuthMiddleware(*playersRepository)
 

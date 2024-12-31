@@ -42,4 +42,5 @@ type PlayersRepositoryContract interface {
     AddPlayerToGame(username, gameID string) (*model.Game, error)
     DoesPlayerBelongToGame(username, gameID string) (bool, error)
     DoesPlayerHaveAnyActiveGame(username string) (*string, bool)
+    HasGameFinished(gameID string) (bool, error)
 }

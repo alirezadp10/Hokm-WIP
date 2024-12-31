@@ -20,10 +20,10 @@ type PlaceCardTransformerData struct {
     GameWinner        string
 }
 
-func PlaceCardTransformer(playersService service.PlayersService, pointsService service.PointsService, cardsService service.CardsService, data PlaceCardTransformerData) map[string]interface{} {
+func PlaceCardTransformer(playersService service.PlayersService, cardsService service.CardsService, data PlaceCardTransformerData) map[string]interface{} {
     result := map[string]interface{}{
         "players":           playersService.GetPlayersWithDirections(data.Players, data.UIndex),
-        "points":            pointsService.GetPoints(data.Points, data.UIndex),
+        "points":            cardsService.GetPoints(data.Points, data.UIndex),
         "centerCards":       playersService.GetPlayersCenterCards(data.CenterCards, data.UIndex),
         "turn":              playersService.GetTurn(data.Turn, data.UIndex),
         "king":              playersService.GetKing(data.King, data.UIndex),

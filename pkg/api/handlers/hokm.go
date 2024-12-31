@@ -31,16 +31,14 @@ type HokmHandler struct {
     gameService    service.GameService
     cardsService   service.CardsService
     playersService service.PlayersService
-    pointsService  service.PointsService
 }
 
-func NewHokmHandler(sqliteClient *gorm.DB, redisClient *rueidis.Client, gameService *service.GameService, cardsService *service.CardsService, pointsService *service.PointsService, playersService *service.PlayersService) *HokmHandler {
+func NewHokmHandler(sqliteClient *gorm.DB, redisClient *rueidis.Client, gameService *service.GameService, cardsService *service.CardsService, playersService *service.PlayersService) *HokmHandler {
     return &HokmHandler{
         sqlite:         *sqliteClient,
         redis:          *redisClient,
         gameService:    *gameService,
         cardsService:   *cardsService,
-        pointsService:  *pointsService,
         playersService: *playersService,
     }
 }
@@ -113,6 +111,10 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
 
     gameInformation, err := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
+    return c.JSON(200, map[string]interface{}{
+        "hi": "there",
+    })
+
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
     }
@@ -121,7 +123,7 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
 
     uIndex := my_slice.GetIndex(username, players)
 
-    return c.JSON(http.StatusOK, transformer.GameInformationTransformer(h.playersService, h.pointsService, h.cardsService, transformer.GameInformationTransformerData{
+    return c.JSON(http.StatusOK, transformer.GameInformationTransformer(h.playersService, h.cardsService, transformer.GameInformationTransformerData{
         GameInformation: gameInformation,
         Players:         players,
         UIndex:          uIndex,
@@ -272,7 +274,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 
     centerCards := h.cardsService.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
 
-    cardsWinner := h.pointsService.FindCardsWinner(centerCards, gameState["trump"].(string), leadSuit)
+    cardsWinner := h.cardsService.FindCardsWinner(centerCards, gameState["trump"].(string), leadSuit)
 
     if cardsWinner != "" {
         h.updateWinnersAndPoints(&gameState, cardsWinner)
@@ -308,7 +310,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
         })
     }
 
-    return c.JSON(http.StatusOK, transformer.PlaceCardTransformer(h.playersService, h.pointsService, h.cardsService, transformer.PlaceCardTransformerData{
+    return c.JSON(http.StatusOK, transformer.PlaceCardTransformer(h.playersService, h.cardsService, transformer.PlaceCardTransformerData{
         GameInformation:   gameInformation,
         Players:           players,
         UIndex:            uIndex,
@@ -345,7 +347,7 @@ func (h *HokmHandler) determineLeadSuit(card string, currentLeadSuit string) str
 }
 
 func (h *HokmHandler) updateWinnersAndPoints(gameState *map[string]interface{}, cardsWinner string) {
-    points, roundWinner, gameWinner := h.pointsService.UpdatePoints((*gameState)["points"].(string), cardsWinner)
+    points, roundWinner, gameWinner := h.cardsService.UpdatePoints((*gameState)["points"].(string), cardsWinner)
     (*gameState)["points"] = points
     (*gameState)["roundWinner"] = roundWinner
     (*gameState)["gameWinner"] = gameWinner
@@ -418,7 +420,7 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
         })
     }
 
-    return c.JSON(http.StatusOK, transformer.GetUpdateTransformer(h.pointsService, h.playersService, transformer.GetUpdateTransformerData{
+    return c.JSON(http.StatusOK, transformer.GetUpdateTransformer(h.cardsService, h.playersService, transformer.GetUpdateTransformerData{
         GameInformation: gameInformation,
         UIndex:          uIndex,
         PlayerIndex:     player,
