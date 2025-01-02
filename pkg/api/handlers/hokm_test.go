@@ -3,12 +3,10 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/alirezadp10/hokm/pkg/database"
 	"github.com/alirezadp10/hokm/pkg/mocks"
 	"github.com/alirezadp10/hokm/pkg/service"
 	"github.com/golang/mock/gomock"
@@ -33,43 +31,34 @@ func TestPlaceCard(t *testing.T) {
 	c.Set("username", "b")
 
 	mockGameRepo := mocks.NewMockGameRepositoryContract(ctrl)
-	mockGameRepo.EXPECT().GetGameInformation(gomock.Any(), "12345").Return(sampleGameData(), nil)
+	mockGameRepo.EXPECT().GetGameInformation(gomock.Any(), "12345").Return(getSampleGameData(), nil)
+
+	mockCardRepo := mocks.NewMockCardsRepositoryContract(ctrl)
+	mockCardRepo.EXPECT().PlaceCard(gomock.Any(), gomock.Any()).Return(nil)
 
 	mockPlayerRepo := mocks.NewMockPlayersRepositoryContract(ctrl)
 	mockPlayerRepo.EXPECT().DoesPlayerBelongToGame("b", "12345").Return(true, nil)
 
-	//var s *gorm.DB
-	//var r *rueidis.Client
+	gameService := service.NewGameService(nil, nil, mockGameRepo)
 
-	s := database.GetNewSqliteConnection()
-	r := database.GetNewRedisConnection()
+	cardsService := service.NewCardsService(nil, nil, mockCardRepo)
 
-	gameService := service.NewGameService(s, r, mockGameRepo)
+	playersService := service.NewPlayersService(nil, nil, mockPlayerRepo)
 
-	cardsService := service.NewCardsService(s, r, mocks.NewMockCardsRepositoryContract(ctrl))
-
-	playersService := service.NewPlayersService(s, r, mockPlayerRepo)
-
-	h := NewHokmHandler(s, r, gameService, cardsService, playersService)
+	h := NewHokmHandler(nil, nil, gameService, cardsService, playersService)
 
 	if assert.NoError(t, h.PlaceCard(c)) {
-		fmt.Println(rec.Body)
+		resp := make(map[string]interface{})
+		json.Unmarshal(rec.Body.Bytes(), &resp)
 		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, resp["turn"], "down")
 	}
 }
 
-func sampleGameData() map[string]interface{} {
-	cards, _ := json.Marshal(map[string][]string{
-		"0": {"JH", "01C", "02H", "02C", "02S", "07H", "02D", "06H", "06D", "09H", "QS"},
-		"1": {"05D", "QC", "05H", "KC", "JS", "01D", "08D", "01S", "QH", "03H", "04D"},
-		"2": {"KD", "KS", "JD", "10C", "03D", "10D", "03S", "09S", "10H", "05S", "10S", "JC"},
-		"3": {"08S", "09D", "06S", "08H", "01H", "07S", "08C", "04H", "KH", "07D", "04S", "QD"},
-	})
+func getSampleGameData() map[string]interface{} {
+	cards := getSampleCards()
 
-	points, _ := json.Marshal(map[string]string{
-		"round": "2,1",
-		"total": "0,0",
-	})
+	points := getSamplePoints()
 
 	return map[string]interface{}{
 		"who_has_won_the_cards":   "1",
@@ -93,6 +82,24 @@ func sampleGameData() map[string]interface{} {
 	}
 }
 
+func getSamplePoints() []byte {
+	points, _ := json.Marshal(map[string]string{
+		"round": "2,1",
+		"total": "0,0",
+	})
+	return points
+}
+
+func getSampleCards() []byte {
+	cards, _ := json.Marshal(map[string][]string{
+		"0": {"JH", "01C", "02H", "02C", "02S", "07H", "02D", "06H", "06D", "09H", "QS"},
+		"1": {"05D", "QC", "05H", "KC", "JS", "01D", "08D", "01S", "QH", "03H", "04D"},
+		"2": {"KD", "KS", "JD", "10C", "03D", "10D", "03S", "09S", "10H", "05S", "10S", "JC"},
+		"3": {"08S", "09D", "06S", "08H", "01H", "07S", "08C", "04H", "KH", "07D", "04S", "QD"},
+	})
+	return cards
+}
+
 func ApiCall(e *echo.Echo, method, url string, routeParams, headers, body map[string]string) (echo.Context, *httptest.ResponseRecorder) {
 	marshaledBody, _ := json.Marshal(body)
 	req := httptest.NewRequest(method, url, bytes.NewReader(marshaledBody))
@@ -107,4 +114,10 @@ func ApiCall(e *echo.Echo, method, url string, routeParams, headers, body map[st
 		c.SetParamValues(paramValue)
 	}
 	return c, rec
+}
+
+func convertByteToStringArray(data []byte) []string {
+	var result []string
+	_ = json.Unmarshal(data, &result)
+	return result
 }

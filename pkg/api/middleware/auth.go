@@ -10,10 +10,10 @@ import (
 )
 
 type AuthMiddleware struct {
-	playerRepo sqliteRepo.PlayersRepository
+	playerRepo *sqliteRepo.PlayersRepository
 }
 
-func NewAuthMiddleware(playerRepo sqliteRepo.PlayersRepository) *AuthMiddleware {
+func NewAuthMiddleware(playerRepo *sqliteRepo.PlayersRepository) *AuthMiddleware {
 	return &AuthMiddleware{
 		playerRepo: playerRepo,
 	}
