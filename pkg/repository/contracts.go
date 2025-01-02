@@ -5,7 +5,6 @@ import (
 
 	"github.com/alirezadp10/hokm/pkg/api/request"
 	"github.com/alirezadp10/hokm/pkg/model"
-	"github.com/redis/rueidis"
 )
 
 type PlaceCardParams struct {
@@ -34,7 +33,6 @@ type GameRepositoryContract interface {
 	GetGameInformation(ctx context.Context, gameID string) (map[string]interface{}, error)
 	Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string)
 	RemovePlayerFromWaitingList(ctx context.Context, key, username string)
-	GetGameInf(ctx context.Context, channel string, message func(rueidis.PubSubMessage)) error
 }
 
 type PlayersRepositoryContract interface {

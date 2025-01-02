@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"strconv"
 	"time"
 
@@ -35,5 +36,12 @@ func (s *GameService) RemovePlayerFromWaitingList(username string) {
 }
 
 func (s *GameService) Subscribe(ctx context.Context, channel string, message func(rueidis.PubSubMessage)) error {
-	return s.GameRepo.GetGameInf(ctx, channel, message)
+	err := (*s.redis).Receive(ctx, (*s.redis).B().Subscribe().Channel("game_creation").Build(), message)
+
+	if err != nil {
+		log.Printf("Error in subscribing to %v channel: %v", channel, err)
+		return err
+	}
+
+	return nil
 }
