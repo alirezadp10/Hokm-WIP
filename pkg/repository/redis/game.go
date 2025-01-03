@@ -25,8 +25,8 @@ func NewGameRepository(redisClient *rueidis.Client) *GameRepository {
 	}
 }
 
-func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) (map[string]string, error) {
+	result := make(map[string]string)
 
 	gameFields := []string{
 		"who_has_won_the_cards",
@@ -61,20 +61,22 @@ func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) 
 			log.Fatalf("could not resolve game information: %v", err)
 			return nil, err
 		}
-		result[gameFields[key]] = value["Value"]
+		result[gameFields[key]] = value["Value"].(string)
 	}
 
 	return result, nil
 }
 
-func (r *GameRepository) Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string) {
+func (r *GameRepository) Matchmaking(ctx context.Context, cards map[int][]string, username, gameID, lastMoveTimestamps, king, kingCards string) {
+	playersCards := playersCards(cards)
+
 	command := r.redis.B().Eval().Script(matchmakingScript).Numkeys(2).Key("matchmaking", "game_creation").Arg(
 		username,
 		gameID,
-		cards[0],
-		cards[1],
-		cards[2],
-		cards[3],
+		playersCards[0],
+		playersCards[1],
+		playersCards[2],
+		playersCards[3],
 		lastMoveTimestamps,
 		king,
 		kingCards,

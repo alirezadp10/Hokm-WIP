@@ -7,7 +7,7 @@ import (
 )
 
 type GetUpdateTransformerData struct {
-	GameInformation map[string]interface{}
+	GameInformation map[string]string
 	UIndex          int
 	PlayerIndex     int
 	Card            string
@@ -19,31 +19,31 @@ func GetUpdateTransformer(cardsService *service.CardsService, playersService *se
 			"from": playersService.GetDirection(data.PlayerIndex, data.UIndex),
 			"card": data.Card,
 		},
-		"points":            cardsService.GetPoints(data.GameInformation["points"].(string), data.UIndex),
-		"centerCards":       playersService.GetPlayersCenterCards(data.GameInformation["center_cards"].(string), data.UIndex),
-		"turn":              playersService.GetTurn(data.GameInformation["turn"].(string), data.UIndex),
-		"king":              playersService.GetKing(data.GameInformation["king"].(string), data.UIndex),
-		"timeRemained":      playersService.GetTimeRemained(data.GameInformation["last_move_timestamp"].(string)),
-		"wasKingChanged":    data.GameInformation["was_the_king_changed"].(string),
+		"points":            cardsService.GetPoints(data.GameInformation["points"], data.UIndex),
+		"centerCards":       playersService.GetPlayersCenterCards(data.GameInformation["center_cards"], data.UIndex),
+		"turn":              playersService.GetTurn(data.GameInformation["turn"], data.UIndex),
+		"king":              playersService.GetKing(data.GameInformation["king"], data.UIndex),
+		"timeRemained":      playersService.GetTimeRemained(data.GameInformation["last_move_timestamp"]),
+		"wasKingChanged":    data.GameInformation["was_the_king_changed"],
 		"trump":             data.GameInformation["trump"],
 		"whoHasWonTheCards": "",
 		"whoHasWonTheRound": "",
 		"whoHasWonTheGame":  "",
 	}
 
-	cardsWinner, _ := data.GameInformation["who_has_won_the_cards"].(string)
+	cardsWinner := data.GameInformation["who_has_won_the_cards"]
 	if cardsWinner != "" {
 		cardsWinner, _ := strconv.Atoi(cardsWinner)
 		result["whoHasWonTheCards"] = playersService.GetDirection(cardsWinner, data.UIndex)
 	}
 
-	roundWinner, _ := data.GameInformation["who_has_won_the_round"].(string)
+	roundWinner := data.GameInformation["who_has_won_the_round"]
 	if roundWinner != "" {
 		roundWinner, _ := strconv.Atoi(roundWinner)
 		result["whoHasWonTheRound"] = playersService.GetDirection(roundWinner, data.UIndex)
 	}
 
-	gameWinner, _ := data.GameInformation["who_has_won_the_game"].(string)
+	gameWinner := data.GameInformation["who_has_won_the_game"]
 	if gameWinner != "" {
 		gameWinner, _ := strconv.Atoi(gameWinner)
 		result["whoHasWonTheGame"] = playersService.GetDirection(gameWinner, data.UIndex)

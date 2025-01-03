@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -32,7 +31,7 @@ func TestNextTurnAfterPlacingCardWithoutCardsWinner(t *testing.T) {
 
 	mockGameRepo := mocks.NewMockGameRepositoryContract(ctrl)
 	mockGameRepo.EXPECT().GetGameInformation(gomock.Any(), gomock.Any()).Return(
-		tests.NewGameDataBuilder().BeginingState().SetTrump("C").Build(), nil,
+		tests.NewGameDataBuilder().BeginningState().SetTrump("C").Build(), nil,
 	)
 
 	mockCardRepo := mocks.NewMockCardsRepositoryContract(ctrl)
@@ -75,7 +74,7 @@ func TestNextTurnAfterPlacingCardWithCardsWinner(t *testing.T) {
 
 	mockGameRepo := mocks.NewMockGameRepositoryContract(ctrl)
 	mockGameRepo.EXPECT().GetGameInformation(gomock.Any(), gomock.Any()).Return(
-		tests.NewGameDataBuilder().BeginingState().
+		tests.NewGameDataBuilder().BeginningState().
 			SetTrump("C").
 			SetCenterCards("JS,04S,06S,").
 			SetTurn("3").
@@ -98,7 +97,6 @@ func TestNextTurnAfterPlacingCardWithCardsWinner(t *testing.T) {
 	h := NewHokmHandler(nil, nil, gameService, cardsService, playersService)
 
 	if assert.NoError(t, h.PlaceCard(c)) {
-		fmt.Print(rec.Body.String())
 		resp := make(map[string]interface{})
 		json.Unmarshal(rec.Body.Bytes(), &resp)
 		assert.Equal(t, http.StatusOK, rec.Code)
@@ -124,7 +122,7 @@ func TestPlacingCardAfterGatheringCards(t *testing.T) {
 
 	mockGameRepo := mocks.NewMockGameRepositoryContract(ctrl)
 	mockGameRepo.EXPECT().GetGameInformation(gomock.Any(), gomock.Any()).Return(
-		tests.NewGameDataBuilder().BeginingState().
+		tests.NewGameDataBuilder().BeginningState().
 			SetTrump("C").
 			SetLeadSuit("S").
 			SetWasKingChanged("").

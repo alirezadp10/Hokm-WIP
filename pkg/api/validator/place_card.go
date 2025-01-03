@@ -12,7 +12,7 @@ import (
 )
 
 type PlaceCardValidatorData struct {
-	GameInformation map[string]interface{}
+	GameInformation map[string]string
 	Card            string
 	Username        string
 	GameID          string
@@ -25,7 +25,7 @@ func PlaceCardValidator(playersService *service.PlayersService, cardsService *se
 
 	doesPlayerHaveLeadSuitCard := false
 
-	for _, cards := range cardsService.GetPlayerCards(data.GameInformation["cards"].(string), data.UIndex) {
+	for _, cards := range cardsService.GetPlayerCards(data.GameInformation["cards"], data.UIndex) {
 		for _, card := range cards {
 			if card == data.Card {
 				isSelectedCardForUser = true
@@ -60,7 +60,7 @@ func PlaceCardValidator(playersService *service.PlayersService, cardsService *se
 		}
 	}
 
-	if data.GameInformation["turn"].(string) != strconv.Itoa(data.UIndex) {
+	if data.GameInformation["turn"] != strconv.Itoa(data.UIndex) {
 		return &errors.ValidationError{
 			StatusCode: http.StatusForbidden,
 			Message:    trans.Get("It's not your turn."),
@@ -81,7 +81,7 @@ func PlaceCardValidator(playersService *service.PlayersService, cardsService *se
 		}
 	}
 
-	if data.GameInformation["trump"].(string) == "" {
+	if data.GameInformation["trump"] == "" {
 		return &errors.ValidationError{
 			StatusCode: http.StatusForbidden,
 			Message:    trans.Get("It's not your turn."),

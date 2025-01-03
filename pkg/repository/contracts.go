@@ -30,8 +30,8 @@ type CardsRepositoryContract interface {
 }
 
 type GameRepositoryContract interface {
-	GetGameInformation(ctx context.Context, gameID string) (map[string]interface{}, error)
-	Matchmaking(ctx context.Context, cards []string, username, gameID, lastMoveTimestamps, king, kingCards string)
+	GetGameInformation(ctx context.Context, gameID string) (map[string]string, error)
+	Matchmaking(ctx context.Context, cards map[int][]string, username, gameID, lastMoveTimestamps, king, kingCards string)
 	RemovePlayerFromWaitingList(ctx context.Context, key, username string)
 }
 

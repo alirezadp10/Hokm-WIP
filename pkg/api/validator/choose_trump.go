@@ -11,7 +11,7 @@ import (
 )
 
 type ChooseTrumpValidatorData struct {
-	GameInformation map[string]interface{}
+	GameInformation map[string]string
 	UIndex          int
 	Username        string
 	GameID          string
@@ -42,14 +42,14 @@ func ChooseTrumpValidator(s *service.PlayersService, data ChooseTrumpValidatorDa
 		}
 	}
 
-	if data.GameInformation["king"].(string) != strconv.Itoa(data.UIndex) {
+	if data.GameInformation["king"] != strconv.Itoa(data.UIndex) {
 		return &errors.ValidationError{
 			StatusCode: http.StatusForbidden,
 			Message:    trans.Get("You're not king in this round."),
 		}
 	}
 
-	if data.GameInformation["has_king_cards_finished"].(string) == "true" {
+	if data.GameInformation["has_king_cards_finished"] == "true" {
 		return &errors.ValidationError{
 			StatusCode: http.StatusForbidden,
 			Message:    trans.Get("You're not allowed to choose a trump at the moment."),

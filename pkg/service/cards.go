@@ -56,23 +56,17 @@ func (s *CardsService) GetCardSuit(card string) string {
 	return string(card[len(card)-1])
 }
 
-func (s *CardsService) DistributeCards() []string {
+func (s *CardsService) DistributeCards() map[int][]string {
 	localCards := make([]string, len(Cards))
 	copy(localCards, Cards)
 	rand.Shuffle(len(localCards), func(i, j int) { localCards[i], localCards[j] = localCards[j], localCards[i] })
 
-	hands := make([][]string, 4) // Initialize hands for 4 players
+	hands := map[int][]string{}
 	for i, card := range localCards {
 		player := i % 4 // Determine player index
 		hands[player] = append(hands[player], card)
 	}
-
-	result := make([]string, 4)
-	for i := 0; i < 4; i++ {
-		result[i] = `["` + strings.Join(hands[i], `","`) + `"]` // Format hands as JSON strings
-	}
-
-	return result
+	return hands
 }
 
 func (s *CardsService) GetPlayerCards(cards string, uIndex int) [][]string {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/alirezadp10/hokm/internal/util/crypto"
+	"github.com/alirezadp10/hokm/internal/util/my_bool"
 	"github.com/alirezadp10/hokm/internal/util/my_slice"
 	"github.com/alirezadp10/hokm/internal/util/trans"
 	"github.com/alirezadp10/hokm/pkg/api/request"
@@ -115,7 +116,7 @@ func (h *HokmHandler) GetGameInformation(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
 	}
 
-	players := strings.Split(gameInformation["players"].(string), ",")
+	players := strings.Split(gameInformation["players"], ",")
 
 	uIndex := my_slice.GetIndex(username, players)
 
@@ -144,7 +145,7 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
 	}
 
-	players := strings.Split(gameInformation["players"].(string), ",")
+	players := strings.Split(gameInformation["players"], ",")
 
 	uIndex := my_slice.GetIndex(username, players)
 
@@ -170,9 +171,9 @@ func (h *HokmHandler) ChooseTrump(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"trump":        requestBody.Trump,
-		"cards":        h.cardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex)[1:],
-		"timeRemained": h.playersService.GetTimeRemained(gameInformation["last_move_timestamp"].(string)),
-		"turn":         h.playersService.GetTurn(gameInformation["turn"].(string), uIndex),
+		"cards":        h.cardsService.GetPlayerCards(gameInformation["cards"], uIndex)[1:],
+		"timeRemained": h.playersService.GetTimeRemained(gameInformation["last_move_timestamp"]),
+		"turn":         h.playersService.GetTurn(gameInformation["turn"], uIndex),
 	})
 }
 
@@ -193,9 +194,9 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
 	}
 
-	trump := gameInformation["trump"].(string)
+	trump := gameInformation["trump"]
 
-	if gameInformation["trump"].(string) == "" {
+	if gameInformation["trump"] == "" {
 		err := (*h.redis).Receive(c.Request().Context(), (*h.redis).B().Subscribe().Channel("choosing_trump").Build(), func(msg rueidis.PubSubMessage) {
 			messages := strings.Split(msg.Message, ",")
 			messageId := my_slice.HasLike(messages, func(s string) bool {
@@ -224,13 +225,13 @@ func (h *HokmHandler) GetCards(c echo.Context) error {
 		}
 	}
 
-	players := strings.Split(gameInformation["players"].(string), ",")
+	players := strings.Split(gameInformation["players"], ",")
 
 	uIndex := my_slice.GetIndex(username, players)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"cards": h.cardsService.GetPlayerCards(gameInformation["cards"].(string), uIndex),
-		"turn":  h.playersService.GetTurn(gameInformation["turn"].(string), uIndex),
+		"cards": h.cardsService.GetPlayerCards(gameInformation["cards"], uIndex),
+		"turn":  h.playersService.GetTurn(gameInformation["turn"], uIndex),
 		"trump": trump,
 	})
 }
@@ -249,11 +250,11 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 
 	gameInformation, _ := h.gameService.GameRepo.GetGameInformation(c.Request().Context(), gameID)
 
-	players := strings.Split(gameInformation["players"].(string), ",")
+	players := strings.Split(gameInformation["players"], ",")
 
 	uIndex := my_slice.GetIndex(username, players)
 
-	leadSuit := h.getLeadSuit(requestBody.Card, gameInformation["lead_suit"].(string), gameInformation["who_has_won_the_cards"].(string))
+	leadSuit := h.getLeadSuit(requestBody.Card, gameInformation["lead_suit"], gameInformation["who_has_won_the_cards"])
 
 	if err := validator.PlaceCardValidator(h.playersService, h.cardsService, validator.PlaceCardValidatorData{
 		GameInformation: gameInformation,
@@ -266,40 +267,39 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 		return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
 	}
 
-	if gameInformation["who_has_won_the_cards"].(string) != "" {
+	if gameInformation["who_has_won_the_cards"] != "" {
 		gameInformation["who_has_won_the_cards"] = ""
 		gameInformation["center_cards"] = ",,,"
 	}
 
-	centerCards := h.cardsService.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
+	centerCards := h.cardsService.UpdateCenterCards(gameInformation["center_cards"], requestBody.Card, uIndex)
 
-	cardsWinner := h.cardsService.FindCardsWinner(centerCards, gameInformation["trump"].(string), leadSuit)
+	cardsWinner := h.cardsService.FindCardsWinner(centerCards, gameInformation["trump"], leadSuit)
 
 	if cardsWinner != "" {
 		pervKing := gameInformation["king"]
-		points, roundWinner, gameWinner := h.cardsService.UpdatePoints(gameInformation["points"].(string), cardsWinner)
+		points, roundWinner, gameWinner := h.cardsService.UpdatePoints(gameInformation["points"], cardsWinner)
 		gameInformation["points"] = points
 		gameInformation["who_has_won_the_round"] = roundWinner
 		gameInformation["who_has_won_the_game"] = gameWinner
 
-		gameInformation["king"] = h.playersService.GiveKing(roundWinner, gameInformation["king"].(string))
-		gameInformation["was_the_king_changed"] = pervKing != gameInformation["king"].(string)
-
-		if gameInformation["who_has_won_the_round"].(string) != "" {
-			gameInformation["cards"] = h.cardsService.DistributeCards()
-			gameInformation["trump"] = ""
-		}
+		gameInformation["king"] = h.playersService.GiveKing(roundWinner, gameInformation["king"])
+		gameInformation["was_the_king_changed"] = my_bool.ToString(pervKing != gameInformation["king"])
 	}
 
 	gameInformation["last_move_timestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
-	gameInformation["cards"] = h.cardsService.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
+	newCards := h.cardsService.UpdateUserCards(gameInformation["cards"], requestBody.Card, uIndex)
 
-	fmt.Println("fooooooooooooo:", gameInformation["was_the_king_changed"])
+	if gameInformation["who_has_won_the_round"] != "" {
+		newCards = h.cardsService.DistributeCards()
+		gameInformation["trump"] = ""
+	}
+
 	gameInformation["turn"] = h.playersService.GetNewTurn(
-		gameInformation["turn"].(string),
+		gameInformation["turn"],
 		cardsWinner,
-		gameInformation["king"].(string),
-		gameInformation["was_the_king_changed"].(string),
+		gameInformation["king"],
+		gameInformation["was_the_king_changed"],
 	)
 
 	params := repository.PlaceCardParams{
@@ -308,13 +308,13 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 		CenterCards:       centerCards,
 		LeadSuit:          leadSuit,
 		CardsWinner:       cardsWinner,
-		Points:            gameInformation["points"].(string),
-		Turn:              gameInformation["turn"].(string),
-		King:              gameInformation["king"].(string),
-		WasKingChanged:    gameInformation["was_the_king_changed"].(string),
-		LastMoveTimestamp: gameInformation["last_move_timestamp"].(string),
-		Trump:             gameInformation["trump"].(string),
-		Cards:             gameInformation["cards"].(map[int][]string),
+		Points:            gameInformation["points"],
+		Turn:              gameInformation["turn"],
+		King:              gameInformation["king"],
+		WasKingChanged:    gameInformation["was_the_king_changed"],
+		LastMoveTimestamp: gameInformation["last_move_timestamp"],
+		Trump:             gameInformation["trump"],
+		Cards:             newCards,
 		PlayerIndex:       uIndex,
 	}
 
@@ -330,14 +330,14 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 		CenterCards:       centerCards,
 		LeadSuit:          leadSuit,
 		CardsWinner:       cardsWinner,
-		Points:            gameInformation["points"].(string),
-		Turn:              gameInformation["turn"].(string),
-		King:              gameInformation["king"].(string),
-		LastMoveTimestamp: gameInformation["last_move_timestamp"].(string),
-		WasKingChanged:    gameInformation["was_the_king_changed"].(string),
-		Cards:             gameInformation["cards"].(map[int][]string),
-		RoundWinner:       gameInformation["who_has_won_the_round"].(string),
-		GameWinner:        gameInformation["who_has_won_the_game"].(string),
+		Cards:             newCards,
+		Points:            gameInformation["points"],
+		Turn:              gameInformation["turn"],
+		King:              gameInformation["king"],
+		LastMoveTimestamp: gameInformation["last_move_timestamp"],
+		WasKingChanged:    gameInformation["was_the_king_changed"],
+		RoundWinner:       gameInformation["who_has_won_the_round"],
+		GameWinner:        gameInformation["who_has_won_the_game"],
 	}))
 }
 
@@ -365,7 +365,7 @@ func (h *HokmHandler) GetUpdate(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"message": trans.Get("Something went wrong, Please try again later.")})
 	}
 
-	players := strings.Split(gameInformation["players"].(string), ",")
+	players := strings.Split(gameInformation["players"], ",")
 
 	uIndex := my_slice.GetIndex(username, players)
 

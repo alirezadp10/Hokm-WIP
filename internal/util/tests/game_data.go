@@ -5,11 +5,11 @@ import (
 )
 
 type GameDataBuilder struct {
-	data map[string]interface{}
+	data map[string]string
 }
 
 func NewGameDataBuilder() *GameDataBuilder {
-	return &GameDataBuilder{data: map[string]interface{}{
+	return &GameDataBuilder{data: map[string]string{
 		"players":                 "0,1,2,3",
 		"cards":                   string(getSampleCards()),
 		"points":                  string(getSamplePoints()),
@@ -20,7 +20,7 @@ func NewGameDataBuilder() *GameDataBuilder {
 		"is_it_new_round":         "false",
 		"turn":                    "1",
 		"king_cards":              "01C",
-		"was_the_king_changed":        "false",
+		"was_the_king_changed":    "false",
 		"has_king_cards_finished": "true",
 		"who_has_won_the_cards":   "",
 		"who_has_won_the_round":   "",
@@ -29,11 +29,11 @@ func NewGameDataBuilder() *GameDataBuilder {
 	}}
 }
 
-func (b *GameDataBuilder) BeginingState() *GameDataBuilder {
-	b.data = map[string]interface{}{
+func (b *GameDataBuilder) BeginningState() *GameDataBuilder {
+	b.data = map[string]string{
 		"last_move_timestamp":     "1234567890",
 		"who_has_won_the_cards":   "",
-		"was_the_king_changed":        "",
+		"was_the_king_changed":    "",
 		"center_cards":            ",,,",
 		"trump":                   "",
 		"has_king_cards_finished": "false",
@@ -131,7 +131,7 @@ func (b *GameDataBuilder) SetLastMoveTimestamp(lastMoveTimestamp string) *GameDa
 	return b
 }
 
-func (b *GameDataBuilder) Build() map[string]interface{} {
+func (b *GameDataBuilder) Build() map[string]string {
 	return b.data
 }
 

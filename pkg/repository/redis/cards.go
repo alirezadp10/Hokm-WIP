@@ -46,7 +46,7 @@ func (r *CardsRepository) SetTrump(ctx context.Context, gameID, trump, uIndex, l
 }
 
 func (r *CardsRepository) PlaceCard(ctx context.Context, params repository.PlaceCardParams) error {
-	playersCards := playersCards(params.Cards)
+	pCards := playersCards(params.Cards)
 	args := []string{
 		params.CenterCards,
 		params.LeadSuit,
@@ -55,16 +55,14 @@ func (r *CardsRepository) PlaceCard(ctx context.Context, params repository.Place
 		params.Turn,
 		params.King,
 		params.WasKingChanged,
-		//TODO must be fixed
-		playersCards[0],
-		playersCards[1],
-		playersCards[2],
-		playersCards[3],
+		pCards[0],
+		pCards[1],
+		pCards[2],
+		pCards[3],
 		strconv.Itoa(params.PlayerIndex),
 		params.Card,
 		params.LastMoveTimestamp,
 		params.Trump,
-		params.IsItNewRound,
 	}
 
 	// Create and execute the Lua script
