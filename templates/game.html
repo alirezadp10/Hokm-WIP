@@ -404,7 +404,7 @@
                     } else {
                         cards = ["back", "back", "back", "back", "back"];
                     }
-                    if (data.wasKingChanged) {
+                    if (data.WasTheKingChanged) {
                         ["up","down","right","left"].forEach(function (direction) {
                             document.getElementById(`${direction}-player`).innerHTML = document.getElementById(`${direction}-player`).innerHTML.replace('👑 ', '');
                         })

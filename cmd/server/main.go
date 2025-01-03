@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/alirezadp10/hokm/pkg/api"
@@ -21,9 +20,9 @@ func main() {
 	sqliteClient := database.GetNewSqliteConnection()
 	redisClient := database.GetNewRedisConnection()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go service.StartTelegram(ctx)
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
+	// go service.StartTelegram(ctx)
 
 	gameRepository := redisRepo.NewGameRepository(redisClient)
 	gameService := service.NewGameService(sqliteClient, redisClient, gameRepository)

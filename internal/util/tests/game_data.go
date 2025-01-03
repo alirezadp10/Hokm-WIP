@@ -101,8 +101,8 @@ func (b *GameDataBuilder) SetKingCards(kingCards string) *GameDataBuilder {
 	return b
 }
 
-func (b *GameDataBuilder) SetWasKingChanged(wasKingChanged string) *GameDataBuilder {
-	b.data["was_the_king_changed"] = wasKingChanged
+func (b *GameDataBuilder) SetWasTheKingChanged(WasTheKingChanged string) *GameDataBuilder {
+	b.data["was_the_king_changed"] = WasTheKingChanged
 	return b
 }
 

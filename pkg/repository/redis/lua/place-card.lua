@@ -11,7 +11,9 @@ redis.call('HSET', "game:" .. KEYS[1], 'cards', cjson.encode({
     [2] = cjson.decode(ARGV[10]),
     [3] = cjson.decode(ARGV[11])
 }))
-redis.call('PUBLISH', "placing_card", KEYS[1] .. "|" .. ARGV[12] .. "|" .. ARGV[13])
+redis.call('PUBLISH', "placings_card", KEYS[1] .. "|" .. ARGV[12] .. "|" .. ARGV[13])
+redis.call('PUBLISH', "placings_card", KEYS[1] .. "|" .. ARGV[12] .. "|" .. ARGV[13])
+redis.call('PUBLISH', "placings_card", KEYS[1] .. "|" .. ARGV[12] .. "|" .. ARGV[13])
 redis.call('HSET', "game:" .. KEYS[1], 'last_move_timestamp', ARGV[14])
 redis.call('HSET', "game:" .. KEYS[1], 'trump', ARGV[15])
 return ""

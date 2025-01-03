@@ -1,25 +1,25 @@
 package validator
 
 import (
-	"net/http"
+    "net/http"
 
-	"github.com/alirezadp10/hokm/internal/util/errors"
-	"github.com/alirezadp10/hokm/internal/util/trans"
-	"github.com/alirezadp10/hokm/pkg/service"
+    "github.com/alirezadp10/hokm/internal/util/errors"
+    "github.com/alirezadp10/hokm/internal/util/trans"
+    "github.com/alirezadp10/hokm/pkg/service"
 )
 
 type CreateGameValidatorData struct {
-	Username string
+    Username string
 }
 
 func CreateGameValidator(playersService *service.PlayersService, data CreateGameValidatorData) *errors.ValidationError {
-	if gid, ok := playersService.PlayersRepo.DoesPlayerHaveAnyActiveGame(data.Username); ok {
-		return &errors.ValidationError{
-			Message:    trans.Get("You have already an active game."),
-			StatusCode: http.StatusForbidden,
-			Details:    *gid,
-		}
-	}
+    if gid, ok := playersService.PlayersRepo.DoesPlayerHaveAnyActiveGame(data.Username); ok {
+        return &errors.ValidationError{
+            Message:    trans.Get("You have already an active game."),
+            StatusCode: http.StatusForbidden,
+            Details:    *gid,
+        }
+    }
 
-	return nil
+    return nil
 }
