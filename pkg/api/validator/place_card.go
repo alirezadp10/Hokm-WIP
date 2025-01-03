@@ -53,7 +53,7 @@ func PlaceCardValidator(playersService *service.PlayersService, cardsService *se
 		}
 	}
 
-	if ok == false {
+	if !ok {
 		return &errors.ValidationError{
 			StatusCode: http.StatusForbidden,
 			Message:    trans.Get("It's not your game."),

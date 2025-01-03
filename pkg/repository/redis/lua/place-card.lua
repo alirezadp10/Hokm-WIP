@@ -4,7 +4,7 @@ redis.call('HSET', "game:" .. KEYS[1], 'who_has_won_the_cards', ARGV[3])
 redis.call('HSET', "game:" .. KEYS[1], 'points', ARGV[4])
 redis.call('HSET', "game:" .. KEYS[1], 'turn', ARGV[5])
 redis.call('HSET', "game:" .. KEYS[1], 'king', ARGV[6])
-redis.call('HSET', "game:" .. KEYS[1], 'was_king_changed', ARGV[7])
+redis.call('HSET', "game:" .. KEYS[1], 'was_the_king_changed', ARGV[7])
 redis.call('HSET', "game:" .. KEYS[1], 'last_move_timestamp', ARGV[14])
 redis.call('HSET', "game:" .. KEYS[1], 'trump', ARGV[15])
 redis.call('HSET', "game:" .. KEYS[1], 'cards', cjson.encode({

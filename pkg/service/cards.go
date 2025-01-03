@@ -91,18 +91,14 @@ func (s *CardsService) UpdateCenterCards(cards string, newCard string, uIndex in
 	return strings.Join(centerCardsList, ",")
 }
 
-func (s *CardsService) UpdateUserCards(cards string, selectedCard string, uIndex int) []string {
-	userCards := make(map[int][]string)
-	err := json.Unmarshal([]byte(cards), &userCards)
+func (s *CardsService) UpdateUserCards(cards string, selectedCard string, uIndex int) map[int][]string {
+	playersCards := make(map[int][]string)
+	err := json.Unmarshal([]byte(cards), &playersCards)
 	if err != nil {
 		fmt.Println("Error unmarshalling:", err)
 	}
-	userCards[uIndex] = my_slice.Remove(selectedCard, userCards[uIndex])
-	result := make([]string, 4)
-	for i := 0; i < 4; i++ {
-		result[i] = `["` + strings.Join(userCards[i], `","`) + `"]` // Format hands as JSON strings
-	}
-	return result
+	playersCards[uIndex] = my_slice.Remove(selectedCard, playersCards[uIndex])
+	return playersCards
 }
 
 func (s *CardsService) GetKingCards(cards string) []string {

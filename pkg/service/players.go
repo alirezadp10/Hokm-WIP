@@ -30,11 +30,16 @@ func (s *PlayersService) NextPlayerIndex(index int) int {
 	return (index + 1) % 4
 }
 
-func (s *PlayersService) GetNewTurn(pervTurn, gameWinner string) string {
-	if gameWinner != "" {
-		return gameWinner
+func (s *PlayersService) GetNewTurn(pervTurn, cardsWinner, king, wasKingChanged string) string {
+	if wasKingChanged == "true" {
+		return king
 	}
-	return pervTurn
+	if cardsWinner != "" {
+		return cardsWinner
+	}
+	nextTurn, _ := strconv.Atoi(pervTurn)
+
+	return strconv.Itoa(s.NextPlayerIndex(nextTurn))
 }
 
 func (s *PlayersService) GetPlayersWithDirections(players []string, uIndex int) map[string]interface{} {

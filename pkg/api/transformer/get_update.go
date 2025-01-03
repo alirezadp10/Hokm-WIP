@@ -24,7 +24,7 @@ func GetUpdateTransformer(cardsService *service.CardsService, playersService *se
 		"turn":              playersService.GetTurn(data.GameInformation["turn"].(string), data.UIndex),
 		"king":              playersService.GetKing(data.GameInformation["king"].(string), data.UIndex),
 		"timeRemained":      playersService.GetTimeRemained(data.GameInformation["last_move_timestamp"].(string)),
-		"wasKingChanged":    data.GameInformation["was_king_changed"].(string),
+		"wasKingChanged":    data.GameInformation["was_the_king_changed"].(string),
 		"trump":             data.GameInformation["trump"],
 		"whoHasWonTheCards": "",
 		"whoHasWonTheRound": "",

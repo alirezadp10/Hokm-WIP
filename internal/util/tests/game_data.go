@@ -9,13 +9,10 @@ type GameDataBuilder struct {
 }
 
 func NewGameDataBuilder() *GameDataBuilder {
-	cards := getSampleCards()
-	points := getSamplePoints()
-
 	return &GameDataBuilder{data: map[string]interface{}{
 		"players":                 "0,1,2,3",
-		"cards":                   string(cards),
-		"points":                  string(points),
+		"cards":                   string(getSampleCards()),
+		"points":                  string(getSamplePoints()),
 		"center_cards":            ",,,",
 		"trump":                   "C",
 		"king":                    "0",
@@ -23,13 +20,35 @@ func NewGameDataBuilder() *GameDataBuilder {
 		"is_it_new_round":         "false",
 		"turn":                    "1",
 		"king_cards":              "01C",
-		"was_king_changed":        "false",
+		"was_the_king_changed":        "false",
 		"has_king_cards_finished": "true",
 		"who_has_won_the_cards":   "",
 		"who_has_won_the_round":   "",
 		"who_has_won_the_game":    "",
 		"last_move_timestamp":     "1234567890",
 	}}
+}
+
+func (b *GameDataBuilder) BeginingState() *GameDataBuilder {
+	b.data = map[string]interface{}{
+		"last_move_timestamp":     "1234567890",
+		"who_has_won_the_cards":   "",
+		"was_the_king_changed":        "",
+		"center_cards":            ",,,",
+		"trump":                   "",
+		"has_king_cards_finished": "false",
+		"king":                    "0",
+		"players":                 "0,1,2,3",
+		"who_has_won_the_game":    "",
+		"lead_suit":               "",
+		"is_it_new_round":         "false",
+		"turn":                    "0",
+		"who_has_won_the_round":   "",
+		"king_cards":              "01H",
+		"cards":                   string(getSampleCards()),
+		"points":                  string(getSamplePoints()),
+	}
+	return b
 }
 
 func (b *GameDataBuilder) SetPlayers(players string) *GameDataBuilder {
@@ -83,7 +102,7 @@ func (b *GameDataBuilder) SetKingCards(kingCards string) *GameDataBuilder {
 }
 
 func (b *GameDataBuilder) SetWasKingChanged(wasKingChanged string) *GameDataBuilder {
-	b.data["was_king_changed"] = wasKingChanged
+	b.data["was_the_king_changed"] = wasKingChanged
 	return b
 }
 

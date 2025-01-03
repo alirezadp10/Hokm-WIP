@@ -1,27 +1,31 @@
 package transformer
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/alirezadp10/hokm/pkg/service"
 )
 
 type PlaceCardTransformerData struct {
-	GameInformation   map[string]interface{}
 	Players           []string
 	UIndex            int
 	Points            string
+	Cards             map[int][]string
 	CenterCards       string
 	Turn              string
 	King              string
+	Trump             string
 	LastMoveTimestamp string
-	WasKingChanged    bool
+	WasKingChanged    string
 	CardsWinner       string
 	RoundWinner       string
 	GameWinner        string
+	LeadSuit          string
 }
 
 func PlaceCardTransformer(playersService *service.PlayersService, cardsService *service.CardsService, data PlaceCardTransformerData) map[string]interface{} {
+	cards, _ := json.Marshal(data.Cards)
 	result := map[string]interface{}{
 		"players":           playersService.GetPlayersWithDirections(data.Players, data.UIndex),
 		"points":            cardsService.GetPoints(data.Points, data.UIndex),
@@ -29,9 +33,10 @@ func PlaceCardTransformer(playersService *service.PlayersService, cardsService *
 		"turn":              playersService.GetTurn(data.Turn, data.UIndex),
 		"king":              playersService.GetKing(data.King, data.UIndex),
 		"timeRemained":      playersService.GetTimeRemained(data.LastMoveTimestamp),
-		"playerCards":       cardsService.GetPlayerCards(data.GameInformation["cards"].(string), data.UIndex),
+		"playerCards":       cardsService.GetPlayerCards(string(cards), data.UIndex),
 		"wasKingChanged":    data.WasKingChanged,
-		"trump":             data.GameInformation["trump"],
+		"trump":             data.Trump,
+		"leadSuit":          data.LeadSuit,
 		"whoHasWonTheCards": "",
 		"whoHasWonTheRound": "",
 		"whoHasWonTheGame":  "",

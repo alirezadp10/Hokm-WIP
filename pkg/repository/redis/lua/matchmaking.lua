@@ -52,7 +52,7 @@ if count >= 4 then
 
     redis.call('HSET', 'game:' .. ARGV[2], 'has_king_cards_finished', "false")
 
-    redis.call('HSET', 'game:' .. ARGV[2], 'was_king_changed', '')
+    redis.call('HSET', 'game:' .. ARGV[2], 'was_the_king_changed', '')
 
     redis.call('HSET', 'game:' .. ARGV[2], 'who_has_won_the_cards', '')
 

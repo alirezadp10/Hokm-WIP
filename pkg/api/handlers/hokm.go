@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/alirezadp10/hokm/internal/util/crypto"
-	"github.com/alirezadp10/hokm/internal/util/my_bool"
 	"github.com/alirezadp10/hokm/internal/util/my_slice"
 	"github.com/alirezadp10/hokm/internal/util/trans"
 	"github.com/alirezadp10/hokm/pkg/api/request"
@@ -254,9 +253,7 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 
 	uIndex := my_slice.GetIndex(username, players)
 
-	gameState := h.initializeGameState(gameInformation)
-
-	leadSuit := h.determineLeadSuit(requestBody.Card, gameState["leadSuit"].(string))
+	leadSuit := h.getLeadSuit(requestBody.Card, gameInformation["lead_suit"].(string), gameInformation["who_has_won_the_cards"].(string))
 
 	if err := validator.PlaceCardValidator(h.playersService, h.cardsService, validator.PlaceCardValidatorData{
 		GameInformation: gameInformation,
@@ -269,20 +266,41 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 		return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
 	}
 
+	if gameInformation["who_has_won_the_cards"].(string) != "" {
+		gameInformation["who_has_won_the_cards"] = ""
+		gameInformation["center_cards"] = ",,,"
+	}
+
 	centerCards := h.cardsService.UpdateCenterCards(gameInformation["center_cards"].(string), requestBody.Card, uIndex)
 
-	cardsWinner := h.cardsService.FindCardsWinner(centerCards, gameState["trump"].(string), leadSuit)
+	cardsWinner := h.cardsService.FindCardsWinner(centerCards, gameInformation["trump"].(string), leadSuit)
 
 	if cardsWinner != "" {
-		h.updateWinnersAndPoints(&gameState, cardsWinner)
-		if gameState["roundWinner"].(string) != "" {
-			h.startNewRound(&gameState)
+		pervKing := gameInformation["king"]
+		points, roundWinner, gameWinner := h.cardsService.UpdatePoints(gameInformation["points"].(string), cardsWinner)
+		gameInformation["points"] = points
+		gameInformation["who_has_won_the_round"] = roundWinner
+		gameInformation["who_has_won_the_game"] = gameWinner
+
+		gameInformation["king"] = h.playersService.GiveKing(roundWinner, gameInformation["king"].(string))
+		gameInformation["was_the_king_changed"] = pervKing != gameInformation["king"].(string)
+
+		if gameInformation["who_has_won_the_round"].(string) != "" {
+			gameInformation["cards"] = h.cardsService.DistributeCards()
+			gameInformation["trump"] = ""
 		}
 	}
 
-	gameState["lastMoveTimestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
-	gameState["cards"] = h.cardsService.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
-	gameState["turn"] = h.playersService.GetNewTurn(gameInformation["turn"].(string), gameState["gameWinner"].(string))
+	gameInformation["last_move_timestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
+	gameInformation["cards"] = h.cardsService.UpdateUserCards(gameInformation["cards"].(string), requestBody.Card, uIndex)
+
+	fmt.Println("fooooooooooooo:", gameInformation["was_the_king_changed"])
+	gameInformation["turn"] = h.playersService.GetNewTurn(
+		gameInformation["turn"].(string),
+		cardsWinner,
+		gameInformation["king"].(string),
+		gameInformation["was_the_king_changed"].(string),
+	)
 
 	params := repository.PlaceCardParams{
 		GameId:            gameID,
@@ -290,14 +308,13 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 		CenterCards:       centerCards,
 		LeadSuit:          leadSuit,
 		CardsWinner:       cardsWinner,
-		Points:            gameState["points"].(string),
-		Turn:              gameState["turn"].(string),
-		King:              gameState["king"].(string),
-		WasKingChanged:    my_bool.ToString(gameState["wasKingChanged"].(bool)),
-		LastMoveTimestamp: gameState["lastMoveTimestamp"].(string),
-		Trump:             gameState["trump"].(string),
-		IsItNewRound:      my_bool.ToString(gameState["isItNewRound"].(bool)),
-		Cards:             gameState["cards"].([]string),
+		Points:            gameInformation["points"].(string),
+		Turn:              gameInformation["turn"].(string),
+		King:              gameInformation["king"].(string),
+		WasKingChanged:    gameInformation["was_the_king_changed"].(string),
+		LastMoveTimestamp: gameInformation["last_move_timestamp"].(string),
+		Trump:             gameInformation["trump"].(string),
+		Cards:             gameInformation["cards"].(map[int][]string),
 		PlayerIndex:       uIndex,
 	}
 
@@ -308,65 +325,27 @@ func (h *HokmHandler) PlaceCard(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, transformer.PlaceCardTransformer(h.playersService, h.cardsService, transformer.PlaceCardTransformerData{
-		GameInformation:   gameInformation,
 		Players:           players,
 		UIndex:            uIndex,
-		Points:            gameState["points"].(string),
 		CenterCards:       centerCards,
-		Turn:              gameState["turn"].(string),
-		King:              gameState["king"].(string),
-		LastMoveTimestamp: gameState["lastMoveTimestamp"].(string),
-		WasKingChanged:    gameState["wasKingChanged"].(bool),
+		LeadSuit:          leadSuit,
 		CardsWinner:       cardsWinner,
-		RoundWinner:       gameState["roundWinner"].(string),
-		GameWinner:        gameState["gameWinner"].(string),
+		Points:            gameInformation["points"].(string),
+		Turn:              gameInformation["turn"].(string),
+		King:              gameInformation["king"].(string),
+		LastMoveTimestamp: gameInformation["last_move_timestamp"].(string),
+		WasKingChanged:    gameInformation["was_the_king_changed"].(string),
+		Cards:             gameInformation["cards"].(map[int][]string),
+		RoundWinner:       gameInformation["who_has_won_the_round"].(string),
+		GameWinner:        gameInformation["who_has_won_the_game"].(string),
 	}))
 }
 
-func (h *HokmHandler) initializeGameState(gameInformation map[string]interface{}) map[string]interface{} {
-	return map[string]interface{}{
-		"trump":          gameInformation["trump"].(string),
-		"king":           gameInformation["king"].(string),
-		"points":         gameInformation["points"].(string),
-		"leadSuit":       gameInformation["lead_suit"].(string),
-		"gameWinner":     "",
-		"roundWinner":    "",
-		"wasKingChanged": false,
-		"isItNewRound":   false,
-	}
-}
-
-func (h *HokmHandler) determineLeadSuit(card string, currentLeadSuit string) string {
-	if currentLeadSuit == "" {
+func (h *HokmHandler) getLeadSuit(card, currentLeadSuit, whoHasWonTheCards string) string {
+	if currentLeadSuit == "" || whoHasWonTheCards != "" {
 		return h.cardsService.GetCardSuit(card)
 	}
 	return currentLeadSuit
-}
-
-func (h *HokmHandler) updateWinnersAndPoints(gameState *map[string]interface{}, cardsWinner string) {
-	points, roundWinner, gameWinner := h.cardsService.UpdatePoints((*gameState)["points"].(string), cardsWinner)
-	(*gameState)["points"] = points
-	(*gameState)["roundWinner"] = roundWinner
-	(*gameState)["gameWinner"] = gameWinner
-
-	if roundWinner == "" {
-		(*gameState)["turn"] = cardsWinner
-	} else {
-		(*gameState)["turn"] = ""
-	}
-
-	(*gameState)["king"] = h.playersService.GiveKing(roundWinner, (*gameState)["king"].(string))
-	(*gameState)["wasKingChanged"] = (*gameState)["king"] == (*gameState)["king"].(string)
-	(*gameState)["leadSuit"] = ""
-	(*gameState)["centerCards"] = ",,,"
-}
-
-func (h *HokmHandler) startNewRound(gameState *map[string]interface{}) {
-	(*gameState)["cards"] = h.cardsService.DistributeCards()
-	(*gameState)["isItNewRound"] = true
-	if (*gameState)["wasKingChanged"].(bool) {
-		(*gameState)["trump"] = ""
-	}
 }
 
 func (h *HokmHandler) GetUpdate(c echo.Context) error {

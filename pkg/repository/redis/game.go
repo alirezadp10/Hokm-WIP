@@ -31,7 +31,7 @@ func (r *GameRepository) GetGameInformation(ctx context.Context, gameID string) 
 	gameFields := []string{
 		"who_has_won_the_cards",
 		"last_move_timestamp",
-		"was_king_changed",
+		"was_the_king_changed",
 		"center_cards",
 		"trump",
 		"cards",

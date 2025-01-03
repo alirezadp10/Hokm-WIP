@@ -20,7 +20,7 @@ type PlaceCardParams struct {
 	LastMoveTimestamp string
 	Trump             string
 	IsItNewRound      string
-	Cards             []string
+	Cards             map[int][]string
 	PlayerIndex       int
 }
 

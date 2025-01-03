@@ -159,6 +159,8 @@
         splashContainer.style.transition = 'opacity 1s ease';
         splashContainer.style.opacity = '0';
 
+        console.log(window.Telegram.WebApp.initData);
+
         // After fade-out completes, redirect to the menu
         setTimeout(() => {
             document.location.href = `/menu?` + window.Telegram.WebApp.initData;
