@@ -6,8 +6,20 @@ services:
     environment:
       - HTTPS_PROXY=${HTTPS_PROXY}
       - HTTP_PROXY=${HTTP_PROXY}
-
+    depends_on:
+      - redis
+    networks:
+      - hokm-net
+    ports:
+      - '${SERVER_PORT}:9090'
+      
   redis:
     image: redis/redis-stack-server:latest
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT}:6379'
+    networks:
+      - hokm-net
+
+networks:
+  hokm-net:
+    driver: bridge

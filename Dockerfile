@@ -4,11 +4,6 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-#RUN CGO_ENABLED=0 GOOS=linux go build -o app
-#
-#FROM alpine:latest
-#WORKDIR /app
-#COPY --from=builder /app/app .
-#ENTRYPOINT ["./app","serve"]
+EXPOSE 9090
+ENTRYPOINT ["go", "run", "./cmd/server/main.go"]
 
-ENTRYPOINT ["go", "run", "main.go"]

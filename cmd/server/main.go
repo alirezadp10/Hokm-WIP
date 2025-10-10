@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/alirezadp10/hokm/pkg/api"
 	"github.com/alirezadp10/hokm/pkg/api/handlers"
 	"github.com/alirezadp10/hokm/pkg/api/middleware"
@@ -41,6 +39,5 @@ func main() {
 
 	api.SetupRouter(e, hokmHandler, authMiddleware)
 
-	fmt.Println("Server is running at 9090")
 	e.Start("0.0.0.0:9090")
 }

@@ -1,15 +1,26 @@
 package database
 
 import (
-    _ "embed"
-    "github.com/redis/rueidis"
-    "log"
+	_ "embed"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/redis/rueidis"
 )
 
 func GetNewRedisConnection() *rueidis.Client {
-    client, err := rueidis.NewClient(rueidis.ClientOption{InitAddress: []string{"127.0.0.1:6379"}})
-    if err != nil {
-        log.Fatal("couldn't connect to redis")
-    }
-    return &client
+	host := os.Getenv("REDIS_HOST")
+	port := os.Getenv("REDIS_PORT")
+
+	address := fmt.Sprintf("%s:%s", host, port)
+
+	client, err := rueidis.NewClient(rueidis.ClientOption{
+		InitAddress: []string{address},
+	})
+
+	if err != nil {
+		log.Fatal("couldn't connect to redis")
+	}
+	return &client
 }
