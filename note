@@ -1,7 +1,3 @@
-APP_KEY=E2UAlCvPvD6m1jS0bAXk8vYjPvD6m1jS
-
-DB_NAME=/home/alireza/Desktop/Hokm/internal/database/sqlite/hokm.db
-
 amir:
 urk="user-reference-key:7m2m5O5dIZZDvx9lb/ggD1qX22M="
 

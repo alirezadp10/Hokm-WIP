@@ -12,7 +12,9 @@ services:
       - hokm-net
     ports:
       - '${APP_PORT}:8000'
-      
+    volumes:
+      - .:/app
+
   redis:
     image: redis/redis-stack-server:latest
     ports:
