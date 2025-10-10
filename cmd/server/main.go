@@ -39,5 +39,5 @@ func main() {
 
 	api.SetupRouter(e, hokmHandler, authMiddleware)
 
-	e.Start("0.0.0.0:9090")
+	e.Start("0.0.0.0:8000")
 }

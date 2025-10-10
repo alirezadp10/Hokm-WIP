@@ -13,9 +13,9 @@ import (
 // Encrypt encrypts the plaintext and returns a Base64-encoded ciphertext
 func Encrypt(plainText string) (string, error) {
 	// Ensure the app key is of the correct length
-	appKey := os.Getenv("APP_KEY")
+	appKey := os.Getenv("APP_SECRET_KEY")
 	if len(appKey) != 32 {
-		return "", errors.New("APP_KEY must be 32 bytes long for AES-256")
+		return "", errors.New("APP_SECRET_KEY must be 32 bytes long for AES-256")
 	}
 
 	// Create a new AES cipher block
@@ -42,9 +42,9 @@ func Encrypt(plainText string) (string, error) {
 // Decrypt decrypts a Base64-encoded ciphertext and returns the plaintext
 func Decrypt(cipherTextBase64 string) (string, error) {
 	// Ensure the app key is of the correct length
-	appKey := os.Getenv("APP_KEY")
+	appKey := os.Getenv("APP_SECRET_KEY")
 	if len(appKey) != 32 {
-		return "", errors.New("APP_KEY must be 32 bytes long for AES-256")
+		return "", errors.New("APP_SECRET_KEY must be 32 bytes long for AES-256")
 	}
 
 	// Decode the Base64-encoded ciphertext

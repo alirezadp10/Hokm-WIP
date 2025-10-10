@@ -11,7 +11,7 @@ services:
     networks:
       - hokm-net
     ports:
-      - '${SERVER_PORT}:9090'
+      - '${APP_PORT}:9090'
       
   redis:
     image: redis/redis-stack-server:latest
