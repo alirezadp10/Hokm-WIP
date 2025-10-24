@@ -20,7 +20,6 @@ import (
 	"github.com/alirezadp10/hokm/pkg/api/validator"
 	"github.com/alirezadp10/hokm/pkg/repository"
 	"github.com/alirezadp10/hokm/pkg/service"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/rueidis"
 	"gorm.io/gorm"
@@ -53,13 +52,17 @@ func (h *HokmHandler) CreateGame(c echo.Context) error {
 		return c.JSON(err.StatusCode, map[string]interface{}{"message": err.Message, "details": err.Details})
 	}
 
-	gameID := uuid.New().String()
-	distributedCards := h.cardsService.DistributeCards()
-	kingCards, king := h.playersService.ChooseFirstKing()
+	gameID, hasGame := h.gameService.CheckAnyExistingGameForPlayer(c.Request().Context(), username)
+	if hasGame {
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"message": trans.Get("An active game already exists for this user."),
+			"gameID":  gameID,
+		})
+	}
 
-	go h.gameService.Matchmaking(c.Request().Context(), username, gameID, distributedCards, kingCards, king)
+	go h.gameService.AddPlayerToWaitingList(c.Request().Context(), username)
 
-	err := (*h.redis).Receive(c.Request().Context(), (*h.redis).B().Subscribe().Channel("game_creation").Build(), func(msg rueidis.PubSubMessage) {
+	err := (*h.redis).Receive(c.Request().Context(), (*h.redis).B().Subscribe().Channel("matchmaking").Build(), func(msg rueidis.PubSubMessage) {
 		message := strings.Split(msg.Message, "|")
 		players := strings.Split(message[0], ",")
 		if my_slice.Has(players, username) {
@@ -68,7 +71,7 @@ func (h *HokmHandler) CreateGame(c echo.Context) error {
 			if err != nil {
 				fmt.Println(err)
 			}
-			unsubscribeErr := (*h.redis).Do(c.Request().Context(), (*h.redis).B().Unsubscribe().Channel("game_creation").Build()).Error()
+			unsubscribeErr := (*h.redis).Do(c.Request().Context(), (*h.redis).B().Unsubscribe().Channel("matchmaking").Build()).Error()
 			if unsubscribeErr != nil {
 				log.Println("Error while unsubscribing:", unsubscribeErr)
 			}
@@ -76,10 +79,10 @@ func (h *HokmHandler) CreateGame(c echo.Context) error {
 	})
 
 	if err != nil {
-		log.Printf("Error in subscribing to %v channel: %v", "game_creation", err)
+		log.Printf("Error in subscribing to %v channel: %v", "matchmaking", err)
 
 		if errors.Is(err, context.Canceled) {
-			h.gameService.RemovePlayerFromWaitingList(username)
+			h.gameService.RemovePlayerFromWaitingList(c.Request().Context(), username)
 		}
 		if errors.Is(c.Request().Context().Err(), context.DeadlineExceeded) {
 			return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
@@ -350,7 +353,6 @@ func (h *HokmHandler) getLeadSuit(card, currentLeadSuit, whoHasWonTheCards strin
 
 func (h *HokmHandler) GetUpdate(c echo.Context) error {
 	username := c.Get("username").(string)
-	fmt.Println("username: ", username, "Hi there")
 
 	gameID := c.Param("gameID")
 

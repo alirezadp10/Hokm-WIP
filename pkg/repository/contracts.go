@@ -1,45 +1,47 @@
 package repository
 
 import (
-    "context"
+	"context"
 
-    "github.com/alirezadp10/hokm/pkg/api/request"
-    "github.com/alirezadp10/hokm/pkg/model"
+	"github.com/alirezadp10/hokm/pkg/api/request"
+	"github.com/alirezadp10/hokm/pkg/model"
 )
 
 type PlaceCardParams struct {
-    GameId            string
-    Card              string
-    CenterCards       string
-    LeadSuit          string
-    CardsWinner       string
-    Points            string
-    Turn              string
-    King              string
-    WasTheKingChanged string
-    LastMoveTimestamp string
-    Trump             string
-    IsItNewRound      string
-    Cards             map[int][]string
-    PlayerIndex       int
+	GameId            string
+	Card              string
+	CenterCards       string
+	LeadSuit          string
+	CardsWinner       string
+	Points            string
+	Turn              string
+	King              string
+	WasTheKingChanged string
+	LastMoveTimestamp string
+	Trump             string
+	IsItNewRound      string
+	Cards             map[int][]string
+	PlayerIndex       int
 }
 
 type CardsRepositoryContract interface {
-    SetTrump(ctx context.Context, gameID, trump, uIndex, lastMoveTimestamp string) error
-    PlaceCard(ctx context.Context, params PlaceCardParams) error
+	SetTrump(ctx context.Context, gameID, trump, uIndex, lastMoveTimestamp string) error
+	PlaceCard(ctx context.Context, params PlaceCardParams) error
 }
 
 type GameRepositoryContract interface {
-    GetGameInformation(ctx context.Context, gameID string) (map[string]string, error)
-    Matchmaking(ctx context.Context, cards map[int][]string, username, gameID, lastMoveTimestamps, king, kingCards string)
-    RemovePlayerFromWaitingList(ctx context.Context, key, username string)
+	GetGameInformation(ctx context.Context, gameID string) (map[string]string, error)
+	Matchmaking(ctx context.Context, username string)
+	RemovePlayerFromWaitingList(ctx context.Context, username string)
+	AddPlayerToWaitingList(ctx context.Context, username string)
+	CheckAnyExistingGameForPlayer(ctx context.Context, username string) (string, bool, error)
 }
 
 type PlayersRepositoryContract interface {
-    CheckPlayerExistence(username string) bool
-    SavePlayer(user request.User, chatId int64) (*model.Player, error)
-    AddPlayerToGame(username, gameID string) (*model.Game, error)
-    DoesPlayerBelongToGame(username, gameID string) (bool, error)
-    DoesPlayerHaveAnyActiveGame(username string) (*string, bool)
-    HasGameFinished(gameID string) (bool, error)
+	CheckPlayerExistence(username string) bool
+	SavePlayer(user request.User, chatId int64) (*model.Player, error)
+	AddPlayerToGame(username, gameID string) (*model.Game, error)
+	DoesPlayerBelongToGame(username, gameID string) (bool, error)
+	DoesPlayerHaveAnyActiveGame(username string) (*string, bool)
+	HasGameFinished(gameID string) (bool, error)
 }
